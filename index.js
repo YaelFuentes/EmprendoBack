@@ -453,4 +453,3 @@ app.get("/puni/:id",auth.required,async function (req, res) {
   await punitoriosController.calculate(id);
   res.sendStatus(200)
 });
-

@@ -138,13 +138,13 @@ async function getAllInvestements() {
   return [...activeInvestments, ...finishedInvestments]
 }
 
-async function reinversion(investmentID, amount){
+async function reinversion(investmentID, amount) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
   const sqlCash_flow = `UPDATE cash_flow SET amount = ? WHERE investment_id = ? and operation_type = 'inversion_nueva';`;
   const result = await query(sqlCash_flow, [amount, investmentID]);
   const sqlInvestment = `UPDATE investments SET ts = now(), amount = ? WHERE id = ?;`;
-  const resultInvestments = await query(sqlInvestment, [amount,investmentID]);
+  const resultInvestments = await query(sqlInvestment, [amount, investmentID]);
   return {
     result,
     resultInvestments
@@ -501,7 +501,7 @@ async function notificationInvestment(amount, percentaje) {
     }
     let mailOptions2 = {
       from: process.env.MAIL_FROM,
-      to: [...sendMailFunction1, ...sendMailFunction7 ],
+      to: [...sendMailFunction1, ...sendMailFunction7],
       subject: 'Aviso de pago a Em.prendo',
       html: ''
     }
@@ -525,7 +525,7 @@ async function notificationInvestment(amount, percentaje) {
     }
     let mailOptions3 = {
       from: process.env.MAIL_FROM,
-      to: sendMailFunction1,
+      to: [...sendMailFunction1, ...sendMailFunction7],
       subject: 'Aviso de finalización de inversión',
       html: ''
     }
@@ -549,7 +549,7 @@ async function notificationInvestment(amount, percentaje) {
     }
     let mailOptions4 = {
       from: process.env.MAIL_FROM,
-      to: [...sendMailFunction1, ...sendMailFunction7 ],
+      to: sendMailFunction5,
       subject: 'Aviso de finalización de inversión',
       html: ''
     }
@@ -563,7 +563,7 @@ async function notificationInvestment(amount, percentaje) {
         </head>
         <body>
         <tbody>
-        ${item.nombre} ${item.apellido} se informa que su inversión realizada por el monto inicial de ${item.monto_inversion} en Em.prendo finaliza en 30 días. Pasados los 30 días usted podrá comunicarse con nosotros para retirar su inversión. Ante cualquier duda o consulta, por favor, comunicarse con Em.prendo
+        ${item.nombre} ${item.apellido} se informa que su inversión realizada por el monto inicial de $${item.monto_inversion} en Em.prendo finaliza en 30 días. Pasados los 30 días usted podrá comunicarse con nosotros para retirar su inversión. Ante cualquier duda o consulta, por favor, comunicarse con Em.prendo
         </tbody>
         </body>`;
     mailOptions4.html = html4;
@@ -571,10 +571,33 @@ async function notificationInvestment(amount, percentaje) {
       /* sendMail(mailOptions); */
       console.log(mailOptions4)
     }
+    let mailOptions5 = {
+      from: process.env.MAIL_FROM,
+      to: [...sendMailFunction1, ...sendMailFunction7],
+      subject: 'Aviso de finalización de inversión',
+      html: ''
+    }
+    html5 = `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Document</title>
+        </head>
+        <body>
+        <tbody>
+        Se informa que la inversión de ${item.nombre} ${item.apellido} realizada por el monto inicial de ${item.monto_inversion} en Em.prendo finaliza en 7 días
+        </tbody>
+        </body>`;
+    mailOptions5.html = html5;
+    if (moment().add(7, 'days').format("DD-MM-YYYY") === item.addDate) {
+      /* sendMail(mailOptions); */
+      console.log(mailOptions5)
+    }
   })
 
 }
-
 module.exports = {
   createInvestment,
   recapitalizar_auto,
