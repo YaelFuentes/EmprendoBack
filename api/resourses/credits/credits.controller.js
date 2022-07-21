@@ -430,7 +430,7 @@ async function createItems(
 
   let capitalBaseMasOtorgamiento = +budgetInfo.budgetAmount;
 
-  if (budgetInfo.gastos_otorgamiento == 1) {
+  if (budgetInfo.gastos_otorgamiento === 1) {
     capitalBaseMasOtorgamiento += +budgetInfo.budgetGastosOtorgamientoValue;
   }
 
@@ -649,7 +649,7 @@ async function saveClient(data) {
       data.cliente_dni,
       "",
       data.cliente_telefono,
-      data.cliente_probabilidad == "Alta" ? "high" : "low",
+      data.cliente_probabilidad === "Alta" ? "high" : "low",
     ];
     const client = await query(sql, bind);
   } catch (err) {

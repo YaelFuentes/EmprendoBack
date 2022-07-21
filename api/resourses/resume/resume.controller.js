@@ -6,12 +6,14 @@ async function getFinancial2() {
   const gastosPrevistos = await getGastosPrevistos();
   const bienesDeUso = await getBienesDeUso();
   const PunitoriosTotales = await getPunitorios();
+  
   return {
     efectivoDisponible,
     patrimonioTotal,
     gastosPrevistos,
     bienesDeUso,
     PunitoriosTotales,
+    
   }
 }
 
@@ -28,6 +30,8 @@ async function getFinancial(start, end) {
     start,
     end
   );
+/*   const patrimonioTotalCompleto = await getPatrimonioPorFecha(start, end) */
+  const capitalVigente = await getCapitalVigente();
   const ingresosPorInteresesRecuperado =
     await getIngresosPorInteresesRecuperado(start, end);
   const ingresosPorPunitoriosRecuperado =
@@ -40,6 +44,9 @@ async function getFinancial(start, end) {
   const creditosOtorgados = await getCreditosOtorgados(start, end);
   const patrimonioTotal = await getPatrimonioTotal();
 
+  //futuros
+  const futurosIngresoDineroMes = await getFuturosIngresoDineroMes();
+  
   //sumadores
   const capitalEInteresesPrestado =
     (capitalPrestado ?? 0) + (interesesPrestado ?? 0);
@@ -53,8 +60,17 @@ async function getFinancial(start, end) {
     (ingresosPorInteresesRecuperado ?? 0) +
     (ingresosPorPunitoriosRecuperado ?? 0) +
     (gastosPrevistos ?? 0);
+  const investmentsComplete = await getInvestmentsUserComplete();
+  ///////////////////////////////////////////////////////
+  const cajaTotalPositivo = await getCajaTotalPositivo();
+  const cajaTotalNegativo = await getCajaTotalNEgativo();
+  ///////////////////////////////////////////////////////
 
   return {
+    //////////////////
+    cajaTotalPositivo,
+    cajaTotalNegativo,
+    //////////////////
     efectivoDisponible,
     chequesEnCartera,
     bienesDeUso,
@@ -72,7 +88,13 @@ async function getFinancial(start, end) {
     totalIngresosRecuperado,
     creditosOtorgados,
     ganaciaRecuperada,
-    PunitoriosTotales
+    PunitoriosTotales,
+    investmentsComplete,
+    capitalVigente,
+    //futuros
+    futurosIngresoDineroMes,
+    //patrimonio total 
+   /*  patrimonioTotalCompleto */
   };
 }
 
@@ -113,6 +135,52 @@ async function getResumeInvestments(start, end) {
 }
 
 // functiones internas
+
+async function getCajaTotalPositivo(){
+  let cajaTotalPositivoR = 0;
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const cajaQuery = ``;
+  const cajaResult = await query(cajaQuery, [])
+  if(cajaResult){
+    cajaTotalPositivoR = cajaResult[0].cajatotal
+  }
+}
+
+async function  getInvestmentsUserComplete(){
+  let totalInvestmentComplete = 0;
+
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const InvestmentUserCompleteQuery = `SELECT amount InvestmentUserComplete FROM cayetano.users join cayetano.investments on users.id = investments.investorID;`;
+  const InvestmentUserCompleteResult = await query(InvestmentUserCompleteQuery, [])
+  if(InvestmentUserCompleteResult){
+    totalInvestmentComplete = InvestmentUserCompleteResult[0].InvestmentUserComplete
+  }
+  const InvestmentUserCompleteQuery2 = `SELECT investorID InvestmentUserComplete FROM cayetano.users join cayetano.investments on users.id = investments.investorID;`;
+  const InvestmentUserCompleteResult2 = await query(InvestmentUserCompleteQuery2, [])
+  if(InvestmentUserCompleteResult2){
+    totalInvestmentComplete2 = InvestmentUserCompleteResult2[0].InvestmentUserComplete
+  }
+  return{
+    totalInvestmentComplete,
+    totalInvestmentComplete2,
+  }
+}
+
+/* async function getPatrimonioPorFecha(start, end) {
+  let patrimonioTotalCompleto = 0;
+
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const patrimonioTotalQuery = `SELECT SUM(amount) patrimonioTotalCompleto1 FROM cash_flow WHERE created_at BETWEEN ? AND ? AND operation_type NOT IN('egreso_credito_otorgado','ingreso_capital_cuotas','pago_inversion','retiro_inversion');`;
+  const result = await query (patrimonioTotalQuery, [start, end]);
+  if(result){
+    return patrimonioTotalCompleto[0].patrimonioTotalCompleto1
+  }else{
+    return 0
+  }
+} */
 
 async function getPatrimonioTotal() {
   /**
@@ -308,10 +376,22 @@ async function getBienesDeUso() {
   {/*const util = require("util)*/ }
 }
 
+//Futuros
+async function getFuturosIngresoDineroMes() {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT SUM(amount) InversoresVigentes FROM investments WHERE DATE_ADD(DATE(ts),INTERVAL (period) MONTH) >= DATE(NOW()) AND DATE_ADD(DATE(ts),INTERVAL (period) MONTH) > DATE(NOW());`;
+  const result = await query(dataQuery, []);
+  if(result) {
+    return result[0].InversoresVigentes
+  }
+}
+//Futuros 
+
 async function getEfectivoDisponible() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(amount) efectivoDisponible FROM cash_flow WHERE deleted_at IS NULL`;
+  const dataQuery = `SELECT SUM(amount) efectivoDisponible FROM cash_flow WHERE deleted_at IS NULL;`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].efectivoDisponible;
@@ -322,11 +402,23 @@ async function getEfectivoDisponible() {
 async function getPunitorios() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(punitorios) getPunitorio FROM credits_items`;
+  const dataQuery = `SELECT SUM(punitorios) Punitorio FROM credits_items;`;
   const result = await query(dataQuery, []);
   if (result) {
-    return result[0].getPunitorio;
+    return result[0].Punitorio;
   } else {
+    return 0;
+  }
+}
+
+async function getCapitalVigente(){
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT SUM(distinct s.capital) capitalVigentes FROM credits s INNER JOIN credits_items d ON s.id = d.credit_id ;;`;
+  const result = await query(dataQuery, []);
+  if(result){
+    return result[0].capitalVigentes;
+  }else{
     return 0;
   }
 }

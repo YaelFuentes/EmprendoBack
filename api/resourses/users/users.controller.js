@@ -99,7 +99,9 @@ async function createUser(
   privileges,
   phone,
   probability,
-  callback
+  callback,
+
+
 ) {
   /**
       1 - si type 1 y 2 no se repetir el email y el (type 1 o 2)
@@ -151,6 +153,9 @@ async function createUser(
     }
   }
 }
+
+//ah modificar inversores
+//ah modificar inversores
 
 async function insertuser(user) {
   return new Promise((resolve, reject) => {

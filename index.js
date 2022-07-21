@@ -15,11 +15,12 @@ const notificationsRouter = require("./api/resourses/notifications/notifications
 const logsRouter = require("./api/resourses/logsrecords/logs.routes");
 const investmentsController = require("./api/resourses/investments/investments.controller");
 const punitoriosController = require("./api/resourses/punitorios/punitorios.controller");
+const futurosRouter = require("./api/resourses/futuros/futuros.routes");
 
 const dotenv = require('dotenv');
 dotenv.config();
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3002;
 const bodyParser = require("body-parser");
 const mysql = require("mysql");
 var multer = require("multer");
@@ -36,6 +37,23 @@ const mysqli = mysql.createConnection({
   database: process.env.DB_DATABASE,
   port: process.env.DB_PORT,
 });
+
+//prueba de puerto 
+/* const PORT = 8080; */
+/* const http = require('http');
+const hostname = '0.0.0.0'; */
+/* const server = http.createServer((req, res) => {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/plain');
+    res.end('http://localhost:3000');
+});
+server.listen(port, hostname, () =>{
+  console.log(`server running at http://${hostname}:${port}/`)
+}); */+
+app.get('/paneladmin', (req, res) => {
+  res.send('lola')
+})
+//prueba de puerto 
 
 console.log(process.env.DB_HOST);
 
@@ -68,6 +86,7 @@ app.use("/notifications", notificationsRouter);
 app.use("/logs", logsRouter);
 app.use("/cash_flow", cashflowRouter);
 app.use("/media", mediaRouter);
+app.use("/futurosC", futurosRouter);
 
 
 app.use(function (req, res, next) {
