@@ -20,7 +20,7 @@ const futurosRouter = require("./api/resourses/futuros/futuros.routes");
 const dotenv = require('dotenv');
 dotenv.config();
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 8081;
 const bodyParser = require("body-parser");
 const mysql = require("mysql");
 var multer = require("multer");
