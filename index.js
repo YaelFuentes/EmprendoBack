@@ -20,7 +20,7 @@ const futurosRouter = require("./api/resourses/futuros/futuros.routes");
 const dotenv = require('dotenv');
 dotenv.config();
 const app = express();
-const port = process.env.PORT || 3002;
+const port = process.env.PORT || 3001;
 const bodyParser = require("body-parser");
 const mysql = require("mysql");
 var multer = require("multer");
@@ -49,7 +49,7 @@ const hostname = '0.0.0.0'; */
 });
 server.listen(port, hostname, () =>{
   console.log(`server running at http://${hostname}:${port}/`)
-}); */+
+}); */
 app.get('/paneladmin', (req, res) => {
   res.send('lola')
 })

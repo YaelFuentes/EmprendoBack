@@ -62,14 +62,14 @@ async function getFinancial(start, end) {
     (gastosPrevistos ?? 0);
   const investmentsComplete = await getInvestmentsUserComplete();
   ///////////////////////////////////////////////////////
-  const cajaTotalPositivo = await getCajaTotalPositivo();
-  const cajaTotalNegativo = await getCajaTotalNEgativo();
+/*   const cajaTotalPositivo = await getCajaTotalPositivo();
+  const cajaTotalNegativo = await getCajaTotalNEgativo(); */
   ///////////////////////////////////////////////////////
 
   return {
     //////////////////
-    cajaTotalPositivo,
-    cajaTotalNegativo,
+/*     cajaTotalPositivo,
+    cajaTotalNegativo, */
     //////////////////
     efectivoDisponible,
     chequesEnCartera,
@@ -136,7 +136,7 @@ async function getResumeInvestments(start, end) {
 
 // functiones internas
 
-async function getCajaTotalPositivo(){
+/* async function getCajaTotalPositivo(){
   let cajaTotalPositivoR = 0;
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
@@ -146,7 +146,7 @@ async function getCajaTotalPositivo(){
     cajaTotalPositivoR = cajaResult[0].cajatotal
   }
 }
-
+ */
 async function  getInvestmentsUserComplete(){
   let totalInvestmentComplete = 0;
 
