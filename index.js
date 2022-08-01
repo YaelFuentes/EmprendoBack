@@ -38,22 +38,10 @@ const mysqli = mysql.createConnection({
   port: process.env.DB_PORT,
 });
 
-//prueba de puerto 
-/* const PORT = 8080; */
-/* const http = require('http');
-const hostname = '0.0.0.0'; */
-/* const server = http.createServer((req, res) => {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
-    res.end('http://localhost:3000');
-});
-server.listen(port, hostname, () =>{
-  console.log(`server running at http://${hostname}:${port}/`)
-}); */
+
 app.get('/paneladmin', (req, res) => {
   res.send('lola')
 })
-//prueba de puerto 
 
 console.log(process.env.DB_HOST);
 

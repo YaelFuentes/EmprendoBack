@@ -22,8 +22,8 @@ async function getFinancial(start, end) {
   const chequesEnCartera = await getChequesEnCartera();
   const bienesDeUso = await getBienesDeUso();
   const gastosPrevistos = await getGastosPrevistos(start, end);
-  const creditosVigentes = await getCreditosVigentes();
-  const creditosEnMora = await getCreditosEnMora();
+  const creditosVigentes = await getCreditosVigentes(start, end);
+  const creditosEnMora = await getCreditosEnMora(start, end);
   const capitalPrestado = await getCapitalPrestado(start, end);
   const interesesPrestado = await getInteresesPrestado(start, end);
   const ingresosPorCapitalRecuperado = await getIngresosPorCapitalRecuperado(
@@ -40,9 +40,13 @@ async function getFinancial(start, end) {
     start,
     end
   );
-  const PunitoriosTotales = await getPunitorios();
+  const PunitoriosTotales = await getPunitorios(start, end);
   const creditosOtorgados = await getCreditosOtorgados(start, end);
   const patrimonioTotal = await getPatrimonioTotal();
+
+  //caja
+  const ResultadoCaja = await getResultadoCajaPositivo(start, end);
+  const ResultadoCajaNeg = await getResultadoCajaNegativo(start, end);
 
   //futuros
   const futurosIngresoDineroMes = await getFuturosIngresoDineroMes();
@@ -95,6 +99,10 @@ async function getFinancial(start, end) {
     futurosIngresoDineroMes,
     //patrimonio total 
    /*  patrimonioTotalCompleto */
+
+   //caja
+   ResultadoCaja,
+   ResultadoCajaNeg
   };
 }
 
@@ -208,7 +216,7 @@ async function getPatrimonioTotal() {
                                     InversoresVigentes 
                                     FROM
                                     investments
-                                    WHERE
+                                    WHERE 
                                     DATE_ADD(DATE(ts),INTERVAL (period) MONTH) >= DATE(NOW())
                                     AND DATE_ADD(DATE(ts),INTERVAL (period) MONTH) > DATE(NOW());`;
   const inversionesVigentesResult = await query(inversionesVigentesQuery, []);
@@ -275,6 +283,30 @@ async function getPatrimonioTotal() {
     totalIngresosCaja,
     total: +totalMontoInversiones + +totalIngresosCaja,
   };
+}
+
+//Resultado para ver los valores de la + y - de de cashflow filtrados por fecha
+async function getResultadoCajaPositivo(start, end){
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT SUM(amount) ResultBoxPositive FROM cayetano.cash_flow WHERE created_at BETWEEN ? AND ? AND amount > 0;`;
+  const result = await query(dataQuery, [start, end]);
+  if(result){
+    return result[0].ResultBoxPositive
+  }else{
+    return 0;
+  }
+}
+async function getResultadoCajaNegativo(start, end){
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT SUM(amount) ResultBoxNegative FROM cayetano.cash_flow WHERE created_at BETWEEN ? AND ? AND amount < 0;`;
+  const result = await query(dataQuery, [start, end]);
+  if(result){
+    return result[0].ResultBoxNegative
+  }else{
+    return 0;
+  }
 }
 
 
@@ -399,11 +431,11 @@ async function getEfectivoDisponible() {
     return 0;
   }
 }
-async function getPunitorios() {
+async function getPunitorios(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(punitorios) Punitorio FROM credits_items;`;
-  const result = await query(dataQuery, []);
+  const dataQuery = `SELECT SUM(punitorios) Punitorio FROM credits_items WHERE period BETWEEN ? AND ?;`;
+  const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].Punitorio;
   } else {
@@ -414,7 +446,7 @@ async function getPunitorios() {
 async function getCapitalVigente(){
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(distinct s.capital) capitalVigentes FROM credits s INNER JOIN credits_items d ON s.id = d.credit_id ;;`;
+  const dataQuery = `SELECT SUM(distinct s.capital) capitalVigentes FROM credits s INNER JOIN credits_items d ON s.id = d.credit_id ;`;
   const result = await query(dataQuery, []);
   if(result){
     return result[0].capitalVigentes;
@@ -423,11 +455,11 @@ async function getCapitalVigente(){
   }
 }
 
-async function getCreditosVigentes() {
+async function getCreditosVigentes(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(amount+safe+punitorios) deuda FROM credits_items WHERE (amount+safe+punitorios) > payed;`;
-  const result = await query(dataQuery, []);
+  const dataQuery = `SELECT SUM(amount+safe+punitorios) deuda FROM credits_items WHERE (amount+safe+punitorios) > payed AND period BETWEEN ? AND ?;`;
+  const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].deuda;
   } else {
@@ -435,11 +467,11 @@ async function getCreditosVigentes() {
   }
 }
 
-async function getCreditosEnMora() {
+async function getCreditosEnMora(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(amount+safe+punitorios) deuda FROM credits_items WHERE period < NOW() AND (amount+safe+punitorios) > payed;`;
-  const result = await query(dataQuery, []);
+  const dataQuery = `SELECT SUM(amount+safe+punitorios) deuda FROM credits_items WHERE period < NOW() AND (amount+safe+punitorios) > payed AND period BETWEEN ? AND ?;`;
+  const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].deuda;
   } else {
