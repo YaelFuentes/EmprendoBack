@@ -5,7 +5,7 @@ const auth = require("../auth");
 
 
 //agregar dato de total de caja
-resumeRouter.post("/create", auth.required, function (req, res, next) {
+/* resumeRouter.post("/create", auth.required, function (req, res, next) {
   const created_at = req.body.created_at;
   const bank_santander = req.body.bank_santander;
   const cash_global = req.body.cash_global;
@@ -29,7 +29,7 @@ resumeRouter.post("/create", auth.required, function (req, res, next) {
   } else {
     res.status(400).json({ response: "Faltan completar datos" });
   }
-})
+}) */
 
 resumeRouter.post("/financial", auth.required, function (req, res, next) {
   const start = req.body.start;

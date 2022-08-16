@@ -130,7 +130,6 @@ async function add(
   operation_type,
   investment_id,
   account_id,
-  cash_flow_account_id
 ) {
   return new Promise((resolve, reject) => {
     if (type == 2) {

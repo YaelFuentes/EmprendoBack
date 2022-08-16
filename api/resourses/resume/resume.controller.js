@@ -509,7 +509,7 @@ async function getEfectivoCajaMayor() {
     return 0
   }
 }
-function create(created_at, bank_santander, cash_global, cash_day, cheque_30, cheque_60, brubank, callback) {
+/* function create(created_at, bank_santander, cash_global, cash_day, cheque_30, cheque_60, brubank, callback) {
   mysqli.query(
     `INSERT INTO cayetano.cash_flow_deposit (created_at,bank_santander,cash_global,cash_day,cheque_30,cheque_60,brubank) values(now(),?,?,?,?,?,?)`,
     [created_at, bank_santander, cash_global, cash_day, cheque_30, cheque_60, brubank],
@@ -524,7 +524,7 @@ function create(created_at, bank_santander, cash_global, cash_day, cheque_30, ch
     }
   )
 }
-
+ */
 
 async function getPunitorios(start, end) {
   const util = require("util");
@@ -827,5 +827,5 @@ module.exports = {
   getResumeClients,
   getResumeInvestments,
   getCommitment30DaysPerInvestments,
-  create
+/*   create */
 };
