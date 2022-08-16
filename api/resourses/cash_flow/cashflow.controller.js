@@ -1,3 +1,11 @@
+const { start } = require("repl");
+async function getCaja() {
+  const totalcajaDiaria = await getTotalCajaDiaria()
+  return (
+    totalcajaDiaria
+  )
+}
+
 async function getMovements(start = "", end = "") {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
@@ -101,6 +109,17 @@ async function getCreditListMovements(credit_id) {
   return result;
 }
 
+
+async function getTotalCajaDiaria() {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const sql = `SELECT sum(amount) cajadiaria from cash_flow where description = 'Ingreso por pago de seguro de cuota';`;
+  const result = await query(sql, [])
+  return result;
+}
+
+
+
 async function add(
   type,
   amount,
@@ -110,7 +129,8 @@ async function add(
   credit_id,
   operation_type,
   investment_id,
-  account_id
+  account_id,
+  cash_flow_account_id
 ) {
   return new Promise((resolve, reject) => {
     if (type == 2) {
@@ -139,6 +159,7 @@ async function add(
         operation_type,
         investment_id,
         account_id,
+        /* cash_flow_account_id, */
       ],
       (err, results, rows) => {
         if (err) {
@@ -167,4 +188,5 @@ module.exports = {
   addAccount,
   deleteAccount,
   deleteCashFlow,
+  getCaja,
 };

@@ -16,6 +16,7 @@ const logsRouter = require("./api/resourses/logsrecords/logs.routes");
 const investmentsController = require("./api/resourses/investments/investments.controller");
 const punitoriosController = require("./api/resourses/punitorios/punitorios.controller");
 const futurosRouter = require("./api/resourses/futuros/futuros.routes");
+const cash_flow_deposit = require('./api/resourses/cash_flow_deposit/cashflowdeposit.routes')
 
 const dotenv = require('dotenv');
 dotenv.config();
@@ -55,6 +56,7 @@ mysqli.connect((err) => {
 
 global.mysqli = mysqli;
 
+
 app.use(cors());
 app.use(bodyParser.json({ limit: "100mb" }));
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
@@ -75,6 +77,7 @@ app.use("/logs", logsRouter);
 app.use("/cash_flow", cashflowRouter);
 app.use("/media", mediaRouter);
 app.use("/futurosC", futurosRouter);
+app.use("/cashflowdeposit", cash_flow_deposit);
 
 
 app.use(function (req, res, next) {
@@ -103,7 +106,7 @@ app.use(function (req, res, next) {
   // Pass to next layer of middleware
   next();
 });
-app.use(function (err, req, res, next) {
+app.use(function (err, req, res, next) { 
   res.status(err.status || 500);
   res.json({
     errors: {

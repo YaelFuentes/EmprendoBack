@@ -2,18 +2,20 @@ const { query } = require("express");
 
 async function getFinancial2() {
   const efectivoDisponible = await getEfectivoDisponible();
+
   const patrimonioTotal = await getPatrimonioTotal();
   const gastosPrevistos = await getGastosPrevistos();
   const bienesDeUso = await getBienesDeUso();
   const PunitoriosTotales = await getPunitorios();
-  
+
   return {
     efectivoDisponible,
+
     patrimonioTotal,
     gastosPrevistos,
     bienesDeUso,
     PunitoriosTotales,
-    
+
   }
 }
 
@@ -30,7 +32,7 @@ async function getFinancial(start, end) {
     start,
     end
   );
-/*   const patrimonioTotalCompleto = await getPatrimonioPorFecha(start, end) */
+  /*   const patrimonioTotalCompleto = await getPatrimonioPorFecha(start, end) */
   const capitalVigente = await getCapitalVigente();
   const ingresosPorInteresesRecuperado =
     await getIngresosPorInteresesRecuperado(start, end);
@@ -50,7 +52,13 @@ async function getFinancial(start, end) {
 
   //futuros
   const futurosIngresoDineroMes = await getFuturosIngresoDineroMes();
-  
+
+  //cuota calculada pro mes
+
+  //resultado caja
+  const CajaDiaria = await getEfectivoDiarioCaja(start, end);
+  const BancoSantander = await getSaldoBancoSantander(start, end);
+  const EfectivoMayor = await getEfectivoCajaMayor();
   //sumadores
   const capitalEInteresesPrestado =
     (capitalPrestado ?? 0) + (interesesPrestado ?? 0);
@@ -66,14 +74,14 @@ async function getFinancial(start, end) {
     (gastosPrevistos ?? 0);
   const investmentsComplete = await getInvestmentsUserComplete();
   ///////////////////////////////////////////////////////
-/*   const cajaTotalPositivo = await getCajaTotalPositivo();
-  const cajaTotalNegativo = await getCajaTotalNEgativo(); */
+  /*   const cajaTotalPositivo = await getCajaTotalPositivo();
+    const cajaTotalNegativo = await getCajaTotalNEgativo(); */
   ///////////////////////////////////////////////////////
 
   return {
     //////////////////
-/*     cajaTotalPositivo,
-    cajaTotalNegativo, */
+    /*     cajaTotalPositivo,
+        cajaTotalNegativo, */
     //////////////////
     efectivoDisponible,
     chequesEnCartera,
@@ -98,13 +106,24 @@ async function getFinancial(start, end) {
     //futuros
     futurosIngresoDineroMes,
     //patrimonio total 
-   /*  patrimonioTotalCompleto */
+    /*  patrimonioTotalCompleto */
 
-   //caja
-   ResultadoCaja,
-   ResultadoCajaNeg
+    //caja
+    ResultadoCaja,
+    ResultadoCajaNeg,
+    ResultadoCajaTotal: +ResultadoCaja + +ResultadoCajaNeg,
+
+    //resultado totales de caja
+    CajaDiaria,
+    BancoSantander,
+    EfectivoMayor,
+    totalCajaMayor: +CajaDiaria + +EfectivoMayor,
+    //cuotas monto pagado
+
   };
 }
+
+//motno de cuotas pagadas por mes
 
 async function getResumeClients(start, end) {
   try {
@@ -129,7 +148,8 @@ async function getResumeInvestments(start, end) {
   const lowProbability = await getLowProbability();
   const toPay = await getToPay(start, end);
   const InvestmentAmountActive = await investmentRecap(start, end);
-  const InvestmentOutAmountActive = await investmentOutRecap(start, end)
+  const InvestmentOutAmountActive = await investmentOutRecap(start, end);
+  const CuotaPagaMensual = await getCuotaPagaMensual(start, end);
 
   return {
     highProbability: highProbability,
@@ -139,7 +159,19 @@ async function getResumeInvestments(start, end) {
     toPay,
     InvestmentAmountActive,
     InvestmentOutAmountActive,
+    CuotaPagaMensual,
   };
+}
+async function getCuotaPagaMensual(start, end) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT SUM(amount) cuotaPagaMes FROM cash_flow WHERE operation_type in ('ingreso_capital_cuotas','ingreso_interes_cuotas','ingreso_seguro_cuotas') AND created_at BETWEEN ? AND ?;`;
+  const result = await query(dataQuery, [start, end])
+  if (result) {
+    return result[0].cuotaPagaMes
+  } else {
+    return 0;
+  }
 }
 
 // functiones internas
@@ -155,22 +187,22 @@ async function getResumeInvestments(start, end) {
   }
 }
  */
-async function  getInvestmentsUserComplete(){
+async function getInvestmentsUserComplete() {
   let totalInvestmentComplete = 0;
 
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   const InvestmentUserCompleteQuery = `SELECT amount InvestmentUserComplete FROM cayetano.users join cayetano.investments on users.id = investments.investorID;`;
   const InvestmentUserCompleteResult = await query(InvestmentUserCompleteQuery, [])
-  if(InvestmentUserCompleteResult){
+  if (InvestmentUserCompleteResult) {
     totalInvestmentComplete = InvestmentUserCompleteResult[0].InvestmentUserComplete
   }
   const InvestmentUserCompleteQuery2 = `SELECT investorID InvestmentUserComplete FROM cayetano.users join cayetano.investments on users.id = investments.investorID;`;
   const InvestmentUserCompleteResult2 = await query(InvestmentUserCompleteQuery2, [])
-  if(InvestmentUserCompleteResult2){
+  if (InvestmentUserCompleteResult2) {
     totalInvestmentComplete2 = InvestmentUserCompleteResult2[0].InvestmentUserComplete
   }
-  return{
+  return {
     totalInvestmentComplete,
     totalInvestmentComplete2,
   }
@@ -285,29 +317,40 @@ async function getPatrimonioTotal() {
   };
 }
 
-//Resultado para ver los valores de la + y - de de cashflow filtrados por fecha
-async function getResultadoCajaPositivo(start, end){
+//Resultado para ver los valores de la + y - de de cashflow filtrados por fecha (resumen de caja)
+async function getResultadoCajaPositivo(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   const dataQuery = `SELECT SUM(amount) ResultBoxPositive FROM cayetano.cash_flow WHERE created_at BETWEEN ? AND ? AND amount > 0;`;
   const result = await query(dataQuery, [start, end]);
-  if(result){
+  if (result) {
     return result[0].ResultBoxPositive
-  }else{
+  } else {
     return 0;
   }
 }
-async function getResultadoCajaNegativo(start, end){
+async function getResultadoCajaNegativo(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   const dataQuery = `SELECT SUM(amount) ResultBoxNegative FROM cayetano.cash_flow WHERE created_at BETWEEN ? AND ? AND amount < 0;`;
   const result = await query(dataQuery, [start, end]);
-  if(result){
+  if (result) {
     return result[0].ResultBoxNegative
-  }else{
+  } else {
     return 0;
   }
 }
+/* async function getResultadoCajaTotal(start, end){
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = ``;
+  const result = await query(dataQuery, [start, end]);
+  if(result){
+    return result[0].
+  }else{
+    return 0;
+  }
+} */
 
 
 
@@ -414,7 +457,7 @@ async function getFuturosIngresoDineroMes() {
   const query = util.promisify(mysqli.query).bind(mysqli);
   const dataQuery = `SELECT SUM(amount) InversoresVigentes FROM investments WHERE DATE_ADD(DATE(ts),INTERVAL (period) MONTH) >= DATE(NOW()) AND DATE_ADD(DATE(ts),INTERVAL (period) MONTH) > DATE(NOW());`;
   const result = await query(dataQuery, []);
-  if(result) {
+  if (result) {
     return result[0].InversoresVigentes
   }
 }
@@ -431,6 +474,58 @@ async function getEfectivoDisponible() {
     return 0;
   }
 }
+
+//caja . muestra el saldo a favor de las diferentes cuentas...
+async function getEfectivoDiarioCaja(start, end) {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli)
+  const dataQuery = `SELECT sum(amount) cajadiaria FROM cayetano.cash_flow where created_at between curdate() and curdate();`;
+  const result = await query(dataQuery, [start, end]);
+  if (result) {
+    return result[0].cajadiaria
+  } else {
+    return 0
+  }
+}
+async function getSaldoBancoSantander(start, end) {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT SUM(amount) cajaBancoSantander FROM cayetano.cash_flow WHERE account_id='8' AND created_at BETWEEN ? AND ?;`;
+  const result = await query(dataQuery, [start, end]);
+  if (result) {
+    return result[0].cajaBancoSantander
+  } else {
+    return 0
+  }
+}
+async function getEfectivoCajaMayor() {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT cash_global cajaMayor FROM cash_flow_deposit; `;
+  const result = await query(dataQuery, [])
+  if (result) {
+    return result[0].cajaMayor
+  } else {
+    return 0
+  }
+}
+function create(created_at, bank_santander, cash_global, cash_day, cheque_30, cheque_60, brubank, callback) {
+  mysqli.query(
+    `INSERT INTO cayetano.cash_flow_deposit (created_at,bank_santander,cash_global,cash_day,cheque_30,cheque_60,brubank) values(now(),?,?,?,?,?,?)`,
+    [created_at, bank_santander, cash_global, cash_day, cheque_30, cheque_60, brubank],
+    (err, rows) => {
+      mysqli.query(`SELECT sum(cash_global) depositTotal FROM cash_flow_deposit`, [], (err, rows) => {
+        if (rows.length){
+          return callback(err, rows[0]);
+        }else{
+          return callback(err, [])
+        }
+      })
+    }
+  )
+}
+
+
 async function getPunitorios(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
@@ -443,14 +538,14 @@ async function getPunitorios(start, end) {
   }
 }
 
-async function getCapitalVigente(){
+async function getCapitalVigente() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   const dataQuery = `SELECT SUM(distinct s.capital) capitalVigentes FROM credits s INNER JOIN credits_items d ON s.id = d.credit_id ;`;
   const result = await query(dataQuery, []);
-  if(result){
+  if (result) {
     return result[0].capitalVigentes;
-  }else{
+  } else {
     return 0;
   }
 }
@@ -732,4 +827,5 @@ module.exports = {
   getResumeClients,
   getResumeInvestments,
   getCommitment30DaysPerInvestments,
+  create
 };

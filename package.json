@@ -21,8 +21,9 @@
   "dependencies": {
     "@sendgrid/mail": "^6.5.0",
     "adm-zip": "^0.5.4",
-    "aws-sdk": "^2.1062.0",
+    "aws-sdk": "^2.1186.0",
     "cors": "^2.8.5",
+    "cors-anywhere": "^0.4.4",
     "csv-parser": "^2.3.2",
     "dotenv": "^16.0.1",
     "express": "^4.17.1",

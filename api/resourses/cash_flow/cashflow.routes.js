@@ -115,7 +115,8 @@ cashFlowRouter.post("/add", auth.required, function (req, res, next) {
   const credit_id = req.body.credit_id ?? null;
   const operation_type = req.body.operation_type;
   const investment_id = req.body.investment_id ?? null;
-  const account_id = req.body.account_id ?? null;
+  const account_id = req.body.account_id;
+  /* const cash_flow_account_id = req.body.cash_flow_account_id; */
   cashFlowController
     .add(
       type,
@@ -126,7 +127,8 @@ cashFlowRouter.post("/add", auth.required, function (req, res, next) {
       credit_id,
       operation_type,
       investment_id,
-      account_id
+      account_id,
+      /* cash_flow_account_id */
     )
     .then((data) => {
       res.json(data);
