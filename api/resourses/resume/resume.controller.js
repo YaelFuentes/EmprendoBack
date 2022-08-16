@@ -58,7 +58,7 @@ async function getFinancial(start, end) {
   //resultado caja
   const CajaDiaria = await getEfectivoDiarioCaja(start, end);
   const BancoSantander = await getSaldoBancoSantander(start, end);
-  const EfectivoMayor = await getEfectivoCajaMayor();
+  /* const EfectivoMayor = await getEfectivoCajaMayor(); */
   //sumadores
   const capitalEInteresesPrestado =
     (capitalPrestado ?? 0) + (interesesPrestado ?? 0);
@@ -116,8 +116,8 @@ async function getFinancial(start, end) {
     //resultado totales de caja
     CajaDiaria,
     BancoSantander,
-    EfectivoMayor,
-    totalCajaMayor: +CajaDiaria + +EfectivoMayor,
+/*     EfectivoMayor,
+    totalCajaMayor: +CajaDiaria + +EfectivoMayor, */
     //cuotas monto pagado
 
   };
@@ -498,7 +498,7 @@ async function getSaldoBancoSantander(start, end) {
     return 0
   }
 }
-async function getEfectivoCajaMayor() {
+/* async function getEfectivoCajaMayor() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
   const dataQuery = `SELECT cash_global cajaMayor FROM cash_flow_deposit; `;
@@ -508,7 +508,7 @@ async function getEfectivoCajaMayor() {
   } else {
     return 0
   }
-}
+} */
 /* function create(created_at, bank_santander, cash_global, cash_day, cheque_30, cheque_60, brubank, callback) {
   mysqli.query(
     `INSERT INTO cayetano.cash_flow_deposit (created_at,bank_santander,cash_global,cash_day,cheque_30,cheque_60,brubank) values(now(),?,?,?,?,?,?)`,
