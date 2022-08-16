@@ -479,7 +479,7 @@ async function getEfectivoDisponible() {
 async function getEfectivoDiarioCaja() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli)
-  const dataQuery = `select sum(amount) from cayetano.cash_flow where account_id = '1' and created_at between curdate() and curdate() and deleted_at is null`;
+  const dataQuery = `select sum(amount) cajadiaria from cayetano.cash_flow where account_id = '1' and created_at between curdate() and curdate() and deleted_at is null`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].cajadiaria
