@@ -476,11 +476,11 @@ async function getEfectivoDisponible() {
 }
 
 //caja . muestra el saldo a favor de las diferentes cuentas...
-async function getEfectivoDiarioCaja(start, end) {
+async function getEfectivoDiarioCaja() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli)
-  const dataQuery = `SELECT sum(amount) cajadiaria FROM cayetano.cash_flow where account_id = '1' and created_at between curdate() and curdate();`;
-  const result = await query(dataQuery, [start, end]);
+  const dataQuery = `select sum(amount) from cayetano.cash_flow where account_id = '1' and created_at between curdate() and curdate() and deleted_at is null`;
+  const result = await query(dataQuery, []);
   if (result) {
     return result[0].cajadiaria
   } else {
