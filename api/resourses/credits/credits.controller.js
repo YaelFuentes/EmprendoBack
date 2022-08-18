@@ -1,3 +1,4 @@
+/* eslint-disable no-loop-func */
 const moment = require("moment");
 const paymentsController = require("../payments/payments.controller");
 var commonFormulas = require("../common/formulas");
@@ -846,7 +847,7 @@ async function saveCredit(data, clientID, budgetID, carID) {
 
     for (let i = 0; i < Number(data.cuotas); i++) {
       promises.push(
-        new Promise((resolve, reject) => {
+        new Promise((resolve) => {
           const fechaCuota = moment(data.fecha_primera_cuota, "YYYY-MM-DD")
             .add(i, "months")
             .format("YYYY-MM-DD");

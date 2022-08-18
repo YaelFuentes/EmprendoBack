@@ -7,7 +7,8 @@ async function insertPayment(
   client_id,
   cash_flow_list,
   gran_total,
-  USER_ID
+  USER_ID,
+  account_id
 ) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
@@ -23,13 +24,14 @@ async function insertPayment(
     payment_amount = gran_total;
   }
 
-  const sql = `INSERT INTO payments ( clientID,paymentDate,amount,credit_id) VALUES (?,?,?,?)`;
+  const sql = `INSERT INTO payments ( clientID,paymentDate,amount,credit_id,account_id) VALUES (?,?,?,?,?)`;
   try {
     const insertedPayment = await query(sql, [
       client_id,
       payment_date,
       payment_amount,
       credit_id,
+      account_id
     ]);
     const insertId = insertedPayment.insertId;
 
