@@ -126,6 +126,7 @@ async function getFinancial(start, end) {
 
     //resultado totales de caja
     CajaDiaria,
+  
     BancoSantander,
 /*     EfectivoMayor,
     totalCajaMayor: +CajaDiaria + +EfectivoMayor, */
@@ -475,7 +476,7 @@ async function getEfectivoDisponible() {
 async function getEfectivoDiarioCaja() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli)
-  const dataQuery = `select sum(amount) cajadiaria from cayetano.cash_flow  where left(created_at,10) = left(now(),10) and type not in ('3', '2');`;
+  const dataQuery = `select (select sum(amount) from cayetano.cash_flow where left(created_at,10) = left(now(),10) and type not in ('3', '2')) + (select sum(amount) from cayetano.cash_flow where left(created_at,10) = left(now(),10) and type = '2') as montoDiario;`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].cajadiaria
