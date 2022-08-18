@@ -461,7 +461,7 @@ async function getEfectivoDisponible() {
 }
 
 //caja . muestra el saldo a favor de las diferentes cuentas...
-async function getEfectivoDiarioCaja() {
+/* async function getEfectivoDiarioCaja() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli)
   const dataQuery = `select (select sum(amount) from cayetano.cash_flow where left(created_at,10) = left(now(),10) and type not in ('3', '2')) - (select sum(amount) from cayetano.cash_flow where type = '3' and left(created_at,10) = left(now(),10)) cajadiaria;`;
@@ -471,8 +471,8 @@ async function getEfectivoDiarioCaja() {
   } else {
     return 0
   }
-}
-/* async function getEfectivoDiarioCaja() {
+} */
+async function getEfectivoDiarioCaja() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli)
   const dataQuery = `select sum(amount) cajadiaria from cayetano.cash_flow  where left(created_at,10) = left(now(),10) and type not in ('3', '2');`;
@@ -482,7 +482,7 @@ async function getEfectivoDiarioCaja() {
   } else {
     return 0
   }
-} */
+}
 async function getSaldoBancoSantander(start, end) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
