@@ -473,7 +473,7 @@ async function getEfectivoDisponible() {
 async function getCuentaBrubank(){
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) brubank from cayetano.cash_flow where account_id = '5';`
+  const dataQuery = `select sum(amount) brubank from cayetano.cash_flow where account_id = '5' and created_at between '2022-08-18' and now();`
   const result = await query(dataQuery, []);
   if(result){
     return result[0].brubank;
