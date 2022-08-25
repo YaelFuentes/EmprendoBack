@@ -56,16 +56,29 @@ async function getFinancial(start, end) {
   //cuota calculada por mes
 
   //resultado caja
-  const CajaDiaria = await getEfectivoDiarioCaja(start, end);
+  const efectivoDiario = await getEfectivoDiarioCaja(start, end);
+  const cajaDiaria2 = await getEfectivoDiarioCaja2(start, end);
+  const cajaDiaria3 = await getEfectivoCajaMayor3(start, end);
+  const cajaDiariaEgreso = await getRetiroEfectivoCajaDiaria();
+
+  //inicio de caja diaria. debe restar a la caja diaria
+  const cajaDiariaInicio = await getCajaDiariaInicio();
+
+  //bancosantander 
   const BancoSantander = await getSaldoBancoSantander(start, end);
+  const bancoSantanderEgreso = await getSaldoBancoSantanderEgreso(start, end)
   //resultado caja mayor
   const CajaMayorType1 = await getEfectivoCajaMayor();
   const CajaMayorType2 = await getEfectivoCajaMayorRetiro();
   const CajaMayorType3 = await getEfectivoCajaMayorCuotas();
+  const CajaMayorEfectivo = await getCajaMayorEfectivo();
+  const cajaMayorRetiroDiario = await getEfectivoCajaRetiroCajaDiaria();
   const CajaMayorType4 = await getEfectivoCajaMayorInversionNueva();
 
   //cuenta brubank
   const Brubank = await getCuentaBrubank();
+
+  /* const brubankEgreso = await getCuentaBrubankEgreso(); */
 
 
   /* const EfectivoMayor = await getEfectivoCajaMayor(); */
@@ -127,17 +140,29 @@ async function getFinancial(start, end) {
     CajaMayorType2,
     CajaMayorType3,
     /* CajaMayorType4, */
-    CajaMayorResult: +CajaMayorType1 + +CajaMayorType3 + +CajaMayorType2, /* - +CajaMayorType4, */
-
+    CajaMayorResult: +CajaMayorType1 + CajaMayorType3 + CajaMayorType2 - cajaDiariaInicio + cajaMayorRetiroDiario, /* - +CajaMayorType4, */
+    CajaMayorResultEfectivo: +CajaMayorType1 + +CajaMayorEfectivo + CajaMayorType2 ,
     //resultado totales de caja
-    CajaDiaria,
-  
+    efectivoDiario,
+    cajaDiariaEgreso,
+    totalMovimientoEfectivoDiario: efectivoDiario + cajaDiariaEgreso,
+    cajaDiaria2,
+    cajaDiaria3,
+    TotalCajaDiaria: efectivoDiario + cajaDiaria2 + cajaDiaria3 ,
+
+
+
+
     BancoSantander,
+    bancoSantanderEgreso,
+    bancoSantanderTotal: +BancoSantander + +bancoSantanderEgreso,
 
     //brubank
     Brubank,
-/*     EfectivoMayor,
-    totalCajaMayor: +CajaDiaria + +EfectivoMayor, */
+    /* brubankEgreso,
+    brubankTotal : +brubankEgreso + +Brubank, */
+    /*  EfectivoMayor,
+        totalCajaMayor: +CajaDiaria + +EfectivoMayor, */
     //cuotas monto pagado
 
   };
@@ -442,7 +467,6 @@ async function getChequesEnCartera() {
 
 async function getBienesDeUso() {
   return 0;
-  {/*const util = require("util)*/ }
 }
 
 //Futuros
@@ -470,14 +494,14 @@ async function getEfectivoDisponible() {
 }
 
 //brubank
-async function getCuentaBrubank(){
+async function getCuentaBrubank() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) brubank from cayetano.cash_flow where account_id = '5' and created_at between '2022-08-18' and now();`
+  const dataQuery = `select sum(amount) brubank from cayetano.cash_flow where account_id = '5' and created_at between '2022-08-23' and now();`
   const result = await query(dataQuery, []);
-  if(result){
+  if (result) {
     return result[0].brubank;
-  }else{
+  } else {
     return 0
   }
 }
@@ -498,10 +522,44 @@ async function getCuentaBrubank(){
 async function getEfectivoDiarioCaja() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli)
-  const dataQuery = `select sum(amount) cajadiaria from cayetano.cash_flow where account_id in ('1','5') and left(created_at,10) = left(now(),10)`;
+  const dataQuery = `select sum(amount) cajadiaria from cayetano.cash_flow where type in ('1','4') and account_id = '1' and left(created_at,10) = left(now(),10);`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].cajadiaria
+  } else {
+    return 0
+  }
+}
+//egreso de efectivo de caja chica. pagos cajero
+async function getRetiroEfectivoCajaDiaria() {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli)
+  const dataQuery = `select sum(amount) cajadiaria from cayetano.cash_flow where type= '5' and account_id = '1' and left(created_at,10) = left(now(),10);`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].cajadiaria
+  } else {
+    return 0
+  }
+}
+
+//cajadiaria con banco brubank
+async function getEfectivoDiarioCaja2() {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli)
+  const dataQuery = `select sum(amount) cajaDiariaConAccount from cayetano.cash_flow where type = '1' and account_id = '5' and left(created_at,10) = left(now(),10);`;
+  const result = await query(dataQuery, [])
+  if (result) {
+    return result[0].cajaDiariaConAccount
+  }
+}
+async function getEfectivoCajaMayor3() {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `select sum(amount) cajaDiariaConNull from cayetano.cash_flow where type='1' and account_id = '8' and left(created_at,10) = left(now(),10);`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].cajaDiariaConNull
   } else {
     return 0
   }
@@ -513,7 +571,18 @@ async function getEfectivoDiarioCaja() {
 async function getSaldoBancoSantander(start, end) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(amount) cajaBancoSantander FROM cayetano.cash_flow WHERE account_id='8' AND created_at BETWEEN ? AND ?;`;
+  const dataQuery = `SELECT SUM(amount) cajaBancoSantander FROM cayetano.cash_flow WHERE account_id='8' AND created_at BETWEEN '2022-08-23' AND now();`;
+  const result = await query(dataQuery, [start, end]);
+  if (result) {
+    return result[0].cajaBancoSantander
+  } else {
+    return 0
+  }
+}
+async function getSaldoBancoSantanderEgreso(start, end) {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT SUM(amount) cajaBancoSantander FROM cayetano.cash_flow WHERE account_id='8' AND created_at BETWEEN '2022-08-23' AND now() and type='2';`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].cajaBancoSantander
@@ -522,78 +591,90 @@ async function getSaldoBancoSantander(start, end) {
   }
 }
 
+
+
 //composicion Caja mayor
-async function getEfectivoCajaMayor(){ //suma type 3
+async function getEfectivoCajaMayor() { //suma type 3
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
   const dataQuery = `select sum(amount) cajaMayor from cayetano.cash_flow where type = '3';`;
   const result = await query(dataQuery, []);
-  if(result){
-    return result[0].cajaMayor
-  }else{
-    return 0
-  }
-}
-async function getEfectivoCajaMayorRetiro(){ //resta type 2 egreso de pagos
-  const util = require('util');
-  const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) retiroCajaMayor  from cayetano.cash_flow where type='2' and DATE(created_at) between '2022-08-17' and date_sub(current_date(), interval 1 day);`;
-  const result = await query(dataQuery, []);
-  if(result){
-    return result[0].retiroCajaMayor
-  }else{
-    return 0
-  }
-}
-async function getEfectivoCajaMayorCuotas(){  //suma cuota de creditos y demas type 1
-  const util = require('util');
-  const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) ingresoCajaMayorCuotas from cayetano.cash_flow where type='1' and cast(created_at AS DATE) and DATE(created_at) between '2022-08-17' and date_sub(current_date(),interval 1 day) and operation_type is not null;`;
-  const result = await query(dataQuery, []);
-  if(result){
-    return result[0].ingresoCajaMayorCuotas
-  }else{
-    return 0
-  }
-}
-async function getEfectivoCajaMayorInversionNueva(){
-  const util = require('util');
-  const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) InversionNuevaCajaMayor from cash_flow where operation_type = 'inversion_nueva' and created_at between '2022-08-17' and date_sub(current_date(), interval 2 day)`;
-  const result = await query(dataQuery, []);
-  if(result){
-    return result[0].InversionNuevaCajaMayor
-  }
-}
-
-/* async function getEfectivoCajaMayor() {
-  const util = require('util');
-  const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT cash_global cajaMayor FROM cash_flow_deposit; `;
-  const result = await query(dataQuery, [])
   if (result) {
     return result[0].cajaMayor
   } else {
     return 0
   }
-} */
-/* function create(created_at, bank_santander, cash_global, cash_day, cheque_30, cheque_60, brubank, callback) {
-  mysqli.query(
-    `INSERT INTO cayetano.cash_flow_deposit (created_at,bank_santander,cash_global,cash_day,cheque_30,cheque_60,brubank) values(now(),?,?,?,?,?,?)`,
-    [created_at, bank_santander, cash_global, cash_day, cheque_30, cheque_60, brubank],
-    (err, rows) => {
-      mysqli.query(`SELECT sum(cash_global) depositTotal FROM cash_flow_deposit`, [], (err, rows) => {
-        if (rows.length){
-          return callback(err, rows[0]);
-        }else{
-          return callback(err, [])
-        }
-      })
-    }
-  )
 }
- */
+async function getEfectivoCajaMayorRetiro() { //resta type 2 egreso de pagos
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `select sum(amount) retiroCajaMayor  from cayetano.cash_flow where type= ('2') and DATE(created_at) between '2022-08-23' and now();`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].retiroCajaMayor
+  } else {
+    return 0
+  }
+}
+async function getEfectivoCajaRetiroCajaDiaria() { //resta type 2 egreso de pagos
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `select sum(amount) retiroCajaMayor  from cayetano.cash_flow where type= ('5') and DATE(created_at) between '2022-08-23' and date_sub(current_date(),interval 1 day);`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].retiroCajaMayor
+  } else {
+    return 0
+  }
+}
+async function getEfectivoCajaMayorCuotas() {  //suma cuota de creditos y demas type 1
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `select sum(amount) ingresoCajaMayorCuotas from cayetano.cash_flow where type='1' and cast(created_at AS DATE) and DATE(created_at) between '2022-08-23' and date_sub(current_date(),interval 1 day) and account_id in ('8','1','5');`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].ingresoCajaMayorCuotas
+  } else {
+    return 0
+  }
+}
 
+//Caja mayor solo en efectivo 
+async function getCajaMayorEfectivo() {  //suma del efectivo de la caja mayor
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `select sum(amount) ingresoCajaMayorCuotas from cayetano.cash_flow where type='1' and cast(created_at AS DATE) and DATE(created_at) between '2022-08-23' and date_sub(current_date(),interval 1 day) and account_id = '1';`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].ingresoCajaMayorCuotas
+  } else {
+    return 0
+  }
+}
+async function getCajaDiariaInicio() {  //suma del efectivo de la caja mayor
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `select sum(amount) ingresoACajaDiaria from cayetano.cash_flow where type = '4' and created_at between '2022-08-23' and now();`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].ingresoACajaDiaria
+  } else {
+    return 0
+  }
+}
+
+//inversiones nuevas
+async function getEfectivoCajaMayorInversionNueva() {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `select sum(amount) InversionNuevaCajaMayor from cash_flow where operation_type = 'inversion_nueva' and created_at between '2022-08-23' and date_sub(current_date(), interval 2 day)`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].InversionNuevaCajaMayor
+  }
+}
+
+//punitorios
 async function getPunitorios(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
@@ -605,7 +686,6 @@ async function getPunitorios(start, end) {
     return 0;
   }
 }
-
 async function getCapitalVigente() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
@@ -895,5 +975,5 @@ module.exports = {
   getResumeClients,
   getResumeInvestments,
   getCommitment30DaysPerInvestments,
-/*   create */
+  /*   create */
 };

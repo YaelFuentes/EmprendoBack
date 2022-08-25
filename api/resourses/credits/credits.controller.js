@@ -40,7 +40,7 @@ function create(
                   mysqli.query(
                     "INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type) VALUES (2,?,NOW(),'Egreso por Crédito Otorgado',?,?,'egreso_credito_otorgado')",
                     [credit_amount - credit_amount * 2, USER_ID, rows[0].id],
-                    (err, rows) => {}
+                    (err, rows) => { }
                   );
 
                   return callback(err, rows[0]);
@@ -466,7 +466,7 @@ async function createItems(
           newDate,
           cuotaElement.capital,
           otorgamiento,
-          cuotaElement.interes, 
+          cuotaElement.interes,
           cuotaamount,
           creditID,
           cuotaElement.saldo,

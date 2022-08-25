@@ -132,7 +132,7 @@ async function add(
   account_id,
 ) {
   return new Promise((resolve, reject) => {
-    if (type == 2) {
+    if (type == 2 || type == 5) {
       amount = -Math.abs(amount);
     }
 
