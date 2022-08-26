@@ -75,6 +75,8 @@ async function getFinancial(start, end) {
   const cajaMayorRetiroDiario = await getEfectivoCajaRetiroCajaDiaria();
   const CajaMayorType4 = await getEfectivoCajaMayorInversionNueva();
 
+
+  const cajaMayorType2Efectivo = await getCajaMayorType2Efectivo();
   //cuenta brubank
   const Brubank = await getCuentaBrubank();
 
@@ -139,9 +141,11 @@ async function getFinancial(start, end) {
     CajaMayorType1,
     CajaMayorType2,
     CajaMayorType3,
+    //retiro caja mayor type2 solo efectivo
+    cajaMayorType2Efectivo,
     /* CajaMayorType4, */
     CajaMayorResult: +CajaMayorType1 + CajaMayorType3 + CajaMayorType2 - cajaDiariaInicio + cajaMayorRetiroDiario, /* - +CajaMayorType4, */
-    CajaMayorResultEfectivo: +CajaMayorType1 + +CajaMayorEfectivo + CajaMayorType2 ,
+    CajaMayorResultEfectivo: CajaMayorType1 + CajaMayorEfectivo + cajaMayorType2Efectivo ,
     //resultado totales de caja
     efectivoDiario,
     cajaDiariaEgreso,
@@ -635,6 +639,19 @@ async function getEfectivoCajaMayorCuotas() {  //suma cuota de creditos y demas 
   if (result) {
     return result[0].ingresoCajaMayorCuotas
   } else {
+    return 0
+  }
+}
+
+//caja mayor descuento solo en efectivo
+async function getCajaMayorType2Efectivo() {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `select sum(amount) retiroSoloEfectivo from cayetano.cash_flow where type= ('2') and DATE(created_at) between '2022-08-23' and now() and account_id = '1';`;
+  const result = await query(dataQuery, []);
+  if(result) {
+    return result[0].retiroSoloEfectivo
+  }else {
     return 0
   }
 }
