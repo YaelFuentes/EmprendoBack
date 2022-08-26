@@ -66,6 +66,7 @@ async function getFinancial(start, end) {
 
   //bancosantander 
   const BancoSantander = await getSaldoBancoSantander(start, end);
+  const santanderDirecto = await getSantanderDirecto();
   const bancoSantanderEgreso = await getSaldoBancoSantanderEgreso(start, end)
   //resultado caja mayor
   const CajaMayorType1 = await getEfectivoCajaMayor();
@@ -75,10 +76,14 @@ async function getFinancial(start, end) {
   const cajaMayorRetiroDiario = await getEfectivoCajaRetiroCajaDiaria();
   const CajaMayorType4 = await getEfectivoCajaMayorInversionNueva();
 
+  //efectivo ingreso directo a caja mayor
+  const ingresoDirectoCajaMayor= await getEfectivoIngresoDirecto();
+
 
   const cajaMayorType2Efectivo = await getCajaMayorType2Efectivo();
   //cuenta brubank
   const Brubank = await getCuentaBrubank();
+  const brubankDirecto = await getBrubankDirecto();
 
   /* const brubankEgreso = await getCuentaBrubankEgreso(); */
 
@@ -138,13 +143,14 @@ async function getFinancial(start, end) {
     ResultadoCajaNeg,
     ResultadoCajaTotal: +ResultadoCaja + +ResultadoCajaNeg,
     //caja mayor total
+    ingresoDirectoCajaMayor,
     CajaMayorType1,
     CajaMayorType2,
     CajaMayorType3,
     //retiro caja mayor type2 solo efectivo
     cajaMayorType2Efectivo,
     /* CajaMayorType4, */
-    CajaMayorResult: +CajaMayorType1 + CajaMayorType3 + CajaMayorType2 - cajaDiariaInicio + cajaMayorRetiroDiario, /* - +CajaMayorType4, */
+    CajaMayorResult: +CajaMayorType1 + CajaMayorType3 + CajaMayorType2 - cajaDiariaInicio + cajaMayorRetiroDiario + ingresoDirectoCajaMayor, /* - +CajaMayorType4, */
     CajaMayorResultEfectivo: CajaMayorType1 + CajaMayorEfectivo + cajaMayorType2Efectivo ,
     //resultado totales de caja
     efectivoDiario,
@@ -154,15 +160,16 @@ async function getFinancial(start, end) {
     cajaDiaria3,
     TotalCajaDiaria: efectivoDiario + cajaDiaria2 + cajaDiaria3 ,
 
-
-
+    //santander
+    santanderDirecto,
 
     BancoSantander,
     bancoSantanderEgreso,
-    bancoSantanderTotal: +BancoSantander + +bancoSantanderEgreso,
+    bancoSantanderTotal: +BancoSantander + +bancoSantanderEgreso + santanderDirecto,
 
     //brubank
     Brubank,
+    brubankDirecto,
     /* brubankEgreso,
     brubankTotal : +brubankEgreso + +Brubank, */
     /*  EfectivoMayor,
@@ -173,7 +180,6 @@ async function getFinancial(start, end) {
 }
 
 //motno de cuotas pagadas por mes
-
 async function getResumeClients(start, end) {
   try {
     const waiting = await getClientsWaiting(start, end);
@@ -595,6 +601,31 @@ async function getSaldoBancoSantanderEgreso(start, end) {
   }
 }
 
+//ingresos directo de las cajas grandes . sin pasar por la caja diaria- 
+//santander
+async function getSantanderDirecto() { //suma type 3
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `select sum(amount) santanderDirectoEntrada from cash_flow where type='7';`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].santanderDirectoEntrada
+  } else {
+    return 0
+  }
+}
+//brubank
+async function getBrubankDirecto() { //suma type 3
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `select sum(amount) brubankDirectoEntrada from cayetano.cash_flow where type = '8';`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].brubankDirectoEntrada
+  } else {
+    return 0
+  }
+}
 
 
 //composicion Caja mayor
@@ -609,6 +640,18 @@ async function getEfectivoCajaMayor() { //suma type 3
     return 0
   }
 }
+async function getEfectivoIngresoDirecto() { //suma type 3
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `select sum(amount) cajaMayorDirecto from cayetano.cash_flow where account_id='9' and DATE(created_at) between '2022-08-23' and now();`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].cajaMayorDirecto
+  } else {
+    return 0
+  }
+}
+
 async function getEfectivoCajaMayorRetiro() { //resta type 2 egreso de pagos
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
@@ -738,6 +781,8 @@ async function getCreditosEnMora(start, end) {
     return 0;
   }
 }
+
+
 
 async function getGastosPrevistos(start, end) {
   const util = require("util");
