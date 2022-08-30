@@ -17,6 +17,7 @@ const investmentsController = require("./api/resourses/investments/investments.c
 const punitoriosController = require("./api/resourses/punitorios/punitorios.controller");
 const futurosRouter = require("./api/resourses/futuros/futuros.routes");
 const cash_flow_deposit = require('./api/resourses/cash_flow_deposit/cashflowdeposit.routes')
+/* const getUsersRouter = require('/api/resourses/getUsers/getUsers.routes') */
 
 const dotenv = require('dotenv');
 dotenv.config();
@@ -78,6 +79,7 @@ app.use("/cash_flow", cashflowRouter);
 app.use("/media", mediaRouter);
 app.use("/futurosC", futurosRouter);
 app.use("/cashflowdeposit", cash_flow_deposit);
+/* app.use("/users4", getUsersRouter); */
 
 
 app.use(function (req, res, next) {
