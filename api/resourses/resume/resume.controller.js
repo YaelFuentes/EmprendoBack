@@ -690,7 +690,7 @@ async function getEfectivoCajaMayorCuotas() {  //suma cuota de creditos y demas 
 async function getCajaMayorType2Efectivo() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) retiroSoloEfectivo from cayetano.cash_flow where type= ('2') and DATE(created_at) between '2022-08-23' and now() and account_id = '1';`;
+  const dataQuery = `select sum(amount) retiroSoloEfectivo from cayetano.cash_flow where type= ('2') and DATE(created_at) between '2022-08-23' and now() and (account_id = '1' or operation_type = 'pago_inversion');`;
   const result = await query(dataQuery, []);
   if(result) {
     return result[0].retiroSoloEfectivo
