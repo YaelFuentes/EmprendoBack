@@ -507,7 +507,7 @@ async function getEfectivoDisponible() {
 async function getCuentaBrubank() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) brubank from cayetano.cash_flow where account_id = '5' and created_at between '2022-08-23' and now();`
+  const dataQuery = `select sum(amount) brubank from cayetano.cash_flow where account_id = '5' and created_at between '2022-08-23' and now() and type not in ('8');`
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].brubank;
@@ -581,7 +581,7 @@ async function getEfectivoCajaMayor3() {
 async function getSaldoBancoSantander(start, end) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(amount) cajaBancoSantander FROM cayetano.cash_flow WHERE account_id='8' AND created_at BETWEEN '2022-08-23' AND now();`;
+  const dataQuery = `SELECT SUM(amount) cajaBancoSantander FROM cayetano.cash_flow WHERE account_id='8' AND created_at BETWEEN '2022-08-23' AND now() AND type not in ('7');`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].cajaBancoSantander
