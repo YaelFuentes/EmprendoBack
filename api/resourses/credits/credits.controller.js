@@ -304,6 +304,7 @@ async function updatePrenda(
 }
 
 function getPrendaInfo(creditid, callback) {
+  console.log(creditid);
   let sql = `SELECT
       T1.id creditid,
       T1.clientId clientid,
@@ -318,9 +319,9 @@ function getPrendaInfo(creditid, callback) {
       T4.number,
       T4.department,
       T4.type,
-          T5.name,
+          T5.originalname,
           T5.path,
-          T5.filename
+          T5.url
     FROM
       credits T1
       INNER JOIN budget T2 ON T1.budget = T2.id

@@ -75,6 +75,7 @@ async function getFinancial(start, end) {
   const CajaMayorEfectivo = await getCajaMayorEfectivo();
   const cajaMayorRetiroDiario = await getEfectivoCajaRetiroCajaDiaria();
   const CajaMayorType4 = await getEfectivoCajaMayorInversionNueva();
+  const CajaMayorInvesionNueva = await getEfectivoTotalInversionista(); //inversion nueva para sumar en el total
 
   //efectivo ingreso directo a caja mayor
   const ingresoDirectoCajaMayor= await getEfectivoIngresoDirecto();
@@ -150,7 +151,7 @@ async function getFinancial(start, end) {
     //retiro caja mayor type2 solo efectivo
     cajaMayorType2Efectivo,
     /* CajaMayorType4, */
-    CajaMayorResult: +CajaMayorType1 + CajaMayorType3 + CajaMayorType2 - cajaDiariaInicio + cajaMayorRetiroDiario + ingresoDirectoCajaMayor, /* - +CajaMayorType4, */
+    CajaMayorResult: +CajaMayorType1 + CajaMayorType3 + CajaMayorType2 - cajaDiariaInicio + cajaMayorRetiroDiario + ingresoDirectoCajaMayor + CajaMayorInvesionNueva, /* - +CajaMayorType4, */
     CajaMayorResultEfectivo: CajaMayorType1 + CajaMayorEfectivo + cajaMayorType2Efectivo ,
     //resultado totales de caja
     efectivoDiario,
@@ -640,6 +641,18 @@ async function getEfectivoCajaMayor() { //suma type 3
     return 0
   }
 }
+async function getEfectivoTotalInversionista() { //suma type 3
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `select sum(amount) Efectivoinversionnueva from cayetano.cash_flow where operation_type = 'inversion_nueva' and created_at between '2022-08-23' and now();`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].Efectivoinversionnueva
+  } else {
+    return 0
+  }
+}
+
 async function getEfectivoIngresoDirecto() { //suma type 3
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
