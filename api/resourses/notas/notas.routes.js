@@ -41,11 +41,12 @@ notasRoutes.delete("/deletenotas", auth.required, async (req, res) => {
   res.json(deleteNotas);
 })
 
-notasRoutes.update("/editnotas", auth.required, async (req,res) => {
+notasRoutes.put("/editnotas", auth.required, async (req,res) => {
   const decoded = jwt_decode(auth.getToken(req));
   const USER_ID = decoded.id;
+  const {id,notas} = req.body
 
-  const editNotas = await notasController.editNotas()
+  const editNotas = await notasController.editNotas(id,notas)
   res.json(editNotas)
 })
 

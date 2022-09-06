@@ -6,7 +6,7 @@ async function getAllNotas(creditID) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
 
-  const sql = `SELECT * FROM notas WHERE creditID = ?;`;
+  const sql = `SELECT * FROM notas WHERE creditID = ? GROUP BY fecha DESC;`;
   const notas = await query(sql, [creditID]);
 
   if (notas) {
@@ -58,7 +58,7 @@ async function deleteNotas(id) {
   }
 }
 
-async function editNotas(notas, id) {
+async function editNotas(id,notas) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   try{
@@ -74,8 +74,9 @@ async function editNotas(notas, id) {
   }
 }
 
-module.exports = {
+module.exports = { 
   getAllNotas,
   addNotas,
-  deleteNotas
+  deleteNotas,
+  editNotas
 }
