@@ -5,8 +5,9 @@ const auth = require("../auth");
 
 const notasRoutes = express.Router();
 
-notasRoutes.get("/getnotas", auth.required, async (req, res) => {
-  const getNotas = await notasController.getAllNotas();
+notasRoutes.get("/getnotas/:creditID", auth.required, async (req, res) => {
+  const creditID = req.params.creditID
+  const getNotas = await notasController.getAllNotas(creditID);
   res.json(getNotas);
 });
 
@@ -30,6 +31,24 @@ notasRoutes.post("/addnotas", auth.required, async (req, res) => {
     console.log(err);
     res.send(500).json({ response : "esto no funciona"})
   });
+});
+
+notasRoutes.delete("/deletenotas", auth.required, async (req, res) => {
+  const decoded = jwt_decode(auth.getToken(req));
+  const USER_ID = decoded.id;
+
+  const deleteNotas = await notasController.deleteNotas();
+  res.json(deleteNotas);
 })
+
+notasRoutes.update("/editnotas", auth.required, async (req,res) => {
+  const decoded = jwt_decode(auth.getToken(req));
+  const USER_ID = decoded.id;
+
+  const editNotas = await notasController.editNotas()
+  res.json(editNotas)
+})
+
+
 
 module.exports = notasRoutes;
