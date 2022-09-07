@@ -16,9 +16,9 @@ const logsRouter = require("./api/resourses/logsrecords/logs.routes");
 const investmentsController = require("./api/resourses/investments/investments.controller");
 const punitoriosController = require("./api/resourses/punitorios/punitorios.controller");
 const futurosRouter = require("./api/resourses/futuros/futuros.routes");
-const cash_flow_deposit = require('./api/resourses/cash_flow_deposit/cashflowdeposit.routes')
+const cash_flow_deposit = require("./api/resourses/cash_flow_deposit/cashflowdeposit.routes");
 
-const dotenv = require('dotenv');
+const dotenv = require("dotenv");
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 8081;
@@ -39,12 +39,10 @@ const mysqli = mysql.createConnection({
   port: process.env.DB_PORT,
 });
 
+app.get("/paneladmin", (req, res) => {
+  res.send("lola");
+});
 
-app.get('/paneladmin', (req, res) => {
-  res.send('lola')
-})
-
-console.log(process.env.DB_HOST);
 
 mysqli.connect((err) => {
   if (err) {
@@ -55,7 +53,6 @@ mysqli.connect((err) => {
 });
 
 global.mysqli = mysqli;
-
 
 app.use(cors());
 app.use(bodyParser.json({ limit: "100mb" }));
@@ -78,7 +75,6 @@ app.use("/cash_flow", cashflowRouter);
 app.use("/media", mediaRouter);
 app.use("/futurosC", futurosRouter);
 app.use("/cashflowdeposit", cash_flow_deposit);
-
 
 app.use(function (req, res, next) {
   setTimeout(next, 1000);
@@ -106,7 +102,7 @@ app.use(function (req, res, next) {
   // Pass to next layer of middleware
   next();
 });
-app.use(function (err, req, res, next) { 
+app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.json({
     errors: {
@@ -384,16 +380,16 @@ WHERE
 
   //Cargar punitorios automaticamente
   const punitoriosQuery = `SELECT 
-    T1.credit_id
-  FROM
-    credits_items T1
-    LEFT JOIN credits T2 ON T1.credit_id = T2.id
-  WHERE
-    (T1.amount + T1.safe) > T1.payed
-        AND T1.period < NOW()
-        AND T2.status = 1
-        GROUP BY T1.credit_id
-        ;`;
+  T1.credit_id
+FROM
+  cayetano.credits_items T1
+  LEFT JOIN cayetano.credits T2 ON T1.credit_id = T2.id
+WHERE
+  (T1.amount + T1.safe ) > T1.payed
+      AND  DATE_ADD(DATE(T1.period),INTERVAL 4 DAY)  < NOW()
+      AND T2.status = 1
+      GROUP BY T1.credit_id;
+      `;
   const punitorios = await query(punitoriosQuery, []);
   if (punitorios.length > 0) {
     await query(

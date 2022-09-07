@@ -15,17 +15,16 @@ async function calculate(credit_id) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   const promises = [];
-
   let sqlCredit =
     "SELECT total,cuotas FROM credits INNER JOIN budget on budget.id = credits.budget WHERE credits.id = ? LIMIT 1";
   const credit = await query(sqlCredit, [credit_id]);
+  console.log("CreditID", credit_id);
 
   const capitalprestado = credit[0].total;
   const cuotas = credit[0].cuotas;
-  console.log(capitalprestado);
 
   let sql =
-    "SELECT * FROM credits_items WHERE credit_id = ? AND (amount+safe) > payed AND period < NOW()";
+    "SELECT * FROM cayetano.credits_items WHERE credit_id = ? AND (amount+safe) > payed AND  DATE_ADD(DATE(period),INTERVAL 4 DAY) < NOW()";
   let insertado = 0;
   const creditsItems = await query(sql, [credit_id]);
 
@@ -38,29 +37,51 @@ async function calculate(credit_id) {
       moment.duration().asDays();
       const today = moment();
       const initialperiod = creditsItems[indexCredit].period;
-      const period = moment(creditsItems[indexCredit].period);
+      const period = moment(creditsItems[indexCredit].period).add(4, "days");
       const days = period.diff(today, "days");
       const payed = creditsItems[indexCredit].payed;
       const cuota =
         Number(creditsItems[indexCredit].amount) +
         Number(creditsItems[indexCredit].safe);
       const impago = Number(cuota) - Number(payed);
-
       let interes = 0;
       let fecha;
+      const obtenerIngresosPorTipo = await query(
+        `SELECT SUM(amount) ingresado, operation_type, credit_item_id FROM cash_flow WHERE credit_item_id = ? AND deleted_at IS NULL GROUP BY operation_type`,
+        [creditsItems[indexCredit].id]
+      );
+      let obtenerIngresosPorTipoArray = {
+        ingreso_seguro_cuotas: 0,
+        ingreso_punitorios_cuotas: 0,
+        ingreso_interes_cuotas: 0,
+        ingreso_capital_cuotas: 0,
+      };
+      if (obtenerIngresosPorTipo && obtenerIngresosPorTipo.length > 0) {
+        obtenerIngresosPorTipo.forEach((ingreso) => {
+          obtenerIngresosPorTipoArray[ingreso.operation_type] =
+            ingreso.ingresado;
+        });
+      }
       if (Number(days) < 0) {
-        let diasDeAtraso = 0;
-        for (let index = 1; index <= Math.abs(days); index++) {
-          fecha = moment(initialperiod).add(index, "days").format("YYYY-MM-DD");
-          if (!isWeekend(fecha)) {
-            diasDeAtraso++;
-          }
-        }
-
+        let diasDeAtraso = Math.abs(days);
+        fecha = moment(initialperiod)
+          .add(diasDeAtraso, "days")
+          .format("YYYY-MM-DD");
+          
         if (diasDeAtraso > 0) {
           console.log("cuota", cuota);
-
-          let interes = commonFormulas.calcularPunitorios(cuota, diasDeAtraso);
+          let restanteCuota =
+            cuota -
+            obtenerIngresosPorTipoArray.ingreso_capital_cuotas -
+            obtenerIngresosPorTipoArray.ingreso_interes_cuotas -
+            obtenerIngresosPorTipoArray.ingreso_seguro_cuotas;
+          if (restanteCuota < 0) {
+            restanteCuota = 0;
+          }
+          let interes = commonFormulas.calcularPunitorios(
+            restanteCuota,
+            diasDeAtraso
+          );
 
           console.log("INTERES", interes);
 

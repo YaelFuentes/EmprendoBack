@@ -88,10 +88,10 @@ module.exports = {
   calcularTna: function (rate) {
     return (+rate * 365) / 30;
   },
-  calcularPunitorios: function (cuotaPura, diasDeAtraso) {
+  calcularPunitorios: function (restanteCuota, diasDeAtraso) {
     let interes_diario = 125 / 365;
     const punitoriosValue =
-      ((+cuotaPura * +interes_diario) / 100) * +diasDeAtraso;
+      ((+restanteCuota * +interes_diario) / 100) * +diasDeAtraso;
     return punitoriosValue;
   },
 };

@@ -128,7 +128,7 @@ async function insertPayment(
       /*
       Suponiendo que la deuda total es de 20.000 para este cuota (cuota $10.000, seguro $5000 y punitorios $5000) y el orden de cancelacion de los elementos es en este orden:
       
-      seguro/punitorios/interes/capital
+      punitorios/interes/seguro/capital
 
        ---------------------------------- EN EL CASO DE QUE LA SUMA DE PUNITORIOS PARA ESTE PERIODO
       */
@@ -299,7 +299,6 @@ async function insertPayment(
         }
       }
 
-      // console.log("disponible antes de punitorios", disponible);
 
       /* 
       SI LLEGO ACA ES PORQUE QUEDA DISPONIBLE Y EVALUAMOS capital
