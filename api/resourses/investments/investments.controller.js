@@ -248,7 +248,7 @@ function recapitalizar_status({ investmentId, status, USER_ID }) {
   });
 }
 
-function payInvestment(investment, USER_ID) {
+function payInvestment(investment, USER_ID, account_id) {
   return new Promise((resolve, reject) => {
     //ACA CHEQUEAMOS SI SE HA HECHO UNA RECAPITALIZACION, SI ES ASI NO DEBERIA PODER RECIBIR PAGOS
     mysqli.query(
@@ -279,11 +279,12 @@ function payInvestment(investment, USER_ID) {
                   } else {
                     //INSERTAMOS EL EGRESO EN LA CAJA
                     mysqli.query(
-                      "INSERT INTO cash_flow (type,amount,created_at,description,user,investment_id,operation_type) VALUES (2,?,NOW(),'egreso de dinero por pago de inversion',?,?,'pago_inversion')",
+                      "INSERT INTO cash_flow (type,amount,created_at,description,user,investment_id,operation_type,account_id) VALUES (2,?,NOW(),'egreso de dinero por pago de inversion',?,?,'pago_inversion',?);",
                       [
                         investment.amount - investment.amount * 2,
                         USER_ID,
                         investment.investmentID,
+                        account_id
                       ],
                       (err, results, rows) => {
                         mysqli.query(
