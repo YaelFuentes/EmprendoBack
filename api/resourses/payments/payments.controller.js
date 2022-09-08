@@ -128,71 +128,11 @@ async function insertPayment(
       /*
       Suponiendo que la deuda total es de 20.000 para este cuota (cuota $10.000, seguro $5000 y punitorios $5000) y el orden de cancelacion de los elementos es en este orden:
       
-      seguro/punitorios/interes/capital
+      punitorios/interes/seguro/capital
 
-      ----------------------------------EN EL CASO DE QUE EL SEGURO    
+       ---------------------------------- EN EL CASO DE QUE LA SUMA DE PUNITORIOS PARA ESTE PERIODO
       */
-
-      //verificamos que no se haya cargado ya un seguro para este credit_item y que el valor de los pagos no sea menor a el valor del seguro
-      if (
-        obtenerIngresosPorTipoArray["ingreso_seguro_cuotas"] < safe &&
-        safe > 0
-      ) {
-        // - Sea menor a el disponible cargamos el pago en cashflow, restamos el disponible y seguimos con la otra evaluacion de la operacion
-
-        let processed = 0;
-
-        safe = safe - obtenerIngresosPorTipoArray["ingreso_seguro_cuotas"];
-
-        // console.log("disponible antes de seguro", disponible);
-
-        // - Sea igual al disponible cargamos el pago en cashflow, restamos el disponible y finalizamos la operacion
-        if (safe == disponible && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de seguro de cuota',?,'ingreso_seguro_cuotas',?,?)`;
-          await query(cargar_pago_seguro, [
-            safe,
-            credit_id,
-            credit_item_id,
-            insertId,
-          ]);
-          disponible = 0;
-          newpayed += +safe;
-        }
-
-        if (safe < disponible && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de seguro de cuota',?,'ingreso_seguro_cuotas',?,?)`;
-          await query(cargar_pago_seguro, [
-            safe,
-            credit_id,
-            credit_item_id,
-            insertId,
-          ]);
-          newpayed += +safe;
-          disponible = disponible - safe;
-          processed = 1;
-        }
-
-        //- Sea mayor al disponible cargamos el pago en cashflow del valor del seguro, ponemos el disponible en 0 y terminamos la operacion
-        if (safe > disponible && processed == 0 && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de seguro de cuota',?,'ingreso_seguro_cuotas',?,?)`;
-          await query(cargar_pago_seguro, [
-            disponible,
-            credit_id,
-            credit_item_id,
-            insertId,
-          ]);
-          newpayed += +disponible;
-          disponible = 0;
-        }
-      }
-
-      // console.log("disponible antes de punitorios", disponible);
-
-      /* SI LLEGO ACA ES PORQUE QUEDA DISPONIBLE Y EVALUAMOS punitorios
-
-      ---------------------------------- EN EL CASO DE QUE LA SUMA DE PUNITORIOS PARA ESTE PERIODO
-      */
-      if (
+       if (
         obtenerIngresosPorTipoArray["ingreso_punitorios_cuotas"] < punitorios &&
         punitorios > 0
       ) {
@@ -302,8 +242,66 @@ async function insertPayment(
       // console.log("disponible antes de capital", disponible);
 
       /*
-      SI LLEGO ACA ES PORQUE QUEDA DISPONIBLE Y EVALUAMOS capital
 
+      ----------------------------------EN EL CASO DE QUE EL SEGURO    
+      */
+
+      //verificamos que no se haya cargado ya un seguro para este credit_item y que el valor de los pagos no sea menor a el valor del seguro
+      if (
+        obtenerIngresosPorTipoArray["ingreso_seguro_cuotas"] < safe &&
+        safe > 0
+      ) {
+        // - Sea menor a el disponible cargamos el pago en cashflow, restamos el disponible y seguimos con la otra evaluacion de la operacion
+
+        let processed = 0;
+
+        safe = safe - obtenerIngresosPorTipoArray["ingreso_seguro_cuotas"];
+
+        // console.log("disponible antes de seguro", disponible);
+
+        // - Sea igual al disponible cargamos el pago en cashflow, restamos el disponible y finalizamos la operacion
+        if (safe == disponible && disponible > 0) {
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de seguro de cuota',?,'ingreso_seguro_cuotas',?,?)`;
+          await query(cargar_pago_seguro, [
+            safe,
+            credit_id,
+            credit_item_id,
+            insertId,
+          ]);
+          disponible = 0;
+          newpayed += +safe;
+        }
+
+        if (safe < disponible && disponible > 0) {
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de seguro de cuota',?,'ingreso_seguro_cuotas',?,?)`;
+          await query(cargar_pago_seguro, [
+            safe,
+            credit_id,
+            credit_item_id,
+            insertId,
+          ]);
+          newpayed += +safe;
+          disponible = disponible - safe;
+          processed = 1;
+        }
+
+        //- Sea mayor al disponible cargamos el pago en cashflow del valor del seguro, ponemos el disponible en 0 y terminamos la operacion
+        if (safe > disponible && processed == 0 && disponible > 0) {
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de seguro de cuota',?,'ingreso_seguro_cuotas',?,?)`;
+          await query(cargar_pago_seguro, [
+            disponible,
+            credit_id,
+            credit_item_id,
+            insertId,
+          ]);
+          newpayed += +disponible;
+          disponible = 0;
+        }
+      }
+
+
+      /* 
+      SI LLEGO ACA ES PORQUE QUEDA DISPONIBLE Y EVALUAMOS capital
       ---------------------------------- EN EL CASO DE QUE EL CAPITAL
       */
 
