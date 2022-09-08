@@ -107,15 +107,17 @@ cashFlowRouter.get("/total", auth.required, function (req, res, next) {
 });
 
 cashFlowRouter.post("/add", auth.required, function (req, res, next) {
+
   const type = req.body.type;
   const amount = req.body.payment_amount;
   const created_at = req.body.payment_date;
   const description = req.body.description;
-  const user = req.body.userID;
+  const user = req.body.user;
   const credit_id = req.body.credit_id ?? null;
   const operation_type = req.body.operation_type;
   const investment_id = req.body.investment_id ?? null;
   const account_id = req.body.account_id;
+
   /* const cash_flow_account_id = req.body.cash_flow_account_id; */
   cashFlowController
     .add(

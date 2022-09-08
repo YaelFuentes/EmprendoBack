@@ -158,8 +158,8 @@ async function add(
         operation_type,
         investment_id,
         account_id,
-        /* cash_flow_account_id, */
       ],
+      
       (err, results, rows) => {
         if (err) {
           console.error(err);
