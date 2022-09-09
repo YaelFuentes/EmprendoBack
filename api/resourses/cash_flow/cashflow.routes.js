@@ -111,7 +111,7 @@ cashFlowRouter.post("/add", auth.required, function (req, res, next) {
   const amount = req.body.payment_amount;
   const created_at = req.body.payment_date;
   const description = req.body.description;
-  const user = req.body.userID;
+  const user = req.body.user;
   const credit_id = req.body.credit_id ?? null;
   const operation_type = req.body.operation_type;
   const investment_id = req.body.investment_id ?? null;
