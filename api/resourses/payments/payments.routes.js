@@ -38,9 +38,10 @@ paymentsRouter.post(
         .status(400)
         .json({ response: "Campos requeridos, debe elegir un monto y fecha" });
     }
-
+    
     const decoded = jwt_decode(auth.getToken(req));
     const USER_ID = decoded.id;
+    console.log(USER_ID)
 
     paymentsController
       .insertPayment(
@@ -53,6 +54,7 @@ paymentsRouter.post(
         USER_ID,
         account_id
       )
+
       .then((data) => {
         console.log(data, "Data");
         res.json(data);
