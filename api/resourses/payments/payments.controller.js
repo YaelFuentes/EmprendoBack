@@ -143,13 +143,14 @@ async function insertPayment(
 
         // - Es igual al disponible inserta en cashflow, coloca el disponible en 0 y finaliza la operacion
         if (punitorios == disponible && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de punitorios de cuota',?,?,'ingreso_punitorios_cuotas',?,?)`;
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id) VALUES (1,?,NOW(),'Ingreso por pago de punitorios de cuota',?,?,'ingreso_punitorios_cuotas',?,?,?)`;
           await query(cargar_pago_seguro, [
             punitorios,
             USER_ID,
             credit_id,
             credit_item_id,
             insertId,
+            account_id
           ]);
           newpayed += +punitorios;
           disponible = 0;
@@ -157,13 +158,14 @@ async function insertPayment(
 
         // - Es menor al disponible inserta en cashflow, coloca el disponible en disponible - punitorios y sigue con la otra evaluacion de la operacion
         if (punitorios < disponible && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de punitorios de cuota',?,?,'ingreso_punitorios_cuotas',?,?)`;
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id) VALUES (1,?,NOW(),'Ingreso por pago de punitorios de cuota',?,?,'ingreso_punitorios_cuotas',?,?,?)`;
           await query(cargar_pago_seguro, [
             punitorios,
             USER_ID,
             credit_id,
             credit_item_id,
             insertId,
+            account_id
           ]);
           newpayed += +punitorios;
           disponible = disponible - punitorios;
@@ -172,13 +174,14 @@ async function insertPayment(
 
         // - Es mayor al disponible inserta en cashflow el disponible, coloca en 0 el disponible y termina la operacion
         if (punitorios > disponible && processed == 0 && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de punitorios de cuota',?,?,'ingreso_punitorios_cuotas',?,?)`;
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id) VALUES (1,?,NOW(),'Ingreso por pago de punitorios de cuota',?,?,'ingreso_punitorios_cuotas',?,?,?)`;
           await query(cargar_pago_seguro, [
             disponible,
             USER_ID,
             credit_id,
             credit_item_id,
             insertId,
+            account_id
           ]);
           newpayed += +disponible;
           disponible = 0;
@@ -203,13 +206,14 @@ async function insertPayment(
 
         // - Es igual al disponible inserta en cashflow, coloca el disponible en 0 y finaliza la operacion
         if (intereses == disponible && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de interes de cuota',?,?,'ingreso_interes_cuotas',?,?)`;
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id) VALUES (1,?,NOW(),'Ingreso por pago de interes de cuota',?,?,'ingreso_interes_cuotas',?,?,?)`;
           await query(cargar_pago_seguro, [
             intereses,
             USER_ID,
             credit_id,
             credit_item_id,
             insertId,
+            account_id
           ]);
           newpayed += +intereses;
           disponible = 0;
@@ -217,13 +221,14 @@ async function insertPayment(
 
         // - Es menor al disponible inserta en cashflow, coloca el disponible en disponible - interes y sigue con la otra evaluacion de la operacion
         if (intereses < disponible && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de interes de cuota',?,?,'ingreso_interes_cuotas',?,?)`;
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id) VALUES (1,?,NOW(),'Ingreso por pago de interes de cuota',?,?,'ingreso_interes_cuotas',?,?,?)`;
           await query(cargar_pago_seguro, [
             intereses,
             USER_ID,
             credit_id,
             credit_item_id,
             insertId,
+            account_id
           ]);
           newpayed += +intereses;
           disponible = disponible - intereses;
@@ -232,12 +237,14 @@ async function insertPayment(
 
         // - Es mayor al disponible inserta en cashflow el interes, coloca en 0 el disponible y termina la operacion
         if (intereses > disponible && processed == 0 && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de interes de cuota',?,?,'ingreso_interes_cuotas',?,?)`;
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id) VALUES (1,?,NOW(),'Ingreso por pago de interes de cuota',?,?,'ingreso_interes_cuotas',?,?,?)`;
           await query(cargar_pago_seguro, [
             disponible,
+            USER_ID,
             credit_id,
             credit_item_id,
             insertId,
+            account_id
           ]);
           newpayed += +disponible;
           disponible = 0;
@@ -266,26 +273,28 @@ async function insertPayment(
 
         // - Sea igual al disponible cargamos el pago en cashflow, restamos el disponible y finalizamos la operacion
         if (safe == disponible && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de seguro de cuota',?,?,'ingreso_seguro_cuotas',?,?)`;
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id) VALUES (1,?,NOW(),'Ingreso por pago de seguro de cuota',?,?,'ingreso_seguro_cuotas',?,?,?)`;
           await query(cargar_pago_seguro, [
             safe,
             USER_ID,
             credit_id,
             credit_item_id,
             insertId,
+            account_id
           ]);
           disponible = 0;
           newpayed += +safe;
         }
 
         if (safe < disponible && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de seguro de cuota',?,?,'ingreso_seguro_cuotas',?,?)`;
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id) VALUES (1,?,NOW(),'Ingreso por pago de seguro de cuota',?,?,'ingreso_seguro_cuotas',?,?,?)`;
           await query(cargar_pago_seguro, [
             safe,
             USER_ID,
             credit_id,
             credit_item_id,
             insertId,
+            account_id
           ]);
           newpayed += +safe;
           disponible = disponible - safe;
@@ -294,12 +303,13 @@ async function insertPayment(
 
         //- Sea mayor al disponible cargamos el pago en cashflow del valor del seguro, ponemos el disponible en 0 y terminamos la operacion
         if (safe > disponible && processed == 0 && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de seguro de cuota',?,?,'ingreso_seguro_cuotas',?,?)`;
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id) VALUES (1,?,NOW(),'Ingreso por pago de seguro de cuota',?,?,'ingreso_seguro_cuotas',?,?)`;
           await query(cargar_pago_seguro, [
             disponible,
             credit_id,
             credit_item_id,
             insertId,
+            account_id
           ]);
           newpayed += +disponible;
           disponible = 0;
@@ -323,13 +333,14 @@ async function insertPayment(
 
         // - Es igual al disponible inserta en cashflow, coloca el disponible en 0 y finaliza la operacion
         if (capital == disponible && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de capital de cuota',?,?,'ingreso_capital_cuotas',?,?)`;
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id) VALUES (1,?,NOW(),'Ingreso por pago de capital de cuota',?,?,'ingreso_capital_cuotas',?,?,?)`;
           await query(cargar_pago_seguro, [
             capital,
             USER_ID,
             credit_id,
             credit_item_id,
             insertId,
+            account_id
           ]);
           disponible = 0;
           newpayed += +capital;
@@ -337,13 +348,14 @@ async function insertPayment(
 
         // - Es menor al disponible inserta en cashflow, coloca el disponible en disponible - capital y sigue con la otra evaluacion de la operacion
         if (capital < disponible && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de capital de cuota',?,?,'ingreso_capital_cuotas',?,?)`;
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id) VALUES (1,?,NOW(),'Ingreso por pago de capital de cuota',?,?,'ingreso_capital_cuotas',?,?,?)`;
           await query(cargar_pago_seguro, [
             capital,
             USER_ID,
             credit_id,
             credit_item_id,
             insertId,
+            account_id
           ]);
           disponible = disponible - capital;
           processed = 1;
@@ -352,13 +364,14 @@ async function insertPayment(
 
         // - Es mayor al disponible inserta en cashflow el capital, coloca en 0 el disponible y termina la operacion
         if (capital > disponible && processed == 0 && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id) VALUES (1,?,NOW(),'Ingreso por pago de capital de cuota',?,?,'ingreso_capital_cuotas',?,?)`;
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id) VALUES (1,?,NOW(),'Ingreso por pago de capital de cuota',?,?,'ingreso_capital_cuotas',?,?,?)`;
           await query(cargar_pago_seguro, [
             disponible,
             USER_ID,
             credit_id,
             credit_item_id,
             insertId,
+            account_id
           ]);
           newpayed += +disponible;
           disponible = 0;
@@ -397,6 +410,7 @@ async function insertPayment(
       );
     }
   } catch (e) {
+    console.log(e)
     throw e;
   }
 }

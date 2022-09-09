@@ -38,7 +38,7 @@ paymentsRouter.post(
         .status(400)
         .json({ response: "Campos requeridos, debe elegir un monto y fecha" });
     }
-
+    
     const decoded = jwt_decode(auth.getToken(req));
     const USER_ID = decoded.id;
     console.log(USER_ID)
