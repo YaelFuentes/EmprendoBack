@@ -582,7 +582,7 @@ async function getEfectivoCajaMayor3() {
 async function getSaldoBancoSantander(start, end) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(amount) cajaBancoSantander FROM cayetano.cash_flow WHERE account_id='8' AND created_at BETWEEN '2022-08-23' AND now() AND type not in ('7');`;
+  const dataQuery = `SELECT SUM(amount) cajaBancoSantander FROM cayetano.cash_flow WHERE account_id='8' AND created_at BETWEEN '2022-08-23' AND now() AND type not in ('7', '2');`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].cajaBancoSantander
@@ -607,7 +607,7 @@ async function getSaldoBancoSantanderEgreso(start, end) {
 async function getSantanderDirecto() { //suma type 3
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) santanderDirectoEntrada from cash_flow where type='7';`;
+  const dataQuery = `select sum(amount) santanderDirectoEntrada from cash_flow where type='7' and account_id='8';`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].santanderDirectoEntrada
@@ -716,7 +716,8 @@ async function getCajaMayorType2Efectivo() {
 async function getCajaMayorEfectivo() {  //suma del efectivo de la caja mayor
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) ingresoCajaMayorCuotas from cayetano.cash_flow where type='1' and cast(created_at AS DATE) and DATE(created_at) between '2022-08-23' and date_sub(current_date(),interval 1 day) and account_id = '1';`;
+  const dataQuery = `select sum(amount) ingresoCajaMayorCuotas from cayetano.cash_flow where type='1' and cast(created_at AS DATE) and DATE(created_at) between '2022-08-23' and date_sub(current_date(),interval 1 day) and account_id = '1'  and 
+  operation_type like('pago_cuota_total') is not true;`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].ingresoCajaMayorCuotas

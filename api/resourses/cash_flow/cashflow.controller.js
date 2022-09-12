@@ -147,11 +147,11 @@ async function add(
     }
 
     mysqli.query(
-      "INSERT INTO cash_flow (type, amount, created_at,description, user, credit_id, operation_type, investment_id,account_id) VALUES(?, ?, ?,?,?,?,?,?,?)",
+      "INSERT INTO cash_flow (type, amount, created_at,description, user, credit_id, operation_type, investment_id,account_id) VALUES(?, ?, now(),?,?,?,?,?,?)",
       [
         type,
         amount,
-        created_at,
+        /* created_at, */
         description,
         user,
         credit_id,

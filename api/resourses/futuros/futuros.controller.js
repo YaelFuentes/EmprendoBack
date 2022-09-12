@@ -77,7 +77,7 @@ async function getCreditoMensual(start, end){
 async function getCuotaCreditoMensual(start, end){
     const util = require("util");
     const query = util.promisify(mysqli.query).bind(mysqli);
-    const dataQuery = `SELECT SUM(amount + punitorios) CreditoMensualCuota FROM cayetano.credits_items where period BETWEEN ? AND ?;`;
+    const dataQuery = `SELECT SUM(amount ) CreditoMensualCuota FROM cayetano.credits_items where period BETWEEN ? AND ?;`;
     const result = await query(dataQuery, [start, end])
     if(result){
         return result[0].CreditoMensualCuota
