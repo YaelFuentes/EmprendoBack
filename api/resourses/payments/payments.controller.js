@@ -303,9 +303,10 @@ async function insertPayment(
 
         //- Sea mayor al disponible cargamos el pago en cashflow del valor del seguro, ponemos el disponible en 0 y terminamos la operacion
         if (safe > disponible && processed == 0 && disponible > 0) {
-          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id) VALUES (1,?,NOW(),'Ingreso por pago de seguro de cuota',?,?,'ingreso_seguro_cuotas',?,?)`;
+          let cargar_pago_seguro = `INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id) VALUES (1,?,NOW(),'Ingreso por pago de seguro de cuota',?,?,'ingreso_seguro_cuotas',?,?,?)`;
           await query(cargar_pago_seguro, [
             disponible,
+            USER_ID,
             credit_id,
             credit_item_id,
             insertId,
