@@ -5,14 +5,14 @@ const moment = require("moment");
 function createInvestment(investment, USER_ID) {
   return new Promise((resolve, reject) => {
     mysqli.query(
-      "INSERT INTO investments (investorID, amount, percentage, termID, period, ts) VALUES(?, ?, ?, ?, ?, ?)",
+      "INSERT INTO investments (investorID, amount, percentage, termID, period, ts) VALUES(?, ?, ?, ?, ?, now())",
       [
         investment.investorID,
         investment.amount,
         investment.percentage,
         investment.termID,
         investment.period,
-        investment.ts,
+        /* investment.ts, */
       ],
       (err, results, rows) => {
         if (err) {
@@ -25,7 +25,7 @@ function createInvestment(investment, USER_ID) {
             (err, rows) => {
               // INSERTAMOS EL INGRESO DE DINERO A LA CAJA TYPE=1 PARA INGRESOS, TYPE=2 PARA EGRESOS
               mysqli.query(
-                "INSERT INTO cash_flow (type,amount,created_at,description,user,investment_id,operation_type) VALUES (1,?,?,'ingreso de dinero por nueva inversion',?,?,'inversion_nueva')",
+                "INSERT INTO cash_flow (type,amount,created_at,description,user,investment_id,operation_type) VALUES (1,?,now(),'ingreso de dinero por nueva inversion',?,?,'inversion_nueva')",
                 [investment.amount, investment.ts, USER_ID, results.insertId],
                 (err2, rows2) => {
                   resolve(rows[0]);

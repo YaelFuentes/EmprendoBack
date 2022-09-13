@@ -131,7 +131,7 @@ investmentsRouter.post(
       check("percentage").exists({ checkNull: true, checkFalsy: true }),
       check("termID").exists({ checkNull: true, checkFalsy: true }),
       check("period").exists({ checkNull: true, checkFalsy: true }),
-      check("ts").exists({ checkNull: true, checkFalsy: true }),
+      /* check("ts").exists({ checkNull: true, checkFalsy: true }), */
     ],
   ],
   async (req, res) => {
