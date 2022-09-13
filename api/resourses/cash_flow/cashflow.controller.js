@@ -130,6 +130,8 @@ async function add(
   operation_type,
   investment_id,
   account_id,
+  responsable_id,
+  caja_id
 ) {
   return new Promise((resolve, reject) => {
     if (type == 2 || type == 5) {
@@ -145,9 +147,12 @@ async function add(
     if (account_id == "") {
       account_id = null;
     }
+    if (responsable_id == "") {
+      responsable_id = null;
+    }
 
     mysqli.query(
-      "INSERT INTO cash_flow (type, amount, created_at,description, user, credit_id, operation_type, investment_id,account_id) VALUES(?, ?, now(),?,?,?,?,?,?)",
+      "INSERT INTO cash_flow (type, amount, created_at,description, user, credit_id, operation_type, investment_id,account_id,responsable_id,caja_id) VALUES(?, ?, now(),?,?,?,?,?,?,?,?)",
       [
         type,
         amount,
@@ -158,6 +163,8 @@ async function add(
         operation_type,
         investment_id,
         account_id,
+        responsable_id,
+        caja_id
         /* cash_flow_account_id, */
       ],
       (err, results, rows) => {
