@@ -180,10 +180,12 @@ investmentsRouter.post(
       });
     }
     let investment = req.body;
+    let account_id = req.body.account_id
     try {
       const newInvestment = await investmentsController.payInvestment(
         investment,
-        USER_ID
+        USER_ID,
+        account_id,
       );
       res.json(newInvestment);
     } catch (e) {
