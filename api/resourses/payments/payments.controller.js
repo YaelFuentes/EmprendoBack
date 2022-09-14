@@ -419,7 +419,7 @@ async function insertPayment(
 function getList(credit_id, callback) {
   let sql =
     /* "SELECT * FROM payments WHERE credit_id = ? AND status = 1 ORDER BY paymentDate ASC"; */
-    'select A.clientID, A.paymentDate, A.id, A.amount,A.credit_id, B.user, B.payment_id , C.id, C.name, C.lastname from cayetano.payments A join cayetano.cash_flow B on A.id = B.payment_id left join cayetano.users C  on B.user = C.id where A.credit_id = ? AND A.status = 1 group by A.id  ORDER BY paymentDate ASC;'
+    'select A.clientID, A.paymentDate, A.id, A.amount,A.credit_id, B.user, B.payment_id , C.id as idUser, C.name, C.lastname from cayetano.payments A join cayetano.cash_flow B on A.id = B.payment_id left join cayetano.users C  on B.user = C.id where A.credit_id = ? AND A.status = 1 group by A.id  ORDER BY paymentDate ASC;'
   console.log(sql);
 
   mysqli.query(sql, [credit_id], (err, rows) => {
