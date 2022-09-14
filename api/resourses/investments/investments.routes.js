@@ -132,6 +132,7 @@ investmentsRouter.post(
       check("termID").exists({ checkNull: true, checkFalsy: true }),
       check("period").exists({ checkNull: true, checkFalsy: true }),
       check("ts").exists({ checkNull: true, checkFalsy: true }),
+      check("account_id").exists({ checkNull: true, checkFalsy: true }),
     ],
   ],
   async (req, res) => {
@@ -147,10 +148,12 @@ investmentsRouter.post(
       });
     }
     let investment = req.body;
+    let account_id = req.body.account_id;
     try {
       const newInvestment = await investmentsController.createInvestment(
         investment,
-        USER_ID
+        USER_ID,
+        account_id
       );
       res.json(newInvestment);
     } catch (e) {
