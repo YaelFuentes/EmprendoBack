@@ -2,7 +2,7 @@ const usersController = require("../users/users.controller");
 const resumeController = require("../resume/resume.controller");
 const moment = require("moment");
 
-function createInvestment(investment, USER_ID) {
+function createInvestment(investment, USER_ID, account_id) {
   return new Promise((resolve, reject) => {
     mysqli.query(
       "INSERT INTO investments (investorID, amount, percentage, termID, period, ts) VALUES(?, ?, ?, ?, ?, ?)",
@@ -25,8 +25,8 @@ function createInvestment(investment, USER_ID) {
             (err, rows) => {
               // INSERTAMOS EL INGRESO DE DINERO A LA CAJA TYPE=1 PARA INGRESOS, TYPE=2 PARA EGRESOS
               mysqli.query(
-                "INSERT INTO cash_flow (type,amount,created_at,description,user,investment_id,operation_type) VALUES (1,?,?,'ingreso de dinero por nueva inversion',?,?,'inversion_nueva')",
-                [investment.amount, investment.ts, USER_ID, results.insertId],
+                "INSERT INTO cash_flow (type,amount,created_at,description,user,investment_id,operation_type,account_id) VALUES (1,?,?,'ingreso de dinero por nueva inversion',?,?,'inversion_nueva',?)",
+                [investment.amount, investment.ts, USER_ID, results.insertId,account_id],
                 (err2, rows2) => {
                   resolve(rows[0]);
                 }
