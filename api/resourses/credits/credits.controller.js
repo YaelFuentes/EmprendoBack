@@ -910,6 +910,19 @@ function formatNumber(num) {
   }
 }
 
+async function addDiscount(creditId,creditItemId,descuento){
+  try{
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const sql = "UPDATE credits_items SET descuento = ? WHERE id = ?"
+  const returnedData = await query(sql,[descuento,creditItemId])
+console.log(returnedData);
+  }catch(e){
+    return e
+  }
+return
+}
+
 module.exports = {
   create,
   getInfo,
@@ -933,4 +946,5 @@ module.exports = {
   updateState,
   getCashFlow,
   getCashFlowPerCreditItem,
+  addDiscount
 };

@@ -151,6 +151,15 @@ creditsRouter.put(
   }
 );
 
+creditsRouter.put("/discount/:creditId",auth.required,
+function (req, res, next) {
+  const {creditItemId, descuento} = req.body;
+  const {creditId} = req.params;
+  creditsController.addDiscount(creditId,creditItemId,descuento)
+  res.json({creditItemId, descuento})
+
+})
+
 creditsRouter.put(
   "/updatecredit/:creditid",
   auth.required,
