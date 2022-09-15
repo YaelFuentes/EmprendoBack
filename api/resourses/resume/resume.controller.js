@@ -533,7 +533,7 @@ async function getCuentaBrubank() {
 async function getEfectivoDiarioCaja() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli)
-  const dataQuery = `select sum(amount) cajadiaria from cayetano.cash_flow where type in ('1','4') and account_id = '1' and left(created_at,10) = left(now(),10);`;
+  const dataQuery = `select sum(amount) cajadiaria from cayetano.cash_flow where type in ('1','4') and account_id = '1' and left(created_at,10) = left(now(),10) and operation_type in ("ingreso_capital_cuotas","ingreso_interes_cuotas","ingreso_seguro_cuotas","ingreso_punitorios_cuotas") is not true;`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].cajadiaria
@@ -558,7 +558,7 @@ async function getRetiroEfectivoCajaDiaria() {
 async function getEfectivoDiarioCaja2() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli)
-  const dataQuery = `select sum(amount) cajaDiariaConAccount from cayetano.cash_flow where type = '1' and account_id = '5' and left(created_at,10) = left(now(),10);`;
+  const dataQuery = `select sum(amount) cajaDiariaConAccount from cayetano.cash_flow where type = '1' and account_id = '5' and left(created_at,10) = left(now(),10) and operation_type in ("ingreso_capital_cuotas","ingreso_interes_cuotas","ingreso_seguro_cuotas","ingreso_punitorios_cuotas") is not true;`;
   const result = await query(dataQuery, [])
   if (result) {
     return result[0].cajaDiariaConAccount
@@ -567,7 +567,7 @@ async function getEfectivoDiarioCaja2() {
 async function getEfectivoCajaMayor3() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) cajaDiariaConNull from cayetano.cash_flow where type='1' and account_id = '8' and left(created_at,10) = left(now(),10);`;
+  const dataQuery = `select sum(amount) cajaDiariaConNull from cayetano.cash_flow where type='1' and account_id = '8' and left(created_at,10) = left(now(),10) and operation_type in ("ingreso_capital_cuotas","ingreso_interes_cuotas","ingreso_seguro_cuotas","ingreso_punitorios_cuotas") is not true;`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].cajaDiariaConNull
