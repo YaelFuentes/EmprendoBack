@@ -201,6 +201,7 @@ function getInfo(creditid, callback) {
               T4.amount cuota,
               T4.payed pagado,
               T4.safe seguro,
+              T4.descuento,
               COALESCE(SUM(T8.amount),0) punitorios,
               T8.days_past,
               CASE WHEN T4.period <= DATE(NOW())
@@ -910,17 +911,23 @@ function formatNumber(num) {
   }
 }
 
-async function addDiscount(creditId,creditItemId,descuento){
+async function addDiscount(creditId,creditItemId,descuento,callback){
   try{
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   const sql = "UPDATE credits_items SET descuento = ? WHERE id = ?"
-  const returnedData = await query(sql,[descuento,creditItemId])
-console.log(returnedData);
+  const returnedData = await query(sql,[descuento,creditItemId],(err, rows) => {
+    var response = [];
+    if (rows) {
+      response = rows;
+    }
+    return callback(err, response);
+  })
+  
   }catch(e){
     return e
   }
-return
+
 }
 
 module.exports = {
