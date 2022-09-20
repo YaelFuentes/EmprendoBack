@@ -18,6 +18,7 @@ const punitoriosController = require("./api/resourses/punitorios/punitorios.cont
 const futurosRouter = require("./api/resourses/futuros/futuros.routes");
 const cash_flow_deposit = require('./api/resourses/cash_flow_deposit/cashflowdeposit.routes');
 const notasRoutes = require('./api/resourses/notas/notas.routes')
+const cuota = require('./api/resourses/common/formulas')
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -39,6 +40,8 @@ const mysqli = mysql.createConnection({
   database: process.env.DB_DATABASE,
   port: process.env.DB_PORT,
 });
+const resul = cuota.rate(36,71895.47,713406)
+console.log(resul);
 
 app.get("/paneladmin", (req, res) => {
   res.send("lola");
