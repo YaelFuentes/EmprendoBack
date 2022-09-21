@@ -32,6 +32,8 @@ paymentsRouter.post(
     const credit_id = req.body.formData.credit_id;
     const client_id = req.body.formData.client_id;
     const account_id = req.body.formData.account_id
+    const {id,name} = req.body.notaCreditoDebito
+    console.log("id",id,"name",name,"cash_flow_list",cash_flow_list,"formData",req.body.formData);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res
