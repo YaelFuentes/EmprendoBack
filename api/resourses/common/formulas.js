@@ -34,7 +34,7 @@ module.exports = {
     type = type === undefined ? 0 : type;*/
     payment = Number(payment.toFixed(2))
     try {      
-      var formattedFormula = formula.RATE(periods,-payment,present,0,0,0.1);
+      var formattedFormula = formula.RATE(periods,-payment,present,0,0,0.15);
     } catch (error) {
       console.log(error);
     }
