@@ -32,9 +32,10 @@ module.exports = {
     /*guess = guess === undefined ? 0.01 : guess;
     future = future === undefined ? 0 : future;
     type = type === undefined ? 0 : type;*/
+    guess = (((-present / periods) + payment) / present).toFixed(3)
     payment = Number(payment.toFixed(2))
     try {      
-      var formattedFormula = formula.RATE(periods,-payment,present,0,0,0.15);
+      var formattedFormula = formula.RATE(periods,-payment,present,0,0,guess);
     } catch (error) {
       console.log(error);
     }
