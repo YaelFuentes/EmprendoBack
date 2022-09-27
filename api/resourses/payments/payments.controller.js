@@ -108,12 +108,14 @@ async function insertPayment(
         `SELECT SUM(amount) ingresado, operation_type, credit_item_id FROM cash_flow WHERE credit_item_id = ? AND deleted_at IS NULL GROUP BY operation_type`,
         [credit_item_id]
       );
+      console.log("Ingreso",obtenerIngresosPorTipo);
 
       let obtenerIngresosPorTipoArray = {
         ingreso_seguro_cuotas: 0,
         ingreso_punitorios_cuotas: 0,
         ingreso_interes_cuotas: 0,
         ingreso_capital_cuotas: 0,
+
       };
 
       if (obtenerIngresosPorTipo && obtenerIngresosPorTipo.length > 0) {
@@ -416,6 +418,27 @@ async function insertPayment(
   }
 }
 
+async function createNCreditOrDebit(  client_id,
+      payment_date,
+      payment_amount,
+      credit_id,
+      account_id,notaCredito){
+  const sql = `INSERT INTO payments ( clientID,paymentDate,amount,credit_id,account_id,payed_ci) VALUES (?,?,?,?,?,?)`;
+  try {
+    const insertedPayment = await query(sql, [
+      client_id,
+      payment_date,
+      payment_amount,
+      credit_id,
+      account_id,
+      notaCredito.id
+    ])
+    return insertedPayment
+  }catch(error){
+    return error
+  }
+}
+
 function getList(credit_id, callback) {
   let sql =
     /* "SELECT * FROM payments WHERE credit_id = ? AND status = 1 ORDER BY paymentDate ASC"; */
@@ -594,4 +617,5 @@ module.exports = {
   deletePayment,
   getInfo,
   updatePayment,
+  createNCreditOrDebit
 };

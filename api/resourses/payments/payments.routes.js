@@ -21,7 +21,8 @@ paymentsRouter.post(
         checkFalsy: true,
       }),
       check("formData.credit_id").exists({ checkNull: true, checkFalsy: true }),
-      check("formData.client_id").exists({ checkNull: true, checkFalsy: true }),
+      check("notaCreditoDebito.id").exists({ checkNull: true, checkFalsy: true }),
+      check("notaCreditoDebito.name").exists({ checkNull: true, checkFalsy: true }),
     ],
   ],
   function (req, res, next) {
@@ -34,6 +35,11 @@ paymentsRouter.post(
     const account_id = req.body.formData.account_id
     const {id,name} = req.body.notaCreditoDebito
     console.log("id",id,"name",name,"cash_flow_list",cash_flow_list,"formData",req.body.formData);
+    if (id !== 0 && name !==""){
+      const respondeNDorC = paymentsController.createNCreditOrDebit(client_id,payment_date,payment_amount,credit_id,account_id,notaCredito)
+      res.sendStatus(200).json({responseMessage: respondeNDorC })
+    }
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res
