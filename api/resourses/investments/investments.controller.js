@@ -2,7 +2,7 @@ const usersController = require("../users/users.controller");
 const resumeController = require("../resume/resume.controller");
 const moment = require("moment");
 
-function createInvestment(investment, USER_ID, account_id) {
+function createInvestment(investment, USER_ID, account_id, caja_id) {
   return new Promise((resolve, reject) => {
     mysqli.query(
       "INSERT INTO investments (investorID, amount, percentage, termID, period, ts) VALUES(?, ?, ?, ?, ?, ?)",
@@ -25,8 +25,8 @@ function createInvestment(investment, USER_ID, account_id) {
             (err, rows) => {
               // INSERTAMOS EL INGRESO DE DINERO A LA CAJA TYPE=1 PARA INGRESOS, TYPE=2 PARA EGRESOS
               mysqli.query(
-                "INSERT INTO cash_flow (type,amount,created_at,description,user,investment_id,operation_type,account_id) VALUES (1,?,?,'ingreso de dinero por nueva inversion',?,?,'inversion_nueva',?)",
-                [investment.amount, investment.ts, USER_ID, results.insertId,account_id],
+                "INSERT INTO cash_flow (type,amount,created_at,description,user,investment_id,operation_type,account_id,caja_id) VALUES (1,?,?,'ingreso de dinero por nueva inversion',?,?,'inversion_nueva',?,?)",
+                [investment.amount, investment.ts, USER_ID, results.insertId,account_id, caja_id],
                 (err2, rows2) => {
                   resolve(rows[0]);
                 }
@@ -248,7 +248,7 @@ function recapitalizar_status({ investmentId, status, USER_ID }) {
   });
 }
 
-function payInvestment(investment, USER_ID, account_id) {
+function payInvestment(investment, USER_ID, account_id,caja_id) {
   return new Promise((resolve, reject) => {
     //ACA CHEQUEAMOS SI SE HA HECHO UNA RECAPITALIZACION, SI ES ASI NO DEBERIA PODER RECIBIR PAGOS
     mysqli.query(
@@ -279,12 +279,13 @@ function payInvestment(investment, USER_ID, account_id) {
                   } else {
                     //INSERTAMOS EL EGRESO EN LA CAJA
                     mysqli.query(
-                      "INSERT INTO cash_flow (type,amount,created_at,description,user,investment_id,operation_type,account_id) VALUES (2,?,NOW(),'egreso de dinero por pago de inversion',?,?,'pago_inversion',?);",
+                      "INSERT INTO cash_flow (type,amount,created_at,description,user,investment_id,operation_type,account_id,caja_id) VALUES (2,?,NOW(),'egreso de dinero por pago de inversion',?,?,'pago_inversion',?,?);",
                       [
                         investment.amount - investment.amount * 2,
                         USER_ID,
                         investment.investmentID,
-                        account_id
+                        account_id,
+                        caja_id
                       ],
                       (err, results, rows) => {
                         mysqli.query(

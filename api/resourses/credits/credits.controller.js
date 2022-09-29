@@ -11,6 +11,8 @@ function create(
   otorgamiento,
   prenda_file,
   USER_ID,
+  account_id,
+  caja_id,
   callback
 ) {
   mysqli.query(
@@ -38,8 +40,8 @@ function create(
                 if (rows.length > 0) {
                   // INSERTAMOS EL INGRESO DE DINERO A LA CAJA TYPE=1 PARA INGRESOS, TYPE=2 PARA EGRESOS
                   mysqli.query(
-                    "INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type) VALUES (2,?,NOW(),'Egreso por Crédito Otorgado',?,?,'egreso_credito_otorgado')",
-                    [credit_amount - credit_amount * 2, USER_ID, rows[0].id],
+                    "INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,account_id,caja_id) VALUES (2,?,NOW(),'Egreso por Crédito Otorgado',?,?,'egreso_credito_otorgado',?,?)",
+                    [credit_amount - credit_amount * 2, USER_ID, rows[0].id, account_id, caja_id],
                     (err, rows) => { }
                   );
 

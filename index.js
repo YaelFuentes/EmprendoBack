@@ -19,6 +19,8 @@ const futurosRouter = require("./api/resourses/futuros/futuros.routes");
 const cash_flow_deposit = require('./api/resourses/cash_flow_deposit/cashflowdeposit.routes');
 const notasRoutes = require('./api/resourses/notas/notas.routes');
 const cajaRoutes = require('./api/resourses/caja/caja.routes');
+const cronCheques = require('./api/resourses/caja/caja.controller')
+const chequesRoutes = require('./api/resourses/cheques/cheques.routes')
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -79,6 +81,7 @@ app.use("/futurosC", futurosRouter);
 app.use("/cashflowdeposit", cash_flow_deposit);
 app.use("/notas", notasRoutes);
 app.use("/cajas", cajaRoutes);
+app.use("/cheques", chequesRoutes);
 
 app.use(function (req, res, next) {
   setTimeout(next, 1000);
@@ -411,4 +414,9 @@ cron.schedule("* * * * *", async function () {
   //Ejecutar a cada minuto
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
+});
+cron.schedule("0 7 * * *", async function () {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  cronCheques.cronCheques();
 });

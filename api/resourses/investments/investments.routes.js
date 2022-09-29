@@ -149,11 +149,13 @@ investmentsRouter.post(
     }
     let investment = req.body;
     let account_id = req.body.account_id;
+    let caja_id = req.body.caja_id;
     try {
       const newInvestment = await investmentsController.createInvestment(
         investment,
         USER_ID,
-        account_id
+        account_id,
+        caja_id
       );
       res.json(newInvestment);
     } catch (e) {
@@ -183,12 +185,14 @@ investmentsRouter.post(
       });
     }
     let investment = req.body;
-    let account_id = req.body.account_id
+    let account_id = req.body.account_id;
+    let caja_id = req.body.caja_id;
     try {
       const newInvestment = await investmentsController.payInvestment(
         investment,
         USER_ID,
         account_id,
+        caja_id
       );
       res.json(newInvestment);
     } catch (e) {

@@ -31,7 +31,8 @@ paymentsRouter.post(
     const payment_date = req.body.formData.payment_date;
     const credit_id = req.body.formData.credit_id;
     const client_id = req.body.formData.client_id;
-    const account_id = req.body.formData.account_id
+    const account_id = req.body.formData.account_id;
+    const caja_id = req.body.formData.caja_id;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res
@@ -52,7 +53,8 @@ paymentsRouter.post(
         cash_flow_list,
         gran_total,
         USER_ID,
-        account_id
+        account_id,
+        caja_id
       )
 
       .then((data) => {
