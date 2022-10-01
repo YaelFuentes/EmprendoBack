@@ -44,7 +44,7 @@ async function getResumeCaja() {
 async function getEfectivoDiario() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = "select sum(amount) efectivoDiarioQuery from cayetano.cash_flow where caja_id = '2' and operation_type not in ('pago_cuota_total') and account_id = '1'; ";
+  const dataQuery = "SELECT CASE WHEN SUM(amount) IS NULL THEN 0 ELSE SUM(amount) END efectivoDiarioQuery from cayetano.cash_flow where caja_id = '2' and operation_type not in ('pago_cuota_total') and account_id = '1';";
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].efectivoDiarioQuery
@@ -55,7 +55,7 @@ async function getEfectivoDiario() {
 async function getBrubankDiario() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = "select sum(amount) brubankDiarioQuery from cayetano.cash_flow where caja_id = '2' and operation_type not in ('pago_cuota_total') and account_id = '5';";
+  const dataQuery = "select CASE WHEN SUM(amount) IS NULL THEN 0 ELSE SUM(amount) END brubankDiarioQuery from cayetano.cash_flow where caja_id = '2' and operation_type not in ('pago_cuota_total') and account_id = '5';";
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].brubankDiarioQuery
@@ -66,7 +66,7 @@ async function getBrubankDiario() {
 async function getSantanderDiario() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = "select sum(amount) santanderDiarioQuery from cayetano.cash_flow where caja_id = '2' and operation_type not in ('pago_cuota_total') and account_id = '8';";
+  const dataQuery = "select CASE WHEN SUM(amount) IS NULL THEN 0 ELSE SUM(amount) END santanderDiarioQuery from cayetano.cash_flow where caja_id = '2' and operation_type not in ('pago_cuota_total') and account_id = '8';";
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].santanderDiarioQuery
