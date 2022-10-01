@@ -241,11 +241,11 @@ ORDER BY
     </body>`
   mailOptions.html = html
   sendMail(mailOptions)
-  if (getSql.length > 0) {
+  if (resultGetSql.length > 0) {
     var sql = `UPDATE cash_flow SET caja_id = ? WHERE caja_id = 2;`;
   }
   let result = await query(sql, [caja_id]);
-  let deleted_at = `UPDATE cash_flow SET deleted_at = now() WHERE operation_type = 'renovacion_caja_diaria' AND caja_id = '2';`;
+  let deleted_at = `UPDATE cash_flow SET deleted_at = now() WHERE operation_type = 'renovacion_caja_diaria' AND caja_id = '1';`;
   const resultDeleted_at = await query(deleted_at, []);
   console.log(mailOptions.html)
   return {
