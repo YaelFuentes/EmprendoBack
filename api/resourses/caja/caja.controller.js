@@ -209,6 +209,7 @@ ORDER BY
           <th>${resultGetSqlTotalSantanderTotal.map((item) => {return item.amount ? item.amount : 0})}</th>
           <th>brubank</th>
           <th>${resultGetSqlTotalBrubank.map((item) => {return item.amount ? item.amount : 0})}</th>
+          <th></th>
         </tr>
         <br/>
         <br/>
