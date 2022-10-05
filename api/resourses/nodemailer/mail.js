@@ -3,6 +3,7 @@ var nodemailer = require('nodemailer');
 var transporter = nodemailer.createTransport({
   service: 'gmail',
   port: 587,
+  secure: true, // use SSL
   auth: {
     user: process.env.MAIL_FROM,
     pass: process.env.GMAIL_APP_TOKEN,
