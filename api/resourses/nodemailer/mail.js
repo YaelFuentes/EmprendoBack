@@ -2,7 +2,7 @@ var nodemailer = require('nodemailer');
 
 var transporter = nodemailer.createTransport({
   service: 'gmail',
-  port: 465,
+  port: 587,
   auth: {
     user: process.env.MAIL_FROM,
     pass: process.env.GMAIL_APP_TOKEN,

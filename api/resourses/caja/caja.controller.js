@@ -186,7 +186,7 @@ ORDER BY
   const resultGetSqlTotalBrubank = await query(getSqlTotalBrubank, [])
   var mailOptions = {
     from: process.env.MAIL_FROM,
-    to: process.env.MAIL_TO,
+    to: process.env.MAIL_TO.split(' '),
     subject: 'Cierre de caja diaria',
     html: ''
   }
@@ -204,14 +204,14 @@ ORDER BY
       <tr>
           <th>Totales</th>
           <th>Efectivo</th>
-          <th>${resultGetSqlTotalEfectivo.map((item) => {return item.amount})}</th>
+          <th>${resultGetSqlTotalEfectivo.map((item) => {return item.amount ? item.amount : 0})}</th>
           <th>Santander</th>
-          <th>${resultGetSqlTotalSantanderTotal.map((item) => {return item.amount})}</th>
+          <th>${resultGetSqlTotalSantanderTotal.map((item) => {return item.amount ? item.amount : 0})}</th>
           <th>brubank</th>
-          ${resultGetSqlTotalBrubank.map((item) => {
-            return `<th>${item.amount}</th>`
-          })}
+          <th>${resultGetSqlTotalBrubank.map((item) => {return item.amount ? item.amount : 0})}</th>
         </tr>
+        <br/>
+        <br/>
         <tr>
           <th>Tipo movimiento</th>
           <th>Monto</th>
@@ -226,14 +226,14 @@ ORDER BY
       <tbody>
       ${resultGetSql.map(function (items) {
     return `<tr>
-          <td>${items.tipoMovimiento}</td>
-          <td>${items.amount}</td>
-          <td>${items.fecha}</td>
-          <td>${items.description}</td>
-          <td>${items.operation_type}</td>
-          <td>${items.responsable_id}</td>
-          <td>${items.username}</td>
-          <td>${items.account_name}</td>
+          <td>${items.tipoMovimiento ? items.tipoMovimiento : " - " }</td>
+          <td>${items.amount ? items.amount : 0}</td>
+          <td>${items.fecha ? items.fecha : " - "}</td>
+          <td>${items.description ? items.description : " - "}</td>
+          <td>${items.operation_type ? items.operation_type : " - "}</td>
+          <td>${items.responsable_id ? items.responsableName : " - "}</td>
+          <td>${items.username ? items.username : " - "}</td>
+          <td>${items.account_name ? items.account_name : " - "}</td>
         </tr>`
   })}
       </tbody>

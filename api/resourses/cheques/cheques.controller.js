@@ -12,7 +12,7 @@ async function createCheques(
 ) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  if (type === 1) {
+  if (type === '1') {
     let sql = `INSERT INTO cheques 
       (emision, vencimiento, monto, numeroCheque, descripcion,formaCobro,created_at,user,tipo, typeMovement) 
       VALUES 
@@ -88,7 +88,7 @@ async function cronCheques() {
   const result = await query(sql, []);
   var mailOptions = {
     from: process.env.MAIL_FROM,
-    to: process.env.MAIL_TO,
+    to: process.env.MAIL_TO.split(' '),
     subject: 'Vencimientos Cheque',
     html: ''
   }
