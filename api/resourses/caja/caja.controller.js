@@ -79,7 +79,7 @@ async function getEfectivoMayor() {
   const query = util.promisify(mysqli.query).bind(mysqli);
   const dataQuery = `SELECT SUM(amount) efectivoMayorQuery FROM cash_flow WHERE caja_id = '1' 
   AND account_id = '1' and operation_type not in ('pago_cuota_total','ingreso_renovacion_diaria') 
-  AND deleted_at IS NULL AND created_at BETWEEN '2022-09-29' AND NOW();`;
+  AND deleted_at IS NULL AND created_at BETWEEN '2022-10-06' AND NOW();`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].efectivoMayorQuery
@@ -92,7 +92,7 @@ async function getSantanderMayor() {
   const query = util.promisify(mysqli.query).bind(mysqli);
   const dataQuery = `SELECT SUM(amount) santanderMayorQuery FROM cash_flow WHERE caja_id = '1' 
   AND account_id = '8' and operation_type not in ('pago_cuota_total') AND deleted_at IS NULL
-  AND created_at BETWEEN '2022-09-29' AND NOW();`;
+  AND created_at BETWEEN '2022-10-06' AND NOW();`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].santanderMayorQuery
@@ -105,7 +105,7 @@ async function getBrubankMayor() {
   const query = util.promisify(mysqli.query).bind(mysqli);
   const dataQuery = `SELECT SUM(amount) brubankMayorQuery FROM cash_flow WHERE caja_id = '1' 
   AND account_id = '5' and operation_type not in ('pago_cuota_total') AND deleted_at IS NULL
-  AND created_at BETWEEN '2022-09-29' AND NOW();`;
+  AND created_at BETWEEN '2022-10-06' AND NOW();`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].brubankMayorQuery
