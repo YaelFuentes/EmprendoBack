@@ -58,6 +58,43 @@ function create(
   );
 }
 
+function getCsv(callback) {
+  let sql = `SELECT 
+  C.lastname,
+  C.name,
+  C.phone,
+  D.brand,
+  D.model,
+  A.period,
+  A.amount,
+  A.safe,
+  A.punitorios,
+  (A.amount + A.safe + A.punitorios) AS total,
+  A.payed,
+  B.additionalInfo,
+  E.notas
+FROM
+  cayetano.credits_items A
+      INNER JOIN
+  cayetano.credits B ON A.credit_id = B.id
+      INNER JOIN
+  cayetano.users C ON B.clientID = C.id
+      INNER JOIN
+  cayetano.cars D ON B.carID = D.id
+      INNER JOIN
+  cayetano.notas E ON A.credit_id = E.creditID
+WHERE
+  B.status = 1
+      AND B.state IN ('4') IS NOT TRUE;`;
+  mysqli.query(sql, [], (err, rows) => {
+    var response = []
+    if(rows) {
+      response = rows
+    }
+    return callback(err, response)
+  })
+}
+
 function setAsFinished(creditid, userid, reason, callback) {
   let sql = `UPDATE credits SET status = 2 WHERE id = ?`;
   mysqli.query(sql, [creditid], (err, rows) => {
@@ -970,6 +1007,7 @@ function formatNumber(num) {
 
 module.exports = {
   create,
+  getCsv,
   getInfo,
   getList,
   getClientList,
