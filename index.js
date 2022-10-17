@@ -162,7 +162,15 @@ var storage = multer.diskStorage({
 var upload = multer({
   storage: storage,
 }).array("file");
+app.get("/prueba",async function(req,res) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  sql =     "SELECT * FROM cayetano.credits_items WHERE credit_id = ? AND (amount+safe) > payed AND  DATE_ADD(DATE(period),INTERVAL 4 DAY) < NOW()";
+  const creditFile = await query(sql, [6]);
+  res.send({response:creditFile})
 
+
+})
 app.post("/upload", function (req, res) {
   upload(req, res, function (err) {
     if (err instanceof multer.MulterError) {
