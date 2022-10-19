@@ -22,6 +22,7 @@
     "@formulajs/formulajs": "^3.1.7",
     "@sendgrid/mail": "^6.5.0",
     "adm-zip": "^0.5.4",
+    "aws": "^0.0.3-2",
     "aws-sdk": "^2.1186.0",
     "cors": "^2.8.5",
     "cors-anywhere": "^0.4.4",

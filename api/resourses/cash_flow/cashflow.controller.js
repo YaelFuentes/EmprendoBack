@@ -15,7 +15,7 @@ async function getMovements(start = "", end = "") {
     const sql = `SELECT
     cash_flow.*,
     CONCAT(users.lastname," ",users.name) username,
-      creditUsers.name credit_responsable,
+    CONCAT(creditUsers.lastname," ",creditUsers.name) credit_responsable,
       cash_flow_accounts.name account_name,
       investments.investorID
   FROM
@@ -34,7 +34,7 @@ async function getMovements(start = "", end = "") {
     const sql = `SELECT
     cash_flow.*,
     CONCAT(users.lastname," ",users.name) username,
-      creditUsers.name credit_responsable,
+      creditUsers.lastname credit_responsable,
       cash_flow_accounts.name account_name
   FROM
     cash_flow 
