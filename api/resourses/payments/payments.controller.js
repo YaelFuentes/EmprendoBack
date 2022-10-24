@@ -2,7 +2,7 @@ const { query } = require("express-validator");
 
 async function insertPayment(
   payment_amount,
-  payment_date,
+  /* payment_date, */
   credit_id,
   client_id,
   cash_flow_list,
@@ -25,11 +25,11 @@ async function insertPayment(
     payment_amount = gran_total;
   }
 
-  const sql = `INSERT INTO payments ( clientID,paymentDate,amount,credit_id,account_id) VALUES (?,?,?,?,?)`;
+  const sql = `INSERT INTO payments ( clientID,paymentDate,amount,credit_id,account_id) VALUES (?,now(),?,?,?)`;
   try {
     const insertedPayment = await query(sql, [
       client_id,
-      payment_date,
+      /* payment_date, */
       payment_amount,
       credit_id,
       account_id
