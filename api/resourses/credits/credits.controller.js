@@ -58,6 +58,45 @@ function create(
   );
 }
 
+function getCsv(callback) {
+  let sql = `SELECT 
+  B.id,
+      C.lastname,
+      C.name,
+      C.phone,
+      D.brand,
+      D.model,
+      A.period,
+      A.amount,
+      A.safe,
+      A.punitorios,
+      (A.amount + A.safe + A.punitorios) AS total,
+      A.payed,
+      B.additionalInfo,
+      GROUP_CONCAT(concat_ws(' ', E.fecha, E.notas) SEPARATOR ' , ')
+      
+  FROM
+      cayetano.credits_items A
+          INNER JOIN
+      cayetano.credits B ON A.credit_id = B.id
+          INNER JOIN
+      cayetano.users C ON B.clientID = C.id
+          INNER JOIN
+      cayetano.cars D ON B.carID = D.id
+          INNER JOIN
+      cayetano.notas E ON A.credit_id = E.creditID
+  WHERE
+      B.status = 1
+          AND B.state IN ('4') IS NOT TRUE group by A.id;`;
+  mysqli.query(sql, [], (err, rows) => {
+    var response = []
+    if(rows) {
+      response = rows
+    }
+    return callback(err, response)
+  })
+}
+
 function setAsFinished(creditid, userid, reason, callback) {
   let sql = `UPDATE credits SET status = 2 WHERE id = ?`;
   mysqli.query(sql, [creditid], (err, rows) => {
@@ -368,42 +407,98 @@ function getClientList(clientid, callback) {
 }
 
 function getList(callback) {
-  let sql = `SELECT  id,
-          		clientID,
-          		amount,
-          		cuotas,
-          		brand,
-          		model,
-          		year,
-          		name,
-              lastname,
-              status,
-          		(SUM(seguro) + (CASE WHEN SUM(punitorios) IS NULL THEN 0 ELSE SUM(punitorios) END) + SUM(cuota)) - SUM(pagado) deuda
-          		FROM (
-                SELECT
-                      T1.status,
-          			      T1.id,
-          			      T1.clientID,
-          			      T2.amount,
-          			      T2.cuotas,
-          			      T3.brand,
-          			      T3.model,
-          			      T3.year,
-          			      T5.name,
-          			      T5.lastname,
-          			      T4.period,
-          			      CASE WHEN T4.period <= DATE(NOW()) THEN T4.amount ELSE 0 END cuota,
-          			      CASE WHEN T4.period <= DATE(NOW()) THEN T4.payed ELSE 0 END pagado,
-          			      CASE WHEN T4.period <= DATE(NOW()) THEN T4.safe ELSE 0 END seguro,
-          			      CASE WHEN T4.period <= DATE(NOW()) THEN T8.amount ELSE 0 END punitorios
-          			    FROM
-          			      credits T1
-          			      INNER JOIN budget T2 ON T1.budget = T2.id
-          			      INNER JOIN cars T3 ON T1.carID = T3.id
-          			      INNER JOIN users T5 ON T1.clientID = T5.id
-          			      LEFT JOIN credits_items T4 ON T1.id = T4.credit_id
-          			      LEFT JOIN punitorios T8 ON T1.id = T8.credit_id AND T4.period = T8.period
-          	) A WHERE A.status > 0 GROUP BY id ORDER BY clientID
+  let sql = `SELECT 
+  A.id,
+  A.clientID,
+  A.amount,
+  A.cuotas,
+  A.brand,
+  model,
+  year,
+  name,
+  lastname,
+  phone,
+  status,
+  additionalInfo,
+  state,
+  (SUM(seguro) + (CASE
+      WHEN SUM(punitorios) IS NULL THEN 0
+      ELSE SUM(punitorios)
+  END) + SUM(cuota)) - SUM(pagado) deuda,
+  case when state in('2', '5', '6') then NULL
+  else B.dias end as dias
+FROM
+  (SELECT 
+      T1.status,
+          T1.id,
+          T1.clientID,
+          T1.additionalInfo,
+          T2.amount,
+          T2.cuotas,
+          T3.brand,
+          T3.model,
+          T3.year,
+          T5.name,
+          T5.lastname,
+          T4.period,
+          T5.phone,
+          T1.state,
+          CASE
+              WHEN T4.period <= DATE(NOW()) THEN T4.amount
+              ELSE 0
+          END cuota,
+          CASE
+              WHEN T4.period <= DATE(NOW()) THEN T4.payed
+              ELSE 0
+          END pagado,
+          CASE
+              WHEN T4.period <= DATE(NOW()) THEN T4.safe
+              ELSE 0
+          END seguro,
+          CASE
+              WHEN T4.period <= DATE(NOW()) THEN T8.amount
+              ELSE 0
+          END punitorios
+  FROM
+      cayetano.credits T1
+  INNER JOIN cayetano.budget T2 ON T1.budget = T2.id
+  INNER JOIN cayetano.cars T3 ON T1.carID = T3.id
+  INNER JOIN cayetano.users T5 ON T1.clientID = T5.id
+  LEFT JOIN cayetano.credits_items T4 ON T1.id = T4.credit_id
+  LEFT JOIN cayetano.punitorios T8 ON T1.id = T8.credit_id
+      AND T4.period = T8.period) A
+      LEFT JOIN
+  (SELECT 
+      SUM(A.deudas) AS deudas, A.dias, A.id
+  FROM
+      (SELECT 
+      c.id,
+          c.clientID,
+          ci.period,
+          (ci.amount + safe + (CASE
+              WHEN SUM(p.amount) THEN SUM(p.amount)
+              ELSE 0
+          END)) - (CASE
+              WHEN ci.payed THEN ci.payed
+              ELSE 0
+          END) AS deudas,
+          DATEDIFF(NOW(), ci.period) AS dias
+  FROM
+      cayetano.punitorios p
+  RIGHT JOIN cayetano.credits_items ci ON ci.credit_id = p.credit_id
+      AND MONTH(p.period) = MONTH(ci.period)
+      AND YEAR(p.period) = YEAR(ci.period)
+  INNER JOIN cayetano.credits c ON c.id = ci.credit_id
+  WHERE
+      1 AND ci.period < NOW()
+  GROUP BY ci.credit_id , ci.period , c.id
+  HAVING deudas > 0
+  ORDER BY c.clientID , ci.period) A
+  GROUP BY A.id) AS B ON A.id = B.id
+WHERE
+  A.status > 0
+GROUP BY A.id
+ORDER BY status ASC, state,dias DESC;
   `;
   mysqli.query(sql, (err, rows) => {
     //si queremos imprimir el mensaje ponemos err.sqlMessage
@@ -914,6 +1009,7 @@ function formatNumber(num) {
 
 module.exports = {
   create,
+  getCsv,
   getInfo,
   getList,
   getClientList,
