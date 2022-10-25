@@ -16,6 +16,12 @@ creditsRouter.get("/list/:clientid", auth.required, function (req, res, next) {
   });
 });
 
+creditsRouter.get("/getcsv", auth.required, function(req,res,next){
+  creditsController.getCsv(function(err, result){
+    res.json(result)
+  });
+});
+
 creditsRouter.post("/create_state", auth.required, function (req, res, next) {
   const state = req.body.state;
   creditsController.createState(state, function (err, result) {
