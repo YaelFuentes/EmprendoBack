@@ -17,18 +17,22 @@ async function getFuturos(start, end) {
     end
   );
   const totalCreditosOtorgadosCapitalIntereses =
-    await getTotalCreditosOtorgadosCapitalIntereses(start, end);
+  await getTotalCreditosOtorgadosCapitalIntereses(start, end);
   const totalCreditosOtorgadosCapitalInteresesGO =
-    await getTotalCreditosOtorgadosCapitalInteresesGO(start, end);
+  await getTotalCreditosOtorgadosCapitalInteresesGO(start, end);
   const totalGastosOtorgamiento = await getTotalGastosOtorgamiento(start, end);
-    await getTotalCreditosOtorgadosCapitalInteresesGO(start, end);
+  await getTotalCreditosOtorgadosCapitalInteresesGO(start, end);
   const totalDeudaCreditosMora = await getTotalDeudaCreditosMora();
   const totalDeudaCreditosJuicio = await getTotalDeudaCreditosJuicio();
   const totalACobrar = await getTotalACobrar(start, end);
   const totalCobrado = await getTotalCobrado(start, end);
+  const totalCreditosCapitalGO = totalGastosOtorgamiento + totalCreditosOtorgadosCapital
+  const totalHistoricoCapitalGO = await getTotalHistoricoCapitalGO()
+  const saldoRestanteCapitalHistorico = await getSaldoRestanteCapitalHistorico()
   //Caja
   const totalEgresoSinInversiones = await getTotalEgresoSinInversiones(start, end);
   const totalEgresoConInversiones = await getTotalEgresoConInversiones(start, end);
+  const totalEgresosFijos = await getEgresosFijos(start, end);
 
   return {
     totalCapitalInversiones,
@@ -38,13 +42,17 @@ async function getFuturos(start, end) {
     totalCreditosOtorgadosCapital,
     totalCreditosOtorgadosCapitalIntereses,
     totalCreditosOtorgadosCapitalInteresesGO,
+    saldoRestanteCapitalHistorico,
     totalGastosOtorgamiento,
     totalDeudaCreditosMora,
     totalDeudaCreditosJuicio,
     totalACobrar,
     totalCobrado,
+    totalCreditosCapitalGO,
+    totalHistoricoCapitalGO,
     totalEgresoSinInversiones,
     totalEgresoConInversiones,
+    totalEgresosFijos
   };
 }
 /* -------------------------------------------------------------------------- */
@@ -229,6 +237,33 @@ async function getTotalCobrado(start, end) {
   }
 }
 
+// total historico capital + G.Otorgamiento
+async function getTotalHistoricoCapitalGO() {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT SUM(A.capital) amount FROM cayetano.credits A WHERE status = 1;`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].amount;
+  } else {
+    return 0;
+  }
+}
+// total historico capital + G.Otorgamiento - pagado
+async function getSaldoRestanteCapitalHistorico() {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT COALESCE(sum(B.capital),0) as amount  FROM cayetano.credits A inner join cayetano.credits_items B on B.credit_id = A.id  WHERE status = 1;`;
+  const result = await query(dataQuery, []);
+  const dataQuery2 = `SELECT COALESCE(sum(B.amount),0) as amount  FROM cayetano.credits A inner join cayetano.cash_flow B on A.id = B.credit_id WHERE operation_type="ingreso_capital_cuotas" and status = 1;`;
+  const result2 = await query(dataQuery2, []);
+  if (result) {
+    return result[0].amount - result2[0].amount;
+  } else {
+    return 0;
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                    Caja                                    */
 /* -------------------------------------------------------------------------- */
@@ -252,6 +287,21 @@ async function getTotalEgresoConInversiones(start, end) {
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].egreso;
+  } else {
+    return 0;
+  }
+}
+// Egreso fijos
+async function getEgresosFijos(start, end) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT COALESCE(abs(sum(amount)),0) as amount FROM cayetano.cash_flow where type = 2 and created_at between ? and ? and deleted_at is null 
+  and operation_type in ("Comision_mantenimiento","IIBB_creditos","imp_creditos_debitos","IVA","gastos_impuestos","impuesto_luz","impuesto_agua","impuesto_gas","alquiler_oficina","amortizacion_capital",
+  "gastos_cochera","gastos_cafeteria","gastos_agua","gastos_limpieza","gastos_monitoreo_alarma","gasto_telefonia","gastos_celular","gastos_generales","impuesto_inmobiliario",
+  "insumos_libreria","insumos_oficina","publicidad_propaganda","sueldo_aguinaldo", "sueldos","egreso_servers","egreso_web","gastos_tasa_impuestos");`;
+  const result = await query(dataQuery, [start, end]);
+  if (result) {
+    return result[0].amount;
   } else {
     return 0;
   }
