@@ -450,6 +450,73 @@ creditsRouter.get(
 );
 
 creditsRouter.get(
+  "/downloadPagos/:creditid", auth.required,
+  async function(req, res){
+    const fs = require("fs");
+    const creditid = req.params.creditid;
+    let tmpl = fs.readFileSync("./templates/pagos.html", "utf8");
+    let options = {
+      format: 'A4',
+      phantomPath: './node_modules/phantom.js-prebuilt/bin/phantomjs'
+    };
+    const moment = require('moment');
+    const pagoCuotas = await creditsController.getPrintInfoPagos(creditid);
+    let html = tmpl.replace(
+      "{{logo}}",
+      `https://emprendo-public-assets.s3.us-east-2.amazonaws.com/logo.png`);
+      html = html.replace("{{fecha}}", moment().format("DD/MM/YYYY"))
+      html = html.replace("{{apellido_nombre}}" pagoCuotas.pagos.);
+    
+  }
+)
+
+creditsRouter.get(
+  "/downloadSeguros/:creditid"
+  ,auth.required,
+  async function (req, res, next) {
+    const fs = require("fs");
+    const creditid = req.params.creditid;
+    let tmpl = fs.readFileSync("./templates/pagos.html", "utf8");
+    let options = {
+      format: 'A4',
+      phantomPath:'./node_modules/phantomjs-prebuilt/bin/phantomjs'
+    };
+    const moment = require("moment");
+     const seguro = await creditsController.getPrintInfoSeguros(creditid);
+    let html = tmpl.replace(
+      "{{logo}}",
+      `https://emprendo-public-assets.s3.us-east-2.amazonaws.com/logo.png`
+    );
+    html = html.replace("{{fecha}}", moment().format("DD/MM/YYYY"));
+    html = html.replace("{{apellido_nombre}}", seguro.printSeguros.apellido_nombre);
+    html = html.replace(
+      "{{apellido_nombre}}",
+      seguro.printSeguros.apellido_nombre
+    );
+    html = html.replace("{{dni}}", seguro.printSeguros.dni);
+    html = html.replace("{{telefono}}", seguro.printSeguros.telefono);
+    html = html.replace("{{email}}", seguro.printSeguros.email);
+
+     html = html.replace("{{car_brand}}", seguro.seguroDataCar.car_brand);
+     html = html.replace("{{car_model}}", seguro.seguroDataCar.car_model);
+     html = html.replace("{{car_year}}", seguro.seguroDataCar.car_year);
+     html = html.replace("{{car_domain}}", seguro.seguroDataCar.car_domain);
+     html = html.replace("{{car_details}}", seguro.seguroDataCar.car_details);
+    let block_seguros = "";
+    var index = 1;
+    seguro.seguroData.forEach(function (item){
+      block_seguros += "<tr>";
+      block_seguros += "<td>" + index++ , "</td>";
+      block_seguros += "<td>" + moment(item.imputationDate).format("DD/MM/YYYY") + "</td>";
+      block_seguros += "<td>$" + item.amount + "</td>";
+      block_seguros += "</tr>"
+    });
+    html = html.replace("{{block_seguros}}", block_seguros);
+    res.json({ html: html });
+  }, 
+)
+
+creditsRouter.get(
   "/download/:creditid",
   auth.required,
   async function (req, res, next) {
@@ -523,7 +590,7 @@ creditsRouter.get(
 
     creditInfo.status.forEach(function (item) {
       block_deuda += Number(item.deuda);
-      // console.log(item);
+      console.log(creditInfo.status);
       block_credit_status += "<tr>";
       block_credit_status +=
         "<td>" + moment(item.period).format("DD/MM/YYYY") + "</td>";
@@ -566,6 +633,8 @@ creditsRouter.get(
     res.json({ html: html });
   }
 );
+
+
 function executeAllPromises(promises) {
   // Wrap all Promises in a Promise that will always "resolve"
   const resolvingPromises = promises.map(function (promise) {
