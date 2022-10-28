@@ -10,11 +10,11 @@ futurosRouter.post("/futuros", auth.required, function (req, res, next) {
     futurosController
         .getFuturos(start, end)
         .then((data) => {
-            res.json(data)
+           return res.json(data)
         })
         .catch((error) => {
             console.log(error)
-            res.send(500).json({ response: "Error al obtener los datos" })
+           return res.send(500).json({ response: "Error al obtener los datos" })
         })
 });
 

@@ -80,8 +80,9 @@ paymentsRouter.post(
         cash_flow_list,
         gran_total,
         USER_ID,
-        account_id
-        )
+        account_id,
+        caja_id
+      )
 
       .then((data) => {
         console.log(data, "Data");

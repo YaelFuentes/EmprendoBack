@@ -15,7 +15,7 @@ async function getMovements(start = "", end = "") {
     const sql = `SELECT
     cash_flow.*,
     CONCAT(users.lastname," ",users.name) username,
-      creditUsers.name credit_responsable,
+    CONCAT(creditUsers.lastname," ",creditUsers.name) credit_responsable,
       cash_flow_accounts.name account_name,
       investments.investorID
   FROM
@@ -34,7 +34,7 @@ async function getMovements(start = "", end = "") {
     const sql = `SELECT
     cash_flow.*,
     CONCAT(users.lastname," ",users.name) username,
-      creditUsers.name credit_responsable,
+      creditUsers.lastname credit_responsable,
       cash_flow_accounts.name account_name
   FROM
     cash_flow 
@@ -130,8 +130,8 @@ async function add(
   operation_type,
   investment_id,
   account_id,
-  // responsable_id,
-  // caja_id
+  responsable_id,
+  caja_id
 ) {
   return new Promise((resolve, reject) => {
     if (type == 2 || type == 5) {
@@ -147,12 +147,12 @@ async function add(
     if (account_id == "") {
       account_id = null;
     }
-    // if (responsable_id == "") {
-    //   responsable_id = null;
-    // }
+   if (responsable_id == "") {
+     responsable_id = null;
+   }
 
     mysqli.query(
-      "INSERT INTO cash_flow (type, amount, created_at,description, user, credit_id, operation_type, investment_id,account_id) VALUES(?, ?, now(),?,?,?,?,?,?)",
+      "INSERT INTO cash_flow (type, amount, created_at,description, user, credit_id, operation_type, investment_id,account_id,responsable_id,caja_id) VALUES(?, ?, now(),?,?,?,?,?,?,?,?)",
       [
         type,
         amount,
@@ -163,6 +163,8 @@ async function add(
         operation_type,
         investment_id,
         account_id,
+        responsable_id,
+        caja_id
       ],
       
       (err, results, rows) => {

@@ -106,3 +106,6 @@ dist
 #custom
 
 files/*
+
+# json
+package-lock.json

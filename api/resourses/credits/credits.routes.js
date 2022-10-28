@@ -16,6 +16,12 @@ creditsRouter.get("/list/:clientid", auth.required, function (req, res, next) {
   });
 });
 
+creditsRouter.get("/getcsv", auth.required, function(req,res,next){
+  creditsController.getCsv(function(err, result){
+    res.json(result)
+  });
+});
+
 creditsRouter.post("/create_state", auth.required, function (req, res, next) {
   const state = req.body.state;
   creditsController.createState(state, function (err, result) {
@@ -229,6 +235,8 @@ creditsRouter.post("/create", auth.required, async function (req, res, next) {
   const primera_cuota = req.body.primera_cuota;
   const otorgamiento = req.body.otorgamiento;
   const file_id = req.body.file_id;
+  const caja_id = req.body.caja_id;
+  const account_id = req.body.account_id;
 
   if (domain) {
     let carID = 0;
@@ -279,9 +287,10 @@ creditsRouter.post("/create", auth.required, async function (req, res, next) {
                         otorgamiento,
                         file_id,
                         USER_ID,
+                        account_id,
+                        caja_id,
                         function (err, result) {
                           let creditID = result.id;
-
                           creditsController.createItems(
                             totalamount,
                             cuotas,

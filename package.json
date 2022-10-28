@@ -19,13 +19,16 @@
   },
   "homepage": "https://github.com/andresezequielmanzanares/cayetanofinanciera-backend#readme",
   "dependencies": {
+    "@formulajs/formulajs": "^3.1.7",
     "@sendgrid/mail": "^6.5.0",
     "adm-zip": "^0.5.4",
+    "aws": "^0.0.3-2",
     "aws-sdk": "^2.1186.0",
     "cors": "^2.8.5",
     "cors-anywhere": "^0.4.4",
     "csv-parser": "^2.3.2",
     "dotenv": "^16.0.1",
+    "excel-formula": "^1.5.0",
     "express": "^4.17.1",
     "express-fileupload": "^1.1.6",
     "express-jwt": "^5.3.3",
@@ -41,6 +44,7 @@
     "mysql": "^2.17.1",
     "mysql2": "^2.1.0",
     "node-cron": "^2.0.3",
+    "nodemailer": "^6.7.8",
     "puppeteer": "^13.4.0"
   },
   "devDependencies": {
