@@ -9,6 +9,13 @@ const jwt_decode = require("jwt-decode");
 
 const creditsRouter = express.Router();
 
+creditsRouter.get("/infoEstado/:creditid", function (req, res) {
+  const creditid = req.params.creditid;
+  creditsController.getCreditoInfo(creditid, function(err, result){
+    res.json(result);
+  });
+});
+
 creditsRouter.get("/list/:clientid", auth.required, function (req, res, next) {
   const clientid = req.params.clientid;
   creditsController.getClientList(clientid, function (err, result) {
@@ -464,8 +471,7 @@ creditsRouter.get(
     let html = tmpl.replace(
       "{{logo}}",
       `https://emprendo-public-assets.s3.us-east-2.amazonaws.com/logo.png`);
-      html = html.replace("{{fecha}}", moment().format("DD/MM/YYYY"))
-      html = html.replace("{{apellido_nombre}}" pagoCuotas.pagos.);
+      html = html.replace("{{fecha}}", moment().format("DD/MM/YYYY"));
     
   }
 )

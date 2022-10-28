@@ -431,16 +431,23 @@ async function insertPayment(
 
 function getList(credit_id, callback) {
   let sql =
-    /* "SELECT * FROM payments WHERE credit_id = ? AND status = 1 ORDER BY paymentDate ASC"; */
-    'select A.clientID, A.paymentDate, A.id, A.amount,A.credit_id, B.user, B.payment_id , C.id as idUser, C.name, C.lastname from cayetano.payments A join cayetano.cash_flow B on A.id = B.payment_id left join cayetano.users C  on B.user = C.id where A.credit_id = ? AND A.status = 1 group by A.id  ORDER BY paymentDate ASC;'
-  console.log(sql);
-
+   `SELECT A.clientID, A.paymentDate, A.id, A.amount,A.credit_id, B.user, B.payment_id , C.id AS idUser, C.name, C.lastname , A.payed_ci AS pagos
+    FROM cayetano.payments A JOIN cayetano.cash_flow B ON A.id = B.payment_id LEFT JOIN cayetano.users C  ON B.user = C.id 
+    WHERE A.credit_id = 89 AND A.status = 1 GROUP BY A.id ORDER BY paymentDate ASC;`
   mysqli.query(sql, [credit_id], (err, rows) => {
     //si queremos imprimir el mensaje ponemos err.sqlMessage
     var response = [];
     if (rows) {
       response = rows;
     }
+    let contador = 0;
+    rows.map((item) => {
+      if(item.pagos[0] >= 1){
+        contador += 1;
+        return item.pagos.replace(item.pagos ,contador)
+      };
+    })
+    rows[0].NroCuotasPagas = contador;
     return callback(err, response);
   });
 }
