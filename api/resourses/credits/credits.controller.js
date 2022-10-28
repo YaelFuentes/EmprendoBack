@@ -205,7 +205,7 @@ function getInfo(creditid, callback) {
               T8.days_past,
               CASE WHEN T4.period <= DATE(NOW())
               	THEN
-              		((T4.safe + COALESCE(SUM(T8.amount),0) + T4.amount) - T4.payed)
+              		((T4.safe + COALESCE(SUM(T8.amount),0) + T4.capital+T4.intereses) - T4.payed)
               	ELSE 0
               	END deuda,
                 T4.intereses,
