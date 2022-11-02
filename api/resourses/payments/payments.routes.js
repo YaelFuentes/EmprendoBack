@@ -67,12 +67,11 @@ paymentsRouter.post(
   }
 );
 
-paymentsRouter.get("/list/:creditid", auth.required, function (req, res, next) {
+paymentsRouter.get("/list/:creditid", auth.required,async function (req, res, next) {
   let credit_id = req.params.creditid;
+  const result = await paymentsController.getList(credit_id)
+  res.status(200).send(result)
 
-  paymentsController.getList(credit_id, function (err, result) {
-    res.json(result);
-  });
 });
 
 paymentsRouter.get(

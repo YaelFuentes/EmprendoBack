@@ -4,13 +4,7 @@ const paymentsController = require("../payments/payments.controller");
 var commonFormulas = require("../common/formulas");
 
 
-async function getCreditoInfo() {
-  const infoCreditos = await getInfoCredit();
 
-  return {
-    infoCreditos
-  }
-}
 
 function create(
   clientid,
@@ -271,15 +265,6 @@ GROUP BY T4.period;`;
   mysqli.query(sql, [creditid], (err, rows) => {
     //si queremos imprimir el mensaje ponemos err.sqlMessage
     var response = [];
-    let contador = 0;
-    if (rows) {
-      rows.map((item) => {
-        if (item.pagado >= item.cuota + item.seguro + item.punitorios) {
-          contador += 1;
-        }
-      })
-    };
-    rows[0].NroCuotasPagas = contador;
     response = rows;
     return callback(err, response);
   });
@@ -287,6 +272,7 @@ GROUP BY T4.period;`;
 
 async function getInfoCredit(creditid, callback) {
   let sql = `SELECT
+  sum(T4.capital+ T4.intereses ) as deudaTotalCredito,
   T1.id creditid,
   T1.status creditStatus,
   T1.carID,
@@ -332,14 +318,14 @@ async function getInfoCredit(creditid, callback) {
     //si queremos imprimir el mensaje ponemos err.sqlMessage
     var response = [];
     let contador = 0;
-    if (rows) {
+    if (Array.isArray(rows) && rows.length>0) {
       rows.map((item) => {
         if (item.pagado >= item.cuota + item.seguro + item.punitorios) {
           contador += 1;
         }
       })
+      Object.assign(rows[0],{NroCuotasPagas : contador})
     };
-    rows[0].NroCuotasPagas = contador;
     response = rows;
     return callback(err, response);
   });
@@ -1161,5 +1147,5 @@ module.exports = {
   getCashFlowPerCreditItem,
   getPrintInfoSeguros,
   getPrintInfoPagos,
-  getCreditoInfo
+  getInfoCredit
 };

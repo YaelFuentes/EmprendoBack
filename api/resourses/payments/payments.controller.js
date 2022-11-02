@@ -429,27 +429,30 @@ async function insertPayment(
   }
 }
 
-function getList(credit_id, callback) {
-  let sql =
-   `SELECT A.clientID, A.paymentDate, A.id, A.amount,A.credit_id, B.user, B.payment_id , C.id AS idUser, C.name, C.lastname , A.payed_ci AS pagos
-    FROM cayetano.payments A JOIN cayetano.cash_flow B ON A.id = B.payment_id LEFT JOIN cayetano.users C  ON B.user = C.id 
-    WHERE A.credit_id = 89 AND A.status = 1 GROUP BY A.id ORDER BY paymentDate ASC;`
-  mysqli.query(sql, [credit_id], (err, rows) => {
-    //si queremos imprimir el mensaje ponemos err.sqlMessage
-    var response = [];
-    if (rows) {
-      response = rows;
+async function getList(credit_id) {
+  try {
+    const util = require("util");
+    const query = util.promisify(mysqli.query).bind(mysqli);
+    let sql =
+     `SELECT A.clientID, A.paymentDate, A.id, A.amount,A.credit_id, B.user, B.payment_id , C.id AS idUser, C.name, C.lastname , A.payed_ci AS pagos
+      FROM cayetano.payments A JOIN cayetano.cash_flow B ON A.id = B.payment_id LEFT JOIN cayetano.users C  ON B.user = C.id 
+      WHERE A.credit_id = ? AND A.status = 1 GROUP BY A.id ORDER BY paymentDate ASC;`
+    const result = await query(sql, [credit_id])
+    if(Array.isArray(result) && result.length > 0) {
+      const arrayPagos = await Promise.all(
+      result.map(async (item) =>{
+        const quotes = await getPayed(item.pagos);
+        if(Array.isArray(quotes) && quotes.length > 0) {
+          console.log("aqui");
+          item.cuotasPagas = quotes
+        }
+        return item
+      }))
+      return arrayPagos
     }
-    let contador = 0;
-    rows.map((item) => {
-      if(item.pagos[0] >= 1){
-        contador += 1;
-        return item.pagos.replace(item.pagos ,contador)
-      };
-    })
-    rows[0].NroCuotasPagas = contador;
-    return callback(err, response);
-  });
+  } catch (error) {
+    return error
+  }
 }
 
 function getListDeleted(credit_id, callback) {
@@ -469,7 +472,6 @@ function getListDeleted(credit_id, callback) {
 
 function getInfo(paymentid, callback) {
   let sql = "SELECT * FROM payments WHERE id = ? LIMIT 1";
-  console.log(sql);
 
   mysqli.query(sql, [paymentid], (err, rows) => {
     //si queremos imprimir el mensaje ponemos err.sqlMessage
@@ -602,7 +604,6 @@ async function getPayed(payed_ci) {
     resultquery1[0].primera_cuota,
     ci,
   ]);
-  console.log(credits_items);
   return credits_items;
 }
 module.exports = {

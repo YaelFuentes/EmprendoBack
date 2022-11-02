@@ -11,7 +11,7 @@ const creditsRouter = express.Router();
 
 creditsRouter.get("/infoEstado/:creditid", function (req, res) {
   const creditid = req.params.creditid;
-  creditsController.getCreditoInfo(creditid, function(err, result){
+  creditsController.getInfoCredit(creditid, function(err, result){
     res.json(result);
   });
 });
