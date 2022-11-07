@@ -70,7 +70,7 @@ function getCsv(callback) {
       A.amount,
       A.safe,
       A.punitorios,
-      (A.amount + A.safe + A.punitorios) AS total,
+      (A.amount + A.safe + A.punitorios + A.nota_debito) AS total,
       A.payed,
       B.additionalInfo,
       GROUP_CONCAT(concat_ws(' ', E.fecha, E.notas) SEPARATOR ' , ')
@@ -242,6 +242,7 @@ function getInfo(creditid, callback) {
               T4.amount cuota,
               T4.payed pagado,
               T4.safe seguro,
+              T4.nota_debito,
               COALESCE(SUM(T8.amount),0) punitorios,
               T8.days_past,
               CASE WHEN T4.period <= DATE(NOW())
@@ -424,7 +425,7 @@ function getList(callback) {
   (SUM(seguro) + (CASE
       WHEN SUM(punitorios) IS NULL THEN 0
       ELSE SUM(punitorios)
-  END) + SUM(cuota)) - SUM(pagado) deuda,
+  END) + SUM(cuota) + SUM(nota_debito) )  - SUM(pagado) deuda,
   case when state in('2', '5', '6') then NULL
   else B.dias end as dias
 FROM
@@ -447,6 +448,10 @@ FROM
               WHEN T4.period <= DATE(NOW()) THEN T4.amount
               ELSE 0
           END cuota,
+            CASE
+              WHEN T4.period <= DATE(NOW()) THEN T4.nota_debito
+              ELSE 0
+          END nota_debito,
           CASE
               WHEN T4.period <= DATE(NOW()) THEN T4.payed
               ELSE 0
@@ -475,7 +480,7 @@ FROM
       c.id,
           c.clientID,
           ci.period,
-          (ci.amount + safe + (CASE
+          (ci.amount + safe + nota_debito + (CASE
               WHEN SUM(p.amount) THEN SUM(p.amount)
               ELSE 0
           END)) - (CASE
@@ -703,10 +708,11 @@ async function getPrintInfo(creditID) {
                           T4.safe,
                           T4.payed pagado,
                           T4.safe seguro,
+                          T4.nota_debito,
                           SUM(T8.amount) punitorios,
                           CASE WHEN T4.period <= DATE(NOW())
                           	THEN
-                          		(T4.safe +
+                          		(T4.safe + T4.nota_debito +
                           		(CASE WHEN SUM(T8.amount) IS NULL THEN 0 ELSE SUM(T8.amount) END) +
                           		T4.amount) - T4.payed
                           	ELSE 0
@@ -918,18 +924,12 @@ async function saveCredit(data, clientID, budgetID, carID) {
     const safe = data.seguro ? formatNumber(data.seguro) : 0;
     const promises = [];
 
-    //console.log(data);
-    //console.log(formatNumber(data.cuotas));
-    //console.log(formatNumber(data.monto_final));
-    //console.log(valorCuota);
-
     const rateValue = commonFormulas.rate(
       formatNumber(data.cuotas),
       valorCuota,
       formatNumber(data.monto_sin_impuestos)
     );
 
-    //console.log(`rateValue = ${rateValue}`);
 
     const generarCuotasArray = commonFormulas.generarCuotas(
       formatNumber(data.cuotas),

@@ -32,6 +32,8 @@ paymentsRouter.post(
     const client_id = req.body.formData.client_id;
     const account_id = req.body.formData.account_id;
     const { id, name } = req.body.notaCreditoDebito;
+    const caja_id = req.body.formData.caja_id;
+
     // console.log(
     //   "id",
     //   id,
@@ -45,7 +47,7 @@ paymentsRouter.post(
     const decoded = jwt_decode(auth.getToken(req));
     const USER_ID = decoded.id;
     if (id !== 0 && name !== "") {
-      const paymentNCD =await paymentsController.createNCreditOrDebit(
+      const paymentNCD = await paymentsController.createNCreditOrDebit(
         client_id,
         payment_date,
         payment_amount,

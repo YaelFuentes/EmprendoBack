@@ -536,14 +536,20 @@ async function insertPayment(
   description,
   USER_ID
 ) {
-  if (notaCredito.name === "nota de debito" || notaCredito.name === "nota de débito" ) {
-    payment_amount = - Number(payment_amount)
-  }
+  try {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
+  if (notaCredito.name === "nota de debito" || notaCredito.name === "nota de débito" ) {
+    payment_amount = - Number(payment_amount)
+    let nota_debito = - Number(payment_amount)
+    if (notaCredito.id != null && notaCredito.id != undefined){
+    const sqlNotaDebito = `UPDATE credits_items SET nota_debito = nota_debito + ? where id = ?` 
+    resultND = await query(sqlNotaDebito,[nota_debito,notaCredito.id])
+    }
+  }
   const sql = `INSERT INTO payments ( clientID,paymentDate,amount,credit_id,account_id,payed_ci, description,responsable) VALUES (?,?,?,?,?,?,?,?)`;
   const sqlUpdate = `UPDATE credits_items SET payed = payed + ? where id = ?` 
-  try {
+
     const insertedPayment =await query(sql, [
       client_id,
       payment_date,
@@ -554,7 +560,7 @@ async function insertPayment(
       description,
       USER_ID
     ]);
-    if (notaCredito.name === "nota de credito" || notaCredito.name === "nota de crédito" ) {
+    if ((notaCredito.name === "nota de credito" || notaCredito.name === "nota de crédito") && notaCredito.id != null && notaCredito.id != undefined ) {
       const updateCreditItem = await query(sqlUpdate, [
         Number(payment_amount),
         notaCredito.id
@@ -741,7 +747,7 @@ async function getPayed(payed_ci) {
   const resultquery1 = await query(query1, [ci]);
 
   const dataQuery = `SELECT ci.*, COALESCE(SUM(p.amount),0) punitorios,CONCAT(TIMESTAMPDIFF( MONTH, ?, ci.period ) + 1,' de ${resultquery1[0].cuotastotales}') cuota,
-                      CASE WHEN (ci.amount+ci.safe+COALESCE ( SUM( p.amount ),0)) > ci.payed THEN 'A CUENTA' ELSE 'CANCELADO' END accion
+                      CASE WHEN (ci.amount+ci.nota_debito+ci.safe+COALESCE ( SUM( p.amount ),0)) > ci.payed THEN 'A CUENTA' ELSE 'CANCELADO' END accion
                       FROM credits_items ci
                       LEFT JOIN punitorios p ON ci.credit_id = p.credit_id AND ci.period = p.period
                       where ci.id IN(?) GROUP BY ci.period`;
