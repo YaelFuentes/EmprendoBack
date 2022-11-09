@@ -534,7 +534,7 @@ creditsRouter.get(
       block_credit_status +=
         "<td>$" +
         (
-          item.cuota +
+          item.cuota + item.nota_debito +
           item.seguro +
           (item.punitorios ? item.punitorios : 0)
         ).toFixed(2) +
@@ -548,7 +548,7 @@ creditsRouter.get(
       block_credit_status +=
         "<td>$" +
         (
-          item.cuota +
+          item.cuota + item.nota_debito +
           item.seguro +
           (item.punitorios ? item.punitorios : 0) -
           item.pagado

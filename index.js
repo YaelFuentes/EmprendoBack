@@ -393,7 +393,7 @@ FROM
   cayetano.credits_items T1
   LEFT JOIN cayetano.credits T2 ON T1.credit_id = T2.id
 WHERE
-  (T1.amount + T1.safe ) > T1.payed
+  (T1.capital+T1.intereses+ T1.nota_debito + T1.safe ) > T1.payed
       AND  DATE_ADD(DATE(T1.period),INTERVAL 4 DAY)  < NOW()
       AND T2.status = 1
       GROUP BY T1.credit_id;
