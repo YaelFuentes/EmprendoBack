@@ -449,38 +449,44 @@ async function insertPayment(
         const restanteNotaDebito = totalNotaDebitoCredito.egreso_nota_debito - obtenerIngresosPorTipoArray.ingreso_nota_debito 
         let processedDebito = 0
         if(restanteNotaDebito == disponible && disponible > 0){
-          const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (2,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,13,1)`
+          const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (2,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,?,?)`
           ,[
             restanteNotaDebito,
             USER_ID,
             credit_id,
             credit_item_id,
             insertId,
+            account_id,
+            caja_id
           ])
           newpayed += +restanteNotaDebito
           disponible = 0
         
         }else if(restanteNotaDebito < disponible && disponible > 0){
-          const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (2,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,13,1)`
+          const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (2,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,?,?)`
           ,[
             restanteNotaDebito,
             USER_ID,
             credit_id,
             credit_item_id,
             insertId,
+            account_id,
+            caja_id
           ])
           disponible = disponible - restanteNotaDebito
           newpayed += +restanteNotaDebito
           processedDebito = 1
           
         }else if(restanteNotaDebito > disponible && processedDebito === 0 && disponible > 0){
-          const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (2,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,13,1)`
+          const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (2,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,?,?)`
           ,[
             disponible,
             USER_ID,
             credit_id,
             credit_item_id,
             insertId,
+            account_id,
+            caja_id
           ])
           newpayed += +disponible
           disponible = 0
@@ -489,7 +495,7 @@ async function insertPayment(
 
       //Final pagos
 
-      if (newpayed > 0) {
+      if ((Math.round(newpayed*100)/100) > 0) {
         const finalPayed = newpayed + +payed;
 
         payed_ci.push(credit_item_id);

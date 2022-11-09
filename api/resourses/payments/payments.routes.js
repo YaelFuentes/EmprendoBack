@@ -34,16 +34,6 @@ paymentsRouter.post(
     const { id, name } = req.body.notaCreditoDebito;
     const caja_id = req.body.formData.caja_id;
 
-    // console.log(
-    //   "id",
-    //   id,
-    //   "name",
-    //   name,
-    //   "cash_flow_list",
-    //   cash_flow_list,
-    //   "formData",
-    //   req.body.formData
-    // );
     const decoded = jwt_decode(auth.getToken(req));
     const USER_ID = decoded.id;
     if (id !== 0 && name !== "") {
@@ -63,16 +53,13 @@ paymentsRouter.post(
         return res.status(200).json({response: paymentNCD.response})
       }
     }
-    console.log("paso response");
+   
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res
         .status(400)
         .json({ response: "Campos requeridos, debe elegir un monto y fecha" });
     }
-
-    console.log(USER_ID);
-
     paymentsController
       .insertPayment(
         payment_amount,
