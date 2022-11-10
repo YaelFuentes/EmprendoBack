@@ -89,7 +89,7 @@ async function insertPayment(
         ingreso_punitorios_cuotas: 0,
         ingreso_interes_cuotas: 0,
         ingreso_capital_cuotas: 0,
-        ingreso_nota_debito:0
+        ingreso_nota_debito: 0
       };
 
       if (obtenerIngresosPorTipo && obtenerIngresosPorTipo.length > 0) {
@@ -104,80 +104,80 @@ async function insertPayment(
       /* -------------------------------------------------------------------------- */
       const totalNotaDebitoCredito = {
         ingreso_nota_credito: 0,
-        egreso_nota_debito:0,
+        egreso_nota_debito: 0,
       }
-      const obtenerNCreditoNDebito = await query('SELECT sum(p.amount) totalAmount,p.*, c.name FROM cayetano.payments p inner join  cayetano.cash_flow_accounts c on p.account_id = c.id where payed_ci = ? and name in ("Nota de Crédito","Nota de Débito","Nota de Credito","Nota de Debito") group by name;',[credit_item_id.toString()])
-      obtenerNCreditoNDebito.map(item=>{
-        if (item.name === "Nota de Crédito" || item.name === "Nota de Credito"){
+      const obtenerNCreditoNDebito = await query('SELECT sum(p.amount) totalAmount,p.*, c.name FROM cayetano.payments p inner join  cayetano.cash_flow_accounts c on p.account_id = c.id where payed_ci = ? and name in ("Nota de Crédito","Nota de Débito","Nota de Credito","Nota de Debito") group by name;', [credit_item_id.toString()])
+      obtenerNCreditoNDebito.map(item => {
+        if (item.name === "Nota de Crédito" || item.name === "Nota de Credito") {
           totalNotaDebitoCredito.ingreso_nota_credito = item.totalAmount
-        }else{
+        } else {
           totalNotaDebitoCredito.egreso_nota_debito = Math.abs(item.totalAmount)
         }
       })
 
-     
+
       // Nota de credito - sumar a cuotas item
       //punitorios
-        if(obtenerIngresosPorTipoArray.ingreso_punitorios_cuotas < punitorios && totalNotaDebitoCredito.ingreso_nota_credito > 0 ){
+      if (obtenerIngresosPorTipoArray.ingreso_punitorios_cuotas < punitorios && totalNotaDebitoCredito.ingreso_nota_credito > 0) {
         const restantePunitorios = punitorios - obtenerIngresosPorTipoArray.ingreso_punitorios_cuotas
-        
-        if(totalNotaDebitoCredito.ingreso_nota_credito < restantePunitorios){
+
+        if (totalNotaDebitoCredito.ingreso_nota_credito < restantePunitorios) {
           obtenerIngresosPorTipoArray.ingreso_punitorios_cuotas += totalNotaDebitoCredito.ingreso_nota_credito
           totalNotaDebitoCredito.ingreso_nota_credito = 0
-        }else if(totalNotaDebitoCredito.ingreso_nota_credito >= restantePunitorios){
+        } else if (totalNotaDebitoCredito.ingreso_nota_credito >= restantePunitorios) {
           obtenerIngresosPorTipoArray.ingreso_punitorios_cuotas += restantePunitorios
           totalNotaDebitoCredito.ingreso_nota_credito -= restantePunitorios
         }
       }
       //Interes
-      if(obtenerIngresosPorTipoArray.ingreso_interes_cuotas < intereses && totalNotaDebitoCredito.ingreso_nota_credito > 0 ){
+      if (obtenerIngresosPorTipoArray.ingreso_interes_cuotas < intereses && totalNotaDebitoCredito.ingreso_nota_credito > 0) {
         const restanteInteres = intereses - obtenerIngresosPorTipoArray.ingreso_interes_cuotas
-        
-        if(totalNotaDebitoCredito.ingreso_nota_credito < restanteInteres){
+
+        if (totalNotaDebitoCredito.ingreso_nota_credito < restanteInteres) {
           obtenerIngresosPorTipoArray.ingreso_interes_cuotas += totalNotaDebitoCredito.ingreso_nota_credito
           totalNotaDebitoCredito.ingreso_nota_credito = 0
-        }else if(totalNotaDebitoCredito.ingreso_nota_credito >= restanteInteres){
+        } else if (totalNotaDebitoCredito.ingreso_nota_credito >= restanteInteres) {
           obtenerIngresosPorTipoArray.ingreso_interes_cuotas += restanteInteres
           totalNotaDebitoCredito.ingreso_nota_credito -= restanteInteres
         }
       }
       //Seguro
-      if(obtenerIngresosPorTipoArray.ingreso_seguro_cuotas < safe && totalNotaDebitoCredito.ingreso_nota_credito > 0 ){
+      if (obtenerIngresosPorTipoArray.ingreso_seguro_cuotas < safe && totalNotaDebitoCredito.ingreso_nota_credito > 0) {
         const restanteSeguro = safe - obtenerIngresosPorTipoArray.ingreso_seguro_cuotas
-        
-        if(totalNotaDebitoCredito.ingreso_nota_credito < restanteSeguro){
+
+        if (totalNotaDebitoCredito.ingreso_nota_credito < restanteSeguro) {
           obtenerIngresosPorTipoArray.ingreso_seguro_cuotas += totalNotaDebitoCredito.ingreso_nota_credito
           totalNotaDebitoCredito.ingreso_nota_credito = 0
-        }else if(totalNotaDebitoCredito.ingreso_nota_credito >= restanteSeguro){
+        } else if (totalNotaDebitoCredito.ingreso_nota_credito >= restanteSeguro) {
           obtenerIngresosPorTipoArray.ingreso_seguro_cuotas += restanteSeguro
           totalNotaDebitoCredito.ingreso_nota_credito -= restanteSeguro
         }
       }
       //Capital
-      if(obtenerIngresosPorTipoArray.ingreso_capital_cuotas < capital && totalNotaDebitoCredito.ingreso_nota_credito > 0 ){
+      if (obtenerIngresosPorTipoArray.ingreso_capital_cuotas < capital && totalNotaDebitoCredito.ingreso_nota_credito > 0) {
         const restanteCapital = capital - obtenerIngresosPorTipoArray.ingreso_capital_cuotas
-        
-        if(totalNotaDebitoCredito.ingreso_nota_credito < restanteCapital){
+
+        if (totalNotaDebitoCredito.ingreso_nota_credito < restanteCapital) {
           obtenerIngresosPorTipoArray.ingreso_capital_cuotas += totalNotaDebitoCredito.ingreso_nota_credito
           totalNotaDebitoCredito.ingreso_nota_credito = 0
-        }else if(totalNotaDebitoCredito.ingreso_nota_credito >= restanteCapital){
+        } else if (totalNotaDebitoCredito.ingreso_nota_credito >= restanteCapital) {
           obtenerIngresosPorTipoArray.ingreso_capital_cuotas += restanteCapital
           totalNotaDebitoCredito.ingreso_nota_credito -= restanteCapital
         }
       }
       //Debito
-      if(obtenerIngresosPorTipoArray.ingreso_nota_debito < totalNotaDebitoCredito.egreso_nota_debito && totalNotaDebitoCredito.ingreso_nota_credito > 0 ){
+      if (obtenerIngresosPorTipoArray.ingreso_nota_debito < totalNotaDebitoCredito.egreso_nota_debito && totalNotaDebitoCredito.ingreso_nota_credito > 0) {
         const restanteDebito = totalNotaDebitoCredito.egreso_nota_debito - obtenerIngresosPorTipoArray.ingreso_nota_debito
-        
-        if(totalNotaDebitoCredito.ingreso_nota_credito < restanteDebito){
+
+        if (totalNotaDebitoCredito.ingreso_nota_credito < restanteDebito) {
           obtenerIngresosPorTipoArray.ingreso_nota_debito += totalNotaDebitoCredito.ingreso_nota_credito
           totalNotaDebitoCredito.ingreso_nota_credito = 0
-        }else if(totalNotaDebitoCredito.ingreso_nota_credito >= restanteDebito){
+        } else if (totalNotaDebitoCredito.ingreso_nota_credito >= restanteDebito) {
           obtenerIngresosPorTipoArray.ingreso_nota_debito += restanteDebito
           totalNotaDebitoCredito.ingreso_nota_credito -= restanteDebito
         }
       }
-      
+
       console.log("totalNotaDebitoCredito", totalNotaDebitoCredito);
 
       /*
@@ -443,51 +443,51 @@ async function insertPayment(
         }
       }
 
-       //Pago nota de débito
+      //Pago nota de débito
 
-       if( obtenerIngresosPorTipoArray.ingreso_nota_debito < totalNotaDebitoCredito.egreso_nota_debito && disponible > 0){
-        const restanteNotaDebito = totalNotaDebitoCredito.egreso_nota_debito - obtenerIngresosPorTipoArray.ingreso_nota_debito 
+      if (obtenerIngresosPorTipoArray.ingreso_nota_debito < totalNotaDebitoCredito.egreso_nota_debito && disponible > 0) {
+        const restanteNotaDebito = totalNotaDebitoCredito.egreso_nota_debito - obtenerIngresosPorTipoArray.ingreso_nota_debito
         let processedDebito = 0
-        if(restanteNotaDebito == disponible && disponible > 0){
+        if (restanteNotaDebito == disponible && disponible > 0) {
           const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (2,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,?,?)`
-          ,[
-            restanteNotaDebito,
-            USER_ID,
-            credit_id,
-            credit_item_id,
-            insertId,
-            account_id,
-            caja_id
-          ])
+            , [
+              restanteNotaDebito,
+              USER_ID,
+              credit_id,
+              credit_item_id,
+              insertId,
+              account_id,
+              caja_id
+            ])
           newpayed += +restanteNotaDebito
           disponible = 0
-        
-        }else if(restanteNotaDebito < disponible && disponible > 0){
+
+        } else if (restanteNotaDebito < disponible && disponible > 0) {
           const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (2,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,?,?)`
-          ,[
-            restanteNotaDebito,
-            USER_ID,
-            credit_id,
-            credit_item_id,
-            insertId,
-            account_id,
-            caja_id
-          ])
+            , [
+              restanteNotaDebito,
+              USER_ID,
+              credit_id,
+              credit_item_id,
+              insertId,
+              account_id,
+              caja_id
+            ])
           disponible = disponible - restanteNotaDebito
           newpayed += +restanteNotaDebito
           processedDebito = 1
-          
-        }else if(restanteNotaDebito > disponible && processedDebito === 0 && disponible > 0){
+
+        } else if (restanteNotaDebito > disponible && processedDebito === 0 && disponible > 0) {
           const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (2,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,?,?)`
-          ,[
-            disponible,
-            USER_ID,
-            credit_id,
-            credit_item_id,
-            insertId,
-            account_id,
-            caja_id
-          ])
+            , [
+              disponible,
+              USER_ID,
+              credit_id,
+              credit_item_id,
+              insertId,
+              account_id,
+              caja_id
+            ])
           newpayed += +disponible
           disponible = 0
         }
@@ -495,7 +495,7 @@ async function insertPayment(
 
       //Final pagos
 
-      if ((Math.round(newpayed*100)/100) > 0) {
+      if ((Math.round(newpayed * 100) / 100) > 0) {
         const finalPayed = newpayed + +payed;
 
         payed_ci.push(credit_item_id);
@@ -532,7 +532,7 @@ async function insertPayment(
   }
 }
 
- async function createNCreditOrDebit(
+async function createNCreditOrDebit(
   client_id,
   payment_date,
   payment_amount,
@@ -543,20 +543,20 @@ async function insertPayment(
   USER_ID
 ) {
   try {
-  const util = require("util");
-  const query = util.promisify(mysqli.query).bind(mysqli);
-  if (notaCredito.name === "nota de debito" || notaCredito.name === "nota de débito" ) {
-    payment_amount = - Number(payment_amount)
-    let nota_debito = - Number(payment_amount)
-    if (notaCredito.id != null && notaCredito.id != undefined){
-    const sqlNotaDebito = `UPDATE credits_items SET nota_debito = nota_debito + ? where id = ?` 
-    resultND = await query(sqlNotaDebito,[nota_debito,notaCredito.id])
+    const util = require("util");
+    const query = util.promisify(mysqli.query).bind(mysqli);
+    if (notaCredito.name === "nota de debito" || notaCredito.name === "nota de débito") {
+      payment_amount = - Number(payment_amount)
+      let nota_debito = - Number(payment_amount)
+      if (notaCredito.id != null && notaCredito.id != undefined) {
+        const sqlNotaDebito = `UPDATE credits_items SET nota_debito = nota_debito + ? where id = ?`
+        resultND = await query(sqlNotaDebito, [nota_debito, notaCredito.id])
+      }
     }
-  }
-  const sql = `INSERT INTO payments ( clientID,paymentDate,amount,credit_id,account_id,payed_ci, description,responsable) VALUES (?,?,?,?,?,?,?,?)`;
-  const sqlUpdate = `UPDATE credits_items SET payed = payed + ? where id = ?` 
+    const sql = `INSERT INTO payments ( clientID,paymentDate,amount,credit_id,account_id,payed_ci, description,responsable) VALUES (?,?,?,?,?,?,?,?)`;
+    const sqlUpdate = `UPDATE credits_items SET payed = payed + ? where id = ?`
 
-    const insertedPayment =await query(sql, [
+    const insertedPayment = await query(sql, [
       client_id,
       payment_date,
       payment_amount,
@@ -566,19 +566,19 @@ async function insertPayment(
       description,
       USER_ID
     ]);
-    if ((notaCredito.name === "nota de credito" || notaCredito.name === "nota de crédito") && notaCredito.id != null && notaCredito.id != undefined ) {
+    if ((notaCredito.name === "nota de credito" || notaCredito.name === "nota de crédito") && notaCredito.id != null && notaCredito.id != undefined) {
       const updateCreditItem = await query(sqlUpdate, [
         Number(payment_amount),
         notaCredito.id
       ]);
     }
 
-    return {response: insertedPayment}
+    return { response: insertedPayment }
   } catch (error) {
-    return {error:error}
+    return { error: error }
   }
 }
-function getNCreditoDebito(credit_id, callback){
+function getNCreditoDebito(credit_id, callback) {
   let sql = `select sum(A.amount) as totalN,sum(A.amount) as contadorNotas,A.accountID,A.credit_item_id,A.name,A.payed_ci from (SELECT cf.credit_item_id,p.payed_ci as creditItem,p.*,c.name,c.id as accountID
     FROM cayetano.payments p 
     inner join  cayetano.cash_flow_accounts c on p.account_id = c.id 
@@ -599,16 +599,30 @@ function getNCreditoDebito(credit_id, callback){
 }
 
 async function getList(credit_id) {
-  const util = require("util");
-  const query = util.promisify(mysqli.query).bind(mysqli);
-  let sql = `
-  select A.clientID, A.paymentDate, A.id, A.amount,A.credit_id, B.user,concat(D.name," " ,D.lastname) as responsable, B.payment_id , C.id as idUser, C.name, C.lastname , E.name as mediopago
+  try {
+    const util = require("util");
+    const query = util.promisify(mysqli.query).bind(mysqli);
+    let sql = `
+  select A.clientID, A.paymentDate, A.id, A.amount,A.credit_id, B.user,concat(D.name," " ,D.lastname) as responsable, B.payment_id , C.id as idUser, C.name, C.lastname , E.name as mediopago, A.payed_ci AS pagos
   from cayetano.payments A left join cayetano.cash_flow B on A.id = B.payment_id left join cayetano.users C  on B.user = C.id left join cayetano.users D  on A.responsable = D.id left join cayetano.cash_flow_accounts E on A.account_id = E.id 
   where A.credit_id = ? AND A.status = 1 group by A.id  ORDER BY paymentDate ASC;`;
- 
-  let response = await query(sql, [credit_id]);
-  
-  return response
+    const result = await query(sql, [credit_id])
+    if (Array.isArray(result) && result.length > 0) {
+      const arrayPagos = await Promise.all(
+        result.map(async (item) => {
+          const quotes = await getPayed(item.pagos);
+          if (Array.isArray(quotes) && quotes.length > 0) {
+            console.log("aqui");
+            item.cuotasPagas = quotes
+          }
+          return item
+        }))
+        console.log(arrayPagos)
+      return arrayPagos
+    }
+  } catch (error) {
+    return error
+  }
 }
 
 function getListDeleted(credit_id, callback) {
