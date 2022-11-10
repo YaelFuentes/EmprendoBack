@@ -47,13 +47,13 @@ paymentsRouter.post(
         req.body.formData.description,
         USER_ID
       );
-      if(paymentNCD.error){
+      if (paymentNCD.error) {
         return res.status(500).json({ error: paymentNCD.error });
-      }else{
-        return res.status(200).json({response: paymentNCD.response})
+      } else {
+        return res.status(200).json({ response: paymentNCD.response })
       }
     }
-   
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res
@@ -83,12 +83,10 @@ paymentsRouter.post(
   }
 );
 
-paymentsRouter.get("/list/:creditid", auth.required,async function (req, res, next) {
+paymentsRouter.get("/list/:creditid", auth.required, async function (req, res, next) {
   let credit_id = req.params.creditid;
-
-  paymentsController.getList(credit_id, function (err, result) {
-    res.json(result);
-  });
+  const result = await paymentsController.getList(credit_id)
+  res.status(200).send(result)
 });
 
 paymentsRouter.get(
