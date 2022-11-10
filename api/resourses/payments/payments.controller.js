@@ -2,7 +2,7 @@ const { query } = require("express-validator");
 
 async function insertPayment(
   payment_amount,
-  payment_date,
+  /* payment_date, */
   credit_id,
   client_id,
   cash_flow_list,
@@ -29,7 +29,7 @@ async function insertPayment(
   try {
     const insertedPayment = await query(sql, [
       client_id,
-      payment_date,
+      /* payment_date, */
       payment_amount,
       credit_id,
       account_id,
@@ -628,7 +628,6 @@ function getListDeleted(credit_id, callback) {
 
 function getInfo(paymentid, callback) {
   let sql = "SELECT * FROM payments WHERE id = ? LIMIT 1";
-  console.log(sql);
 
   mysqli.query(sql, [paymentid], (err, rows) => {
     //si queremos imprimir el mensaje ponemos err.sqlMessage
@@ -761,7 +760,6 @@ async function getPayed(payed_ci) {
     resultquery1[0].primera_cuota,
     ci,
   ]);
-  console.log(credits_items);
   return credits_items;
 }
 module.exports = {

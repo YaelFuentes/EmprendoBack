@@ -3,6 +3,9 @@ const moment = require("moment");
 const paymentsController = require("../payments/payments.controller");
 var commonFormulas = require("../common/formulas");
 
+
+
+
 function create(
   clientid,
   carID,
@@ -90,7 +93,7 @@ function getCsv(callback) {
           AND B.state IN ('4') IS NOT TRUE group by A.id;`;
   mysqli.query(sql, [], (err, rows) => {
     var response = []
-    if(rows) {
+    if (rows) {
       response = rows
     }
     return callback(err, response)
@@ -263,9 +266,68 @@ function getInfo(creditid, callback) {
   mysqli.query(sql, [creditid], (err, rows) => {
     //si queremos imprimir el mensaje ponemos err.sqlMessage
     var response = [];
-    if (rows) {
-      response = rows;
-    }
+    response = rows;
+    return callback(err, response);
+  });
+};
+
+async function getInfoCredit(creditid, callback) {
+  let sql = `SELECT
+  sum(T4.capital+ T4.intereses ) as deudaTotalCredito,
+  T1.id creditid,
+  T1.status creditStatus,
+  T1.carID,
+  T1.clientID clientid,
+  T1.additionalInfo,
+  T1.state internalState,
+  T4.id,
+  T2.cuotas,
+  T2.amount,
+  T2.total,
+  DATE(T4.period) period,
+  T4.amount cuota,
+  T4.payed pagado,
+  T4.safe seguro,
+  COALESCE(SUM(T8.amount),0) punitorios,
+  T8.days_past,
+  CASE WHEN T4.period <= DATE(NOW())
+    THEN
+      ((T4.safe + COALESCE(SUM(T8.amount),0) + T4.amount) - T4.payed)
+    ELSE 0
+    END deuda,
+    T4.intereses,
+  T4.saldo,
+  T4.capital,
+  T9.brand,
+  T9.model,
+  T9.year,
+  T9.details,
+  T10.name,
+  T10.lastname,
+  T10.dni,
+  T10.phone
+  FROM
+  cayetano.credits T1
+  INNER JOIN cayetano.budget T2 ON T1.budget = T2.id
+  LEFT JOIN cayetano.credits_items T4 ON T1.id = T4.credit_id
+  LEFT JOIN cayetano.punitorios T8 ON T1.id = T8.credit_id AND T4.period = T8.period
+  left JOIN cayetano.cars T9 ON T1.carID = T9.id
+  left JOIN cayetano.users T10 ON T1.clientid = T10.id
+  WHERE T1.id = ?
+  GROUP BY T4.period;`;
+  mysqli.query(sql, [creditid], (err, rows) => {
+    //si queremos imprimir el mensaje ponemos err.sqlMessage
+    var response = [];
+    let contador = 0;
+    if (Array.isArray(rows) && rows.length>0) {
+      rows.map((item) => {
+        if (item.pagado >= item.cuota + item.seguro + item.punitorios) {
+          contador += 1;
+        }
+      })
+      Object.assign(rows[0],{NroCuotasPagas : contador})
+    };
+    response = rows;
     return callback(err, response);
   });
 }
@@ -659,6 +721,58 @@ async function getPaymentCoupons(creditId) {
   const coupons = await query(sql, [creditId]);
   return coupons;
 }
+async function getPrintInfoSeguros(creditID) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const seguroDataQuery = `SELECT
+  T1.id,
+  T1.amount,
+  T1.imputationDate,
+  T2.brand,
+  T2.model,
+  T2.year,
+  T2.domain,
+  CONCAT(T4.lastname,' ', T4.name)  apellido_nombre,
+  T4.email,
+  T4.phone telefono,
+  T4.dni
+FROM
+  cayetano.insurances T1 
+  LEFT JOIN cayetano.cars T2 ON T1.carID = T2.id INNER JOIN cayetano.credits T3 ON T1.carID = T3.carID INNER JOIN cayetano.users T4 ON T3.clientID = T4.id
+  WHERE T3.id = ?
+ORDER BY
+  imputationDate DESC`;
+  const printSeguros = await query(seguroDataQuery, [creditID]);
+  const seguroDataInfo = `  select A.* from cayetano.insurances A inner join cayetano.credits B on A.carID = B.carID where B.id = ? and A.status = 1 order by A.imputationDate desc`;
+  const seguroData = await query(seguroDataInfo, [creditID]);
+  const seguroDataInfoCar = `SELECT brand car_brand
+  , model car_model
+  , year car_year
+  , domain car_domain
+  , details car_details
+  FROM cayetano.cars c
+  INNER JOIN cayetano.users u on u.id = c.clientID
+  INNER JOIN cayetano.credits cr on cr.clientID = u.id
+  WHERE cr.id=?;`;
+  const seguroDataCar = await query(seguroDataInfoCar, [creditID]);
+  return {
+    printSeguros: printSeguros[0],
+    seguroDataCar: seguroDataCar[0],
+    seguroData: seguroData
+  }
+};
+
+async function getPrintInfoPagos(creditID) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const pagosDataQuery = `select A.clientID, A.paymentDate, A.id, A.amount,A.credit_id, B.user, B.payment_id , C.id as idUser, C.name, C.lastname 
+  from cayetano.payments A join cayetano.cash_flow B on A.id = B.payment_id left join cayetano.users C  on B.user = C.id 
+  where A.credit_id = ? AND A.status = 1 group by A.id  ORDER BY paymentDate ASC;`;
+  const pagos = await query(pagosDataQuery, [creditID]);
+  return {
+    pagos: pagos[0]
+  }
+};
 
 async function getPrintInfo(creditID) {
   const util = require("util");
@@ -1032,4 +1146,7 @@ module.exports = {
   updateState,
   getCashFlow,
   getCashFlowPerCreditItem,
+  getPrintInfoSeguros,
+  getPrintInfoPagos,
+  getInfoCredit
 };
