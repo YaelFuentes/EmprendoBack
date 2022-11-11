@@ -449,7 +449,7 @@ async function insertPayment(
         const restanteNotaDebito = totalNotaDebitoCredito.egreso_nota_debito - obtenerIngresosPorTipoArray.ingreso_nota_debito
         let processedDebito = 0
         if (restanteNotaDebito == disponible && disponible > 0) {
-          const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (2,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,?,?)`
+          const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (1,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,?,?)`
             , [
               restanteNotaDebito,
               USER_ID,
@@ -463,7 +463,7 @@ async function insertPayment(
           disponible = 0
 
         } else if (restanteNotaDebito < disponible && disponible > 0) {
-          const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (2,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,?,?)`
+          const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (1,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,?,?)`
             , [
               restanteNotaDebito,
               USER_ID,
@@ -478,7 +478,7 @@ async function insertPayment(
           processedDebito = 1
 
         } else if (restanteNotaDebito > disponible && processedDebito === 0 && disponible > 0) {
-          const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (2,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,?,?)`
+          const pagoNotaDebito = await query(`INSERT INTO cash_flow (type,amount,created_at,description,user,credit_id,operation_type,credit_item_id,payment_id,account_id,caja_id) VALUES (1,?,NOW(),'Ingreso nota debito',?,?,'ingreso_nota_debito',?,?,?,?)`
             , [
               disponible,
               USER_ID,
@@ -546,11 +546,10 @@ async function createNCreditOrDebit(
     const util = require("util");
     const query = util.promisify(mysqli.query).bind(mysqli);
     if (notaCredito.name === "nota de debito" || notaCredito.name === "nota de débito") {
-      payment_amount = - Number(payment_amount)
-      let nota_debito = - Number(payment_amount)
+      payment_amount = Number(payment_amount)
       if (notaCredito.id != null && notaCredito.id != undefined) {
         const sqlNotaDebito = `UPDATE credits_items SET nota_debito = nota_debito + ? where id = ?`
-        resultND = await query(sqlNotaDebito, [nota_debito, notaCredito.id])
+        resultND = await query(sqlNotaDebito, [payment_amount, notaCredito.id])
       }
     }
     const sql = `INSERT INTO payments ( clientID,paymentDate,amount,credit_id,account_id,payed_ci, description,responsable) VALUES (?,?,?,?,?,?,?,?)`;
@@ -603,7 +602,7 @@ async function getList(credit_id) {
     const util = require("util");
     const query = util.promisify(mysqli.query).bind(mysqli);
     let sql = `
-  select A.clientID, A.paymentDate, A.id, A.amount,A.credit_id, B.user,concat(D.name," " ,D.lastname) as responsable, B.payment_id , C.id as idUser, C.name, C.lastname , E.name as mediopago, A.payed_ci AS pagos
+  select A.clientID, A.paymentDate, A.id, A.amount,A.account_id,A.credit_id, B.user,concat(D.name," " ,D.lastname) as responsable, B.payment_id , C.id as idUser, C.name, C.lastname , E.name as mediopago, A.payed_ci AS pagos
   from cayetano.payments A left join cayetano.cash_flow B on A.id = B.payment_id left join cayetano.users C  on B.user = C.id left join cayetano.users D  on A.responsable = D.id left join cayetano.cash_flow_accounts E on A.account_id = E.id 
   where A.credit_id = ? AND A.status = 1 group by A.id  ORDER BY paymentDate ASC;`;
     const result = await query(sql, [credit_id])

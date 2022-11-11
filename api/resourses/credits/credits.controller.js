@@ -346,7 +346,7 @@ function getCashFlow(creditid, callback) {
 
 function getCashFlowPerCreditItem(creditidid, callback) {
   let sql = `SELECT SUM(amount) pagado, credit_item_id, operation_type, description, created_at FROM cayetano.cash_flow 
-  WHERE credit_item_id = ? AND credit_item_id > 0 AND deleted_at IS NULL GROUP BY operation_type,credit_item_id,created_at;`;
+  WHERE credit_item_id = ? AND credit_item_id > 0 AND deleted_at IS NULL GROUP BY operation_type;`;
   mysqli.query(sql, [creditidid], (err, rows) => {
     //si queremos imprimir el mensaje ponemos err.sqlMessage
     var response = [];

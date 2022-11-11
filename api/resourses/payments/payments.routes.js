@@ -27,7 +27,7 @@ paymentsRouter.post(
     const cash_flow_list = req.body.cash_flow_list;
     const gran_total = req.body.gran_total;
     const payment_amount = req.body.formData.payment_amount;
-    const payment_date = req.body.formData.payment_date;
+    const payment_date = new Date();
     const credit_id = req.body.formData.credit_id;
     const client_id = req.body.formData.client_id;
     const account_id = req.body.formData.account_id;
