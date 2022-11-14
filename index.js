@@ -19,7 +19,7 @@ const futurosRouter = require("./api/resourses/futuros/futuros.routes");
 const cash_flow_deposit = require('./api/resourses/cash_flow_deposit/cashflowdeposit.routes');
 const notasRoutes = require('./api/resourses/notas/notas.routes');
 const cajaRoutes = require('./api/resourses/caja/caja.routes');
-const cronCheques = require('./api/resourses/caja/caja.controller')
+const cronCheques = require('./api/resourses/cheques/cheques.controller')
 const chequesRoutes = require('./api/resourses/cheques/cheques.routes')
 
 const dotenv = require("dotenv");
