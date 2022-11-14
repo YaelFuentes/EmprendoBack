@@ -602,7 +602,7 @@ async function getList(credit_id) {
     const util = require("util");
     const query = util.promisify(mysqli.query).bind(mysqli);
     let sql = `
-  select A.clientID, A.paymentDate, A.id, A.amount,A.account_id,A.credit_id, B.user,concat(D.name," " ,D.lastname) as responsable, B.payment_id , C.id as idUser, C.name, C.lastname , E.name as mediopago, A.payed_ci AS pagos
+  select A.clientID,A.description, A.paymentDate, A.id, A.amount,A.account_id,A.credit_id, B.user,concat(D.name," " ,D.lastname) as responsable, B.payment_id , C.id as idUser, C.name, C.lastname , E.name as mediopago, A.payed_ci AS pagos
   from cayetano.payments A left join cayetano.cash_flow B on A.id = B.payment_id left join cayetano.users C  on B.user = C.id left join cayetano.users D  on A.responsable = D.id left join cayetano.cash_flow_accounts E on A.account_id = E.id 
   where A.credit_id = ? AND A.status = 1 group by A.id  ORDER BY paymentDate ASC;`;
     const result = await query(sql, [credit_id])
@@ -611,7 +611,6 @@ async function getList(credit_id) {
         result.map(async (item) => {
           const quotes = await getPayed(item.pagos);
           if (Array.isArray(quotes) && quotes.length > 0) {
-            console.log("aqui");
             item.cuotasPagas = quotes
           }
           return item
@@ -765,7 +764,39 @@ async function getPayed(payed_ci) {
   const resultquery1 = await query(query1, [ci]);
 
   const dataQuery = `SELECT ci.*, COALESCE(SUM(p.amount),0) punitorios,CONCAT(TIMESTAMPDIFF( MONTH, ?, ci.period ) + 1,' de ${resultquery1[0].cuotastotales}') cuota,
-                      CASE WHEN (ci.amount+ci.nota_debito+ci.safe+COALESCE ( SUM( p.amount ),0)) > ci.payed THEN 'A CUENTA' ELSE 'CANCELADO' END accion
+                      CASE WHEN (ci.capital+ci.intereses+ci.nota_debito+ci.safe+COALESCE ( SUM( p.amount ),0)) > ci.payed THEN 'A CUENTA' ELSE 'CANCELADO' END accion
+                      FROM credits_items ci
+                      LEFT JOIN punitorios p ON ci.credit_id = p.credit_id AND ci.period = p.period
+                      where ci.id IN(?) GROUP BY ci.period`;
+  const credits_items = await query(dataQuery, [
+    resultquery1[0].primera_cuota,
+    ci,
+  ]);
+  return credits_items;
+}
+async function getPayed2(payed_ci, payment_id) {
+  const ci = payed_ci.split(",");
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+
+  const query1 = `SELECT
+  COUNT(credits_items.id) cuotastotales,
+  subquery.primera_cuota
+  FROM credits_items JOIN (SELECT
+    credits.primera_cuota,
+    credits.id
+  FROM
+    credits
+    INNER JOIN credits_items ci ON ci.credit_id = credits.id 
+  WHERE
+    ci.id IN (?)
+  LIMIT 1) subquery
+  WHERE credits_items.credit_id = subquery.id
+  ;`;
+  const resultquery1 = await query(query1, [ci]);
+
+  const dataQuery = `SELECT ci.*, COALESCE(SUM(p.amount),0) punitorios,CONCAT(TIMESTAMPDIFF( MONTH, ?, ci.period ) + 1,' de ${resultquery1[0].cuotastotales}') cuota,
+                      CASE WHEN (ci.capital+ci.intereses+ci.nota_debito+ci.safe+COALESCE ( SUM( p.amount ),0)) > ci.payed THEN 'A CUENTA' ELSE 'CANCELADO' END accion
                       FROM credits_items ci
                       LEFT JOIN punitorios p ON ci.credit_id = p.credit_id AND ci.period = p.period
                       where ci.id IN(?) GROUP BY ci.period`;
