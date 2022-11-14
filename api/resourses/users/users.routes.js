@@ -41,12 +41,15 @@ usersRouter.get("/privileges", auth.required, function (req, res, next) {
   });
 });
 
-usersRouter.get("/info/:userID", auth.required, async (req, res) => {
-  var userID = req.params.userID;
-  const user = await usersController.getUser(userID);
-  res.json({
-    user: user,
+usersRouter.get("/info/:userID", auth.required, function (req, res) {
+  let userID = req.params.userID
+  console.log("here " + userID)
+  usersController.getUser(userID, function(req, result){
+    res.json(result);
   });
+  /* res.json({
+    user: user,
+  }); */
 });
 
 usersRouter.post("/pause", auth.required, function (req, res, next) {
