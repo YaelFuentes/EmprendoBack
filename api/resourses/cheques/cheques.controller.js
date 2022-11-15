@@ -92,6 +92,7 @@ async function cronCheques() {
   const query = util.promisify(mysqli.query).bind(mysqli);
   let sql = `select * from cayetano.cheques where  date_sub(vencimiento, interval 2 day) = date(now());`;
   const result = await query(sql, []);
+  console.log(result);
   var mailOptions = {
     from: process.env.MAIL_FROM,
     to: process.env.MAIL_TO.split(' '),
@@ -137,7 +138,9 @@ async function cronCheques() {
     </table>
     </body>`
   mailOptions.html = html
-  sendMail(mailOptions)
+  if (Array.isArray(result) && result.length > 0) {
+    sendMail(mailOptions)
+  } 
   return result;
 }
 
