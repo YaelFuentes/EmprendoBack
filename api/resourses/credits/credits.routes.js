@@ -449,7 +449,7 @@ creditsRouter.get(
   }
 );
 
-creditsRouter.get(
+/* creditsRouter.get(
   "/downloadPagos/:creditid", auth.required,
   async function(req, res){
     const fs = require("fs");
@@ -468,7 +468,7 @@ creditsRouter.get(
       html = html.replace("{{apellido_nombre}}" pagoCuotas.pagos.);
     
   }
-)
+) */
 
 creditsRouter.get(
   "/downloadSeguros/:creditid"
