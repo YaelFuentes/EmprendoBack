@@ -456,7 +456,7 @@ creditsRouter.get(
   }
 );
 
-creditsRouter.get(
+/* creditsRouter.get(
   "/downloadPagos/:creditid", auth.required,
   async function(req, res){
     const fs = require("fs");
@@ -474,7 +474,7 @@ creditsRouter.get(
       html = html.replace("{{fecha}}", moment().format("DD/MM/YYYY"));
     
   }
-)
+) */
 
 creditsRouter.get(
   "/downloadSeguros/:creditid"
