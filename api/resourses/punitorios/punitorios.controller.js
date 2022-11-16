@@ -24,7 +24,7 @@ async function calculate(credit_id) {
   const cuotas = credit[0].cuotas;
 
   let sql =
-    "SELECT * FROM cayetano.credits_items WHERE credit_id = ? AND (capital+intereses+safe+nota_debito) > payed AND  DATE_ADD(DATE(period),INTERVAL 4 DAY) < NOW()";
+    "SELECT * FROM cayetano.credits_items WHERE credit_id = ? AND (punitorios+capital+intereses+safe+nota_debito) > payed AND  DATE_ADD(DATE(period),INTERVAL 4 DAY) < NOW()";
   let insertado = 0;
   const creditsItems = await query(sql, [credit_id]);
 
@@ -38,6 +38,22 @@ async function calculate(credit_id) {
       const today = moment();
       const initialperiod = creditsItems[indexCredit].period;
       const period = moment(creditsItems[indexCredit].period).add(4, "days");
+      //Punitorios existentes
+      let sqlCheck =
+      "SELECT * FROM punitorios WHERE period = ? and credit_id = ? ";
+      const sqlCheckResult = await query(sqlCheck, [
+      initialperiod,
+      credit_id,
+      ]);
+      if(Array.isArray(sqlCheckResult) && sqlCheckResult.length > 0){
+        let punitoriosItem = sqlCheckResult.filter(item=>item.closed_date!=null).sort((item1, item2)=>item2.closed_date - item1.closed_date)
+        console.log(punitoriosItem);
+        if (sqlCheckResult.length>1){
+          period = moment(punitoriosItem[0].closed_date);
+        }
+      }
+
+
       const days = period.diff(today, "days");
       const payed = creditsItems[indexCredit].payed;
       const cuota =
@@ -62,6 +78,7 @@ async function calculate(credit_id) {
             ingreso.ingresado;
         });
       }
+    
       if (Number(days) < 0) {
         let diasDeAtraso = Math.abs(days);
         fecha = moment(initialperiod)
@@ -88,17 +105,11 @@ async function calculate(credit_id) {
           let gastoAdministrativo = 650;
           interes += gastoAdministrativo;
 
-          let sqlCheck =
-            "SELECT id FROM punitorios WHERE period = ? and credit_id = ?";
-          const sqlCheckResult = await query(sqlCheck, [
-            initialperiod,
-            credit_id,
-          ]);
-
+     
           if (sqlCheckResult.length > 0) {
             console.log("UPDATE dias de atraso", diasDeAtraso);
             let sqlUpdate =
-              "UPDATE punitorios SET amount = ?, days_past = ? WHERE period = ? AND credit_id = ?";
+              "UPDATE punitorios SET amount = ?, days_past = ? WHERE period = ? AND credit_id = ? AND nota_debito is null";
             await query(sqlUpdate, [
               interes,
               diasDeAtraso,
