@@ -487,7 +487,7 @@ function getList(callback) {
   (SUM(seguro) + (CASE
       WHEN SUM(punitorios) IS NULL THEN 0
       ELSE SUM(punitorios)
-  END) + SUM(cuota) + SUM(nota_debito) )  - SUM(pagado) deuda,
+  END) + SUM(capital)+ SUM(intereses) + SUM(nota_debito) )  - SUM(pagado) deuda,
   case when state in('2', '5', '6') then NULL
   else B.dias end as dias
 FROM
@@ -510,6 +510,14 @@ FROM
               WHEN T4.period <= DATE(NOW()) THEN T4.amount
               ELSE 0
           END cuota,
+          CASE
+              WHEN T4.period <= DATE(NOW()) THEN T4.capital
+              ELSE 0
+          END capital,
+          CASE
+              WHEN T4.period <= DATE(NOW()) THEN T4.intereses
+              ELSE 0
+          END intereses,
             CASE
               WHEN T4.period <= DATE(NOW()) THEN T4.nota_debito
               ELSE 0
@@ -542,7 +550,7 @@ FROM
       c.id,
           c.clientID,
           ci.period,
-          (ci.amount + safe + nota_debito + (CASE
+          (ci.capital + ci.intereses + safe + nota_debito + (CASE
               WHEN SUM(p.amount) THEN SUM(p.amount)
               ELSE 0
           END)) - (CASE
