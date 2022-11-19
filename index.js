@@ -393,7 +393,7 @@ FROM
   cayetano.credits_items T1
   LEFT JOIN cayetano.credits T2 ON T1.credit_id = T2.id
 WHERE
-  (T1.capital+T1.intereses+ T1.nota_debito + T1.safe+ T1.punitorios ) > T1.payed
+  (T1.capital+T1.intereses+ T1.safe+ T1.punitorios ) > T1.payed
       AND  DATE_ADD(DATE(T1.period),INTERVAL 4 DAY)  < NOW()
       AND T2.status = 1
       GROUP BY T1.credit_id;
@@ -421,8 +421,3 @@ cron.schedule("0 7 * * *", async function () {
   const query = util.promisify(mysqli.query).bind(mysqli);
   cronCheques.cronCheques();
 });
-
-punitoriosController.calculate(111);
-// let sqlCheckResult = [{closed_date:"2022-12-05"},{closed_date:"2022-11-05"},{closed_date:"2022-08-05"},{closed_date:null}]
-// let punitoriosItem = sqlCheckResult.filter(item=>item.closed_date!=null).sort((item1, item2)=>new Date(item2.closed_date) - new Date(item1.closed_date))
-// console.log(punitoriosItem);

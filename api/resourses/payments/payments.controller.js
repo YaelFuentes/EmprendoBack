@@ -209,14 +209,12 @@ async function insertPayment(
             caja_id
           ]);
           let sqlCheck =
-          "UPDATE punitorios SET amount = amount + ? WHERE period = ? AND credit_id = ? AND closed_date is null";
+          "UPDATE punitorios SET payed = payed + ?, closed_date = now()  WHERE period = ? AND credit_id = ? AND closed_date is null";
           await query(sqlCheck, [
           punitorios,
           period,
           credit_id,
         ]);
-
-
           newpayed += +punitorios;
           disponible = 0;
         }
@@ -234,12 +232,13 @@ async function insertPayment(
             caja_id
           ]);
           let sqlCheck =
-          "UPDATE punitorios SET amount = amount + ? WHERE period = ? AND credit_id = ? AND closed_date is null";
+          "UPDATE punitorios SET payed = payed + ?, closed_date = now() WHERE period = ? AND credit_id = ? AND closed_date is null";
           await query(sqlCheck, [
           punitorios,
           period,
           credit_id,
         ]);
+
 
           newpayed += +punitorios;
           disponible = disponible - punitorios;
@@ -259,9 +258,9 @@ async function insertPayment(
             caja_id
           ]);
           let sqlCheck =
-          "UPDATE punitorios SET amount = amount + ? WHERE period = ? AND credit_id = ? AND closed_date is null";
+          "UPDATE punitorios SET payed = payed + ? WHERE period = ? AND credit_id = ? AND closed_date is null";
           await query(sqlCheck, [
-          punitorios,
+          disponible,
           period,
           credit_id,
         ]);
