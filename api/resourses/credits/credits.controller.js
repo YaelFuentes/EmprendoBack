@@ -483,11 +483,11 @@ function getList(callback) {
   phone,
   status,
   additionalInfo,
-  state,
+  state,coalesce(B.deudas,0) as deuda,
   (SUM(seguro) + (CASE
       WHEN SUM(punitorios) IS NULL THEN 0
       ELSE SUM(punitorios)
-  END) + SUM(capital)+ SUM(intereses) + SUM(nota_debito) )  - SUM(pagado) deuda,
+  END) + SUM(capital)+ SUM(intereses) + SUM(nota_debito) )  - SUM(pagado) deudass,
   case when state in('2', '5', '6') then NULL
   else B.dias end as dias
 FROM
@@ -531,7 +531,7 @@ FROM
               ELSE 0
           END seguro,
           CASE
-              WHEN T4.period <= DATE(NOW()) THEN T8.amount
+              WHEN T4.period <= DATE(NOW()) THEN T4.punitorios
               ELSE 0
           END punitorios
   FROM
@@ -541,7 +541,7 @@ FROM
   INNER JOIN cayetano.users T5 ON T1.clientID = T5.id
   LEFT JOIN cayetano.credits_items T4 ON T1.id = T4.credit_id
   LEFT JOIN cayetano.punitorios T8 ON T1.id = T8.credit_id
-      AND T4.period = T8.period) A
+      AND T4.period = T8.period ) A
       LEFT JOIN
   (SELECT 
       SUM(A.deudas) AS deudas, A.dias, A.id
@@ -550,13 +550,13 @@ FROM
       c.id,
           c.clientID,
           ci.period,
-          (ci.capital + ci.intereses + safe + nota_debito + (CASE
+          coalesce((ci.capital + ci.intereses + safe + nota_debito + (CASE
               WHEN SUM(p.amount) THEN SUM(p.amount)
               ELSE 0
           END)) - (CASE
               WHEN ci.payed THEN ci.payed
               ELSE 0
-          END) AS deudas,
+          END),0) AS deudas,
           DATEDIFF(NOW(), ci.period) AS dias
   FROM
       cayetano.punitorios p
