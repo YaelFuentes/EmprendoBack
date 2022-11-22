@@ -21,6 +21,8 @@ const notasRoutes = require('./api/resourses/notas/notas.routes');
 const cajaRoutes = require('./api/resourses/caja/caja.routes');
 const cronCheques = require('./api/resourses/cheques/cheques.controller')
 const chequesRoutes = require('./api/resourses/cheques/cheques.routes')
+const auth = require('./api/resourses/auth');
+
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -420,4 +422,10 @@ cron.schedule("0 7 * * *", async function () {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   cronCheques.cronCheques();
+});
+
+app.get("/puni/:id",auth.required,async function (req, res) {
+  let id = req.params.id;
+  await punitoriosController.calculate(id);
+  res.sendStatus(200)
 });
