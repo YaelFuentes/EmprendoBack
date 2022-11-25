@@ -15,17 +15,21 @@ async function getMovements(start = "", end = "") {
     const sql = `SELECT
     cash_flow.*,
     CONCAT(users.lastname," ",users.name) username,
-    CONCAT(creditUsers.lastname," ",creditUsers.name) credit_responsable,
+    CASE WHEN credit_id is not null THEN CONCAT(creditUsers.lastname," ",creditUsers.name)
+    WHEN investment_id is not null THEN CONCAT(investmentUser.lastname," ",investmentUser.name) 
+    ELSE null
+    end cliente,
       cash_flow_accounts.name account_name,
       investments.investorID
   FROM
-    cash_flow 
-      LEFT JOIN users ON cash_flow.user = users.id  
-      LEFT JOIN credits ON cash_flow.credit_id = credits.id
-      LEFT JOIN users creditUsers ON credits.clientID = creditUsers.id
-      LEFT JOIN cash_flow_accounts ON cash_flow.account_id = cash_flow_accounts.id
-      LEFT JOIN investments ON cash_flow.investment_id = investments.id
-  WHERE cash_flow.created_at BETWEEN ? AND ? AND cash_flow.deleted_at IS NULL
+    cayetano.cash_flow 
+      LEFT JOIN cayetano.users ON cash_flow.user = users.id  
+      LEFT JOIN cayetano.credits ON cash_flow.credit_id = credits.id
+      LEFT JOIN cayetano.users creditUsers ON credits.clientID = creditUsers.id
+      LEFT JOIN cayetano.cash_flow_accounts ON cash_flow.account_id = cash_flow_accounts.id
+      LEFT JOIN cayetano.investments ON cash_flow.investment_id = investments.id
+      LEFT JOIN cayetano.users investmentUser ON investments.investorID = investmentUser.id
+  WHERE cash_flow.created_at BETWEEN ? AND ? AND cash_flow.deleted_at IS NULL AND operation_type not in ("ingreso_interes_cuotas", "ingreso_capital_cuotas","ingreso_seguro_cuotas", "ingreso_punitorios_cuotas", "ingreso_nota_debito")
   ORDER BY
     cash_flow.created_at DESC`;
     console.log(sql);
@@ -34,15 +38,17 @@ async function getMovements(start = "", end = "") {
     const sql = `SELECT
     cash_flow.*,
     CONCAT(users.lastname," ",users.name) username,
-      creditUsers.lastname credit_responsable,
-      cash_flow_accounts.name account_name
+    CASE WHEN credit_id is not null THEN CONCAT(creditUsers.lastname," ",creditUsers.name)
+    WHEN investment_id is not null THEN CONCAT(investmentUser.lastname," ",investmentUser.name) 
+    ELSE null
+    end cliente,
   FROM
-    cash_flow 
-      LEFT JOIN users ON cash_flow.user = users.id  
-      LEFT JOIN credits ON cash_flow.credit_id = credits.id
-      LEFT JOIN users creditUsers ON credits.clientID = creditUsers.id
-      LEFT JOIN cash_flow_accounts ON cash_flow.account_id = cash_flow_accounts.id
-      WHERE cash_flow.deleted_at IS NULL
+    cayetano.cash_flow 
+      LEFT JOIN cayetano.users ON cash_flow.user = users.id  
+      LEFT JOIN cayetano.credits ON cash_flow.credit_id = credits.id
+      LEFT JOIN cayetano.users creditUsers ON credits.clientID = creditUsers.id
+      LEFT JOIN cayetano.cash_flow_accounts ON cash_flow.account_id = cash_flow_accounts.id
+      WHERE cash_flow.deleted_at IS NULL AND operation_type not in ("ingreso_interes_cuotas", "ingreso_capital_cuotas","ingreso_seguro_cuotas", "ingreso_punitorios_cuotas", "ingreso_nota_debito")
   ORDER BY
     cash_flow.created_at DESC`;
     console.log(sql);
@@ -147,9 +153,9 @@ async function add(
     if (account_id == "") {
       account_id = null;
     }
-   if (responsable_id == "") {
-     responsable_id = null;
-   }
+    if (responsable_id == "") {
+      responsable_id = null;
+    }
 
     mysqli.query(
       "INSERT INTO cash_flow (type, amount, created_at,description, user, credit_id, operation_type, investment_id,account_id,responsable_id,caja_id) VALUES(?, ?, now(),?,?,?,?,?,?,?,?)",
@@ -166,7 +172,7 @@ async function add(
         responsable_id,
         caja_id
       ],
-      
+
       (err, results, rows) => {
         if (err) {
           console.error(err);
