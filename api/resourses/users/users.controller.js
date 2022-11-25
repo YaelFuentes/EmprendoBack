@@ -53,7 +53,7 @@ function getUsers(type, callback) {
         	SELECT
         	  c.clientID
         	, ci.period
-        	, (ci.amount + safe
+        	, (ci.amount + safe + nota_debito +
         		+ (CASE WHEN SUM(p.amount) THEN SUM(p.amount) ELSE 0 END)
         	  )	- (CASE WHEN ci.payed THEN ci.payed ELSE 0 END) as deuda
         	, DATEDIFF(now(), ci.period) as dias
