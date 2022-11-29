@@ -482,6 +482,7 @@ function getList(callback) {
   lastname,
   phone,
   status,
+  state,
   additionalInfo,
   state,coalesce(B.deudas,0) as deuda,
   (SUM(seguro) + (CASE
