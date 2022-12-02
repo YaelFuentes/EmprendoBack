@@ -640,6 +640,125 @@ creditsRouter.get(
   }
 );
 
+creditsRouter.get(
+  "/downloadprenda/:creditid",
+  auth.required,
+  async function (req, res, next) {
+    const fs = require("fs");
+    const creditid = req.params.creditid;
+    let tmpl = fs.readFileSync("./templates/prenda.html", "utf8");
+    let options = {
+      format: "A4",
+      phantomPath: "./node_modules/phantomjs-prebuilt/bin/phantomjs",
+    };
+    const moment = require("moment");
+    const creditInfo = await creditsController.getPrintInfo(creditid);
+    let html = tmpl.replace(
+      "{{logo}}",
+      `https://emprendo-public-assets.s3.us-east-2.amazonaws.com/logo.png`
+    );
+    html = html.replace("{{fecha}}", moment().format("DD/MM/YYYY"));
+    html = html.replace("{{idCredito}}", creditid);
+    html = html.replace(
+      "{{apellido_nombre}}",
+      creditInfo.client.apellido_nombre
+    );
+    html = html.replace("{{dni}}", creditInfo.client.dni);
+    html = html.replace("{{telefono}}", creditInfo.client.telefono);
+    html = html.replace("{{email}}", creditInfo.client.email);
+    html = html.replace(
+      "{{additionaldata}}",
+      creditInfo.status[0].additionaldata
+    );
+    html = html.replace("{{car_brand}}", creditInfo.car.car_brand);
+    html = html.replace("{{car_model}}", creditInfo.car.car_model);
+    html = html.replace("{{car_year}}", creditInfo.car.car_year);
+    html = html.replace("{{car_domain}}", creditInfo.car.car_domain);
+    html = html.replace("{{car_details}}", creditInfo.car.car_details);
+    html = html.replace("{{budget_amount}}", creditInfo.budget.budget_amount);
+    html = html.replace("{{budget_cuotas}}", creditInfo.budget.budget_cuotas);
+    html = html.replace(
+      "{{budget_commision}}",
+      creditInfo.budget.budget_commision
+    );
+    html = html.replace(
+      "{{budget_otorgamiento}}",
+      moment(creditInfo.budget.budget_otorgamiento).format("DD/MM/YYYY")
+    );
+    html = html.replace(
+      "{{budget_primera_cuota}}",
+      moment(creditInfo.budget.budget_primera_cuota).format("DD/MM/YYYY")
+    );
+    console.log(creditInfo.status);
+    let block_credit_status = "";
+    let block_deuda = 0;
+
+    let blockaddressblock = "";
+    creditInfo.addresses.forEach((address) => {
+      blockaddressblock += "<tr>";
+      blockaddressblock +=
+        "<td>" +
+        "Domicilio " +
+        (address.type == 1 ? "" : "Laboral") +
+        "</td>";
+      blockaddressblock +=
+        "<td>" +
+        address.address +
+        " " +
+        address.number +
+        " " +
+        address.department +
+        "</td>";
+      blockaddressblock += "</tr>";
+    });
+
+    creditInfo.status.forEach(function (item) {
+      block_deuda += Number(item.deuda);
+      console.log(creditInfo.status);
+      block_credit_status += "<tr>";
+      block_credit_status +=
+        "<td>" + moment(item.period).format("DD/MM/YYYY") + "</td>";
+      block_credit_status += "<td>$" + item.cuota + "</td>";
+      block_credit_status += "<td>$" + item.seguro + "</td>";
+      block_credit_status +=
+        "<td>$" + (item.punitorios ? item.punitorios : 0) + "</td>";
+      block_credit_status +=
+        "<td>$" +
+        (
+          item.cuota + item.nota_debito +
+          item.seguro +
+          (item.punitorios ? item.punitorios : 0)
+        ).toFixed(2) +
+        "</td>";
+      block_credit_status +=
+        "<td>" +
+        (item.pagado == "" || item.pagado == null
+          ? "Impago"
+          : "Pagado $" + item.pagado) +
+        "</td>";
+      block_credit_status +=
+        "<td>$" +
+        (
+          item.cuota + item.nota_debito +
+          item.seguro +
+          (item.punitorios ? item.punitorios : 0) -
+          item.pagado
+        ).toFixed(2) +
+        "</td>";
+      block_credit_status += "<td>$" + Number(item.deuda).toFixed(2) + "</td>";
+      block_credit_status += "</tr>";
+    });
+
+    html = html.replace("{{block_credit_status}}", block_credit_status);
+    html = html.replace("{{block_deuda}}", block_deuda);
+
+    html = html.replace("{{blockaddressblock}}", blockaddressblock);
+
+    res.json({ html: html });
+  }
+);
+
+
 
 function executeAllPromises(promises) {
   // Wrap all Promises in a Promise that will always "resolve"
