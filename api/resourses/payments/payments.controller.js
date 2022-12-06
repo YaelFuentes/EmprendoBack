@@ -633,7 +633,9 @@ async function getList(credit_id) {
     if (Array.isArray(result) && result.length > 0) {
       const arrayPagos = await Promise.all(
         result.map(async (item) => {
-          const quotes = await getPayed(item.pagos);
+          // const quotes = await getPayed(item.pagos);
+          const quotes = await getPayed2(item.pagos, item.credit_id,item.id);
+
           if (Array.isArray(quotes) && quotes.length > 0) {
             item.cuotasPagas = quotes
           }
@@ -645,6 +647,55 @@ async function getList(credit_id) {
   } catch (error) {
     return error
   }
+}
+
+async function getPayed2(payed_ci,credit_id, payment_id) {
+  const ci = payed_ci.split(",");
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+
+  const query1 = `SELECT
+  COUNT(credits_items.id) cuotastotales,
+  subquery.primera_cuota
+  FROM credits_items JOIN (SELECT
+    credits.primera_cuota,
+    credits.id
+  FROM
+    credits
+    INNER JOIN credits_items ci ON ci.credit_id = credits.id 
+  WHERE
+    ci.id IN (?)
+  LIMIT 1) subquery
+  WHERE credits_items.credit_id = subquery.id
+  ;`;
+  const resultquery1 = await query(query1, [ci]);
+  let result = []
+  ci.map(async item => {
+    const dataQ = `Select C.*,case when (coalesce (sum(B.amount),0) + SUM(CASE WHEN A.account_id = 12 THEN A.amount ELSE 0 END)) >= (C.intereses + C.capital + C.punitorios + SUM(CASE WHEN A.account_id = 13 THEN A.amount ELSE 0 END)) 
+    then "cancelado" else "a cuenta" end as Pago
+    FROM cayetano.payments A 
+    left join cayetano.cash_flow B on A.id = B.payment_id and credit_item_id = ? 
+    inner join cayetano.credits_items C on C.id = ? where paymentDate <= (SELECT paymentDate FROM cayetano.payments where credit_id= ? and id = ?) and payed_ci like "%?%"`
+    const credits_items = await query(dataQ, [
+    resultquery1[0].primera_cuota,
+     item,
+     item,
+     credit_id,
+     payment_id,
+     item,
+    ]);
+    console.log(credits_items);
+    console.log(resultquery1[0].primera_cuota,
+      item,
+      item,
+      credit_id,
+      payment_id,
+      item,);
+    if (Array.isArray(credits_items) && result.length > 0) {
+      result.push(credits_items)
+    }
+  })
+  return result;
 }
 
 function getListDeleted(credit_id, callback) {
