@@ -1,0 +1,202 @@
+<html>
+
+<head>
+  <meta charset="utf8" />
+  <title>Detalle crédito</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-weight: 500;
+      font-size: 10px;
+      -webkit-print-color-adjust: exact;
+      box-sizing: border-box;
+    }
+
+    .page {
+      position: relative;
+      display: block;
+      background: white;
+    }
+
+    .table {
+      border: solid 1px darkgray;
+      width: 90%;
+      margin-top: 20px;
+      font-size: 10px;
+      margin-left: 10mm;
+    }
+
+    .table tr>td {
+      padding: 5px;
+      border-bottom: solid 1px gray;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .page {
+        margin-top: 10mm;
+        margin-bottom: 10mm;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <table class="table" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="background-color: lightgray;" colspan="2">
+        <b>DATOS PERSONALES</b>
+      </td>
+    </tr>
+    <tr>
+      <td style="width: 30%; border-right: solid 1px darkgray;">
+        <b>APELLIDO Y NOMBRE</b>
+      </td>
+      <td>{{apellido_nombre}}</td>
+    </tr>
+    <tr>
+      <td style="border-right: solid 1px darkgray;">
+        <b>DNI</b>
+      </td>
+      <td>{{dni}}</td>
+    </tr>
+    <tr>
+      <td style="border-right: solid 1px darkgray;">
+        <b>TELEFONO</b>
+      </td>
+      <td>{{telefono}}</td>
+    </tr>
+    <tr>
+      <td style="border-right: solid 1px darkgray;">
+        <b>EMAIL</b>
+      </td>
+      <td>{{email}}</td>
+    </tr>
+  </table>
+
+  <table class="table" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="background-color: lightgray;" colspan="2">
+        <b>DATOS DEL VEHICULO</b>
+      </td>
+    </tr>
+    <tr>
+      <td style="width: 30%; border-right: solid 1px darkgray;">
+        <b>MARCA</b>
+      </td>
+      <td>{{car_brand}}</td>
+    </tr>
+    <tr>
+      <td style="border-right: solid 1px darkgray;">
+        <b>MODELO</b>
+      </td>
+      <td>{{car_model}}</td>
+    </tr>
+    <tr>
+      <td style="border-right: solid 1px darkgray;">
+        <b>A&Ntilde;O</b>
+      </td>
+      <td>{{car_year}}</td>
+    </tr>
+    <tr>
+      <td style="border-right: solid 1px darkgray;">
+        <b>PATENTE</b>
+      </td>
+      <td>{{car_domain}}</td>
+    </tr>
+  </table>
+  <table class="table" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="background-color: lightgray;" colspan="2">
+        <b>DATOS DEL CREDITO</b>
+      </td>
+    </tr>
+    <tr>
+      <td style="border-right: solid 1px darkgray;">
+        <b>Monto total del credito</b>
+      </td>
+      <td>{{credit_total}}</td>
+    </tr>
+    <tr>
+      <td style="border-right: solid 1px darkgray;">
+        <b>Monto total pagado del credito</b>
+      </td>
+      <td>{{credit_payed}}</td>
+    </tr>
+    <tr>
+      <td style="border-right: solid 1px darkgray;">
+        <b>Monto total pagado del credito</b>
+      </td>
+      <td>{{credit_deuda}}</td>
+    </tr>
+  </table>
+
+  <table class="table" border="0" cellpadding="0" cellspacing="0">
+    <tr text-align: center;>
+      <td style="background-color: lightgray; text-align: center;" colspan="2">
+        <b>ITEM</b>
+      </td>
+      <td style="width: 17%; border-right: solid 1px darkgray; text-align: center;background-color: lightgray">
+        <b>INTERES</b>
+      </td>
+      <td style="width: 17%; border-right: solid 1px darkgray; text-align: center;background-color: lightgray">
+        <b>CAPITAL</b>
+      </td>
+      <td style="width: 17%; border-right: solid 1px darkgray; text-align: center;background-color: lightgray">
+        <b>SEGURO</b>
+      </td>
+      <td style="width: 17%; border-right: solid 1px darkgray; text-align: center;background-color: lightgray">
+        <b>PUNITORIOS</b>
+      </td>
+      <td style="width: 17%; border-right: solid 1px darkgray; text-align: center;background-color: lightgray">
+        <b>NOTA DEBITO</b>
+      </td>
+      <td style="width: 17%; border-right: solid 1px darkgray; text-align: center;background-color: lightgray">
+        <b>NOTA CREDITO</b>
+      </td>
+    </tr>
+    <tr style="text-align: center;">
+      <td style="background-color: lightgray; " colspan="2">
+        <b>DEUDA</b>
+      </td>
+      <td style="border-right: solid 1px darkgray ;">{{interes_deuda}}</td>
+      <td style="border-right: solid 1px darkgray ;">{{capital_deuda}}</td>
+      <td style="border-right: solid 1px darkgray ;">{{seguro_deuda}}</td>
+      <td style="border-right: solid 1px darkgray ;">{{punitorio_deuda}}</td>
+      <td style="border-right: solid 1px darkgray ;">{{notaD_deuda}}</td>
+      <td>-</td>
+    </tr>
+    <tr style="text-align: center;">
+      <td style="background-color: lightgray;" colspan="2">
+        <b>PAGADO</b>
+      </td>
+      <td style="border-right: solid 1px darkgray ;">{{interes_payed}}</td>
+      <td style="border-right: solid 1px darkgray ;">{{capital_payed}}</td>
+      <td style="border-right: solid 1px darkgray ;">{{seguro_payed}}</td>
+      <td style="border-right: solid 1px darkgray ;">{{punitorio_payed}}</td>
+      <td style="border-right: solid 1px darkgray ;">{{notaD_payed}}</td>
+      <td>{{notaC_payed}}</td>
+    </tr>
+    <tr style="text-align: center;">
+      <td style="background-color: lightgray;" colspan="2">
+        <b>TOTAL</b>
+      <td style="border-right: solid 1px darkgray ;">{{credit_payed_int}}</td>
+      <td style="border-right: solid 1px darkgray ;">{{credit_payed_cap}}</td>
+      <td style="border-right: solid 1px darkgray ;">{{credit_payed_seg}}</td>
+      <td style="border-right: solid 1px darkgray ;">{{credit_payed_pun}}</td>
+      <td style="border-right: solid 1px darkgray ;">{{credit_payed_notD}}</td>
+      <td>-</td>
+      </td>
+    </tr>
+  </table>
+
+
+</body>
+
+</html>
