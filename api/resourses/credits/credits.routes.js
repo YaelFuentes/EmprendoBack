@@ -640,7 +640,7 @@ creditsRouter.get(
   }
 );
 
-creditsRouter.get(
+creditsRouter.post(
   "/downloadprenda/:creditid",
   auth.required,
   async function (req, res, next) {
