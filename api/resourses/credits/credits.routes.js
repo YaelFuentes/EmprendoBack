@@ -11,7 +11,7 @@ const creditsRouter = express.Router();
 
 creditsRouter.get("/infoEstado/:creditid", function (req, res) {
   const creditid = req.params.creditid;
-  creditsController.getInfoCredit(creditid, function(err, result){
+  creditsController.getInfoCredit(creditid, function (err, result) {
     res.json(result);
   });
 });
@@ -23,8 +23,8 @@ creditsRouter.get("/list/:clientid", auth.required, function (req, res, next) {
   });
 });
 
-creditsRouter.get("/getcsv", auth.required, function(req,res,next){
-  creditsController.getCsv(function(err, result){
+creditsRouter.get("/getcsv", auth.required, function (req, res, next) {
+  creditsController.getCsv(function (err, result) {
     res.json(result)
   });
 });
@@ -478,17 +478,17 @@ creditsRouter.get(
 
 creditsRouter.get(
   "/downloadSeguros/:creditid"
-  ,auth.required,
+  , auth.required,
   async function (req, res, next) {
     const fs = require("fs");
     const creditid = req.params.creditid;
     let tmpl = fs.readFileSync("./templates/pagos.html", "utf8");
     let options = {
       format: 'A4',
-      phantomPath:'./node_modules/phantomjs-prebuilt/bin/phantomjs'
+      phantomPath: './node_modules/phantomjs-prebuilt/bin/phantomjs'
     };
     const moment = require("moment");
-     const seguro = await creditsController.getPrintInfoSeguros(creditid);
+    const seguro = await creditsController.getPrintInfoSeguros(creditid);
     let html = tmpl.replace(
       "{{logo}}",
       `https://emprendo-public-assets.s3.us-east-2.amazonaws.com/logo.png`
@@ -503,23 +503,23 @@ creditsRouter.get(
     html = html.replace("{{telefono}}", seguro.printSeguros.telefono);
     html = html.replace("{{email}}", seguro.printSeguros.email);
 
-     html = html.replace("{{car_brand}}", seguro.seguroDataCar.car_brand);
-     html = html.replace("{{car_model}}", seguro.seguroDataCar.car_model);
-     html = html.replace("{{car_year}}", seguro.seguroDataCar.car_year);
-     html = html.replace("{{car_domain}}", seguro.seguroDataCar.car_domain);
-     html = html.replace("{{car_details}}", seguro.seguroDataCar.car_details);
+    html = html.replace("{{car_brand}}", seguro.seguroDataCar.car_brand);
+    html = html.replace("{{car_model}}", seguro.seguroDataCar.car_model);
+    html = html.replace("{{car_year}}", seguro.seguroDataCar.car_year);
+    html = html.replace("{{car_domain}}", seguro.seguroDataCar.car_domain);
+    html = html.replace("{{car_details}}", seguro.seguroDataCar.car_details);
     let block_seguros = "";
     var index = 1;
-    seguro.seguroData.forEach(function (item){
+    seguro.seguroData.forEach(function (item) {
       block_seguros += "<tr>";
-      block_seguros += "<td>" + index++ , "</td>";
+      block_seguros += "<td>" + index++, "</td>";
       block_seguros += "<td>" + moment(item.imputationDate).format("DD/MM/YYYY") + "</td>";
       block_seguros += "<td>$" + item.amount + "</td>";
       block_seguros += "</tr>"
     });
     html = html.replace("{{block_seguros}}", block_seguros);
     res.json({ html: html });
-  }, 
+  },
 )
 
 creditsRouter.get(
@@ -758,7 +758,136 @@ creditsRouter.get(
   }
 );
 
+creditsRouter.post(
+  "/downloadestado/:creditid",
+  auth.required,
+  async function (req, res, next) {
+    const fs = require("fs");
+    const creditid = req.params.creditid;
+    const { total, payed, notaCredito } = req.body
+    console.log(total, "total", payed, "payed", notaCredito, "nc")
+    let tmpl = fs.readFileSync("./templates/estado.html", "utf8");
+    let options = {
+      format: "A4",
+      phantomPath: "./node_modules/phantomjs-prebuilt/bin/phantomjs",
+    };
+    const moment = require("moment");
+    const creditInfo = await creditsController.getPrintInfo(creditid);
+    let creditNumbers
+    creditsController.getInfo(creditid, function (error, result) {
+      creditNumbers = result
+    })
+    console.log(creditNumbers)
+    let html = tmpl.replace(
+      "{{logo}}",
+      `https://emprendo-public-assets.s3.us-east-2.amazonaws.com/logo.png`
+    );
+    html = html.replace("{{fecha}}", moment().format("DD/MM/YYYY"));
+    html = html.replace("{{idCredito}}", creditid);
+    html = html.replace(
+      "{{apellido_nombre}}",
+      creditInfo.client.apellido_nombre
+    );
+    html = html.replace("{{dni}}", creditInfo.client.dni);
+    html = html.replace("{{telefono}}", creditInfo.client.telefono);
+    html = html.replace("{{email}}", creditInfo.client.email);
+    html = html.replace(
+      "{{additionaldata}}",
+      creditInfo.status[0].additionaldata
+    );
+    html = html.replace("{{car_brand}}", creditInfo.car.car_brand);
+    html = html.replace("{{car_model}}", creditInfo.car.car_model);
+    html = html.replace("{{car_year}}", creditInfo.car.car_year);
+    html = html.replace("{{car_domain}}", creditInfo.car.car_domain);
+    html = html.replace("{{car_details}}", creditInfo.car.car_details);
+    html = html.replace("{{budget_amount}}", creditInfo.budget.budget_amount);
+    html = html.replace("{{budget_cuotas}}", creditInfo.budget.budget_cuotas);
+    html = html.replace(
+      "{{budget_commision}}",
+      creditInfo.budget.budget_commision
+    );
+    html = html.replace(
+      "{{budget_otorgamiento}}",
+      moment(creditInfo.budget.budget_otorgamiento).format("DD/MM/YYYY")
+    );
+    html = html.replace(
+      "{{budget_primera_cuota}}",
+      moment(creditInfo.budget.budget_primera_cuota).format("DD/MM/YYYY")
+    );
+    html = html.replace("{{credit_total}}", `$ ${total.total.toFixed(2)}`)
+    html = html.replace("{{credit_payed}}", `$ ${total.pagado.toFixed(2)}`)
+    html = html.replace("{{credit_deuda}}", `$ ${total.deudaCreditoTotal.toFixed(2)}`)
+    html = html.replace("{{credit_payed_int}}", `$ ${total.interes.toFixed(2)}`)
+    html = html.replace("{{interes_payed}}", `$ ${payed.interesPagado.toFixed(2)}`)
+    html = html.replace("{{interes_deuda}}", `$ ${(total.interes - payed.interesPagado).toFixed(2)}`)
+    html = html.replace("{{credit_payed_cap}}", `$ ${total.capital.toFixed(2)}`)
+    html = html.replace("{{capital_payed}}", `$ ${payed.capitalPagado.toFixed(2)}`)
+    html = html.replace("{{capital_deuda}}", `$ ${(total.capital - payed.capitalPagado).toFixed(2)}`)
+    html = html.replace("{{seguro_deuda}}", `$ ${total.seguro.toFixed(2)}`)
+    html = html.replace("{{seguro_payed}}", `$ ${payed.seguroPagado.toFixed(2)}`)
+    html = html.replace("{{credit_payed_seg}}", `$ ${total.seguro - payed.capitalPagado}`)
+    html = html.replace("{{punitorio_deuda}}", `$ ${total.punitorios.toFixed(2)}`)
+    html = html.replace("{{punitorio_payed}}", `$ ${payed.punitoriosPagado.toFixed(2)}`)
+    html = html.replace("{{credit_payed_pun}}", `$ ${(total.punitorios - payed.punitoriosPagado).toFixed(2)}`)
+    html = html.replace("{{notaD_deuda}}", `$ ${total.nota_debito.toFixed(2)}`)
+    html = html.replace("{{notaD_payed}}", `$ ${payed.notaDebitoPagado.toFixed(2)}`)
+    html = html.replace("{{credit_payed_notD}}", `$ ${total.nota_debito - payed.notaDebitoPagado.toFixed(2)}`)
+    html = html.replace("{{notaC_deuda}}", `$ ${total.nota_credito}`)
+    html = html.replace("{{notaC_payed}}", `$ ${notaCredito}`)
+    html = html.replace("{{credit_payed_notC}}", `$ ${(total.nota_credito - payed.notaCreditoPagado).toFixed(2)}`)
+    console.log(creditInfo.status);
+    let block_credit_status = "";
+    let block_deuda = 0;
 
+    let blockaddressblock = "";
+
+    creditInfo.status.forEach(function (item) {
+      block_deuda += Number(item.deuda);
+      console.log(creditInfo.status);
+      block_credit_status += "<tr>";
+      block_credit_status +=
+        "<td>" + moment(item.period).format("DD/MM/YYYY") + "</td>";
+      block_credit_status += "<td>$" + item.cuota + "</td>";
+      block_credit_status += "<td>$" + item.seguro + "</td>";
+      block_credit_status +=
+        "<td>$" + (item.punitorios ? item.punitorios : 0) + "</td>";
+      block_credit_status +=
+        "<td>$" +
+        (
+          item.cuota + item.nota_debito +
+          item.seguro +
+          (item.punitorios ? item.punitorios : 0)
+        ).toFixed(2) +
+        "</td>";
+      block_credit_status +=
+        "<td>" +
+        (item.pagado == "" || item.pagado == null
+          ? "Impago"
+          : "Pagado $" + item.pagado) +
+        "</td>";
+      block_credit_status +=
+        "<td>$" +
+        (
+          item.cuota + item.nota_debito +
+          item.seguro +
+          (item.punitorios ? item.punitorios : 0) -
+          item.pagado
+        ).toFixed(2) +
+        "</td>";
+      block_credit_status += "<td>$" + Number(item.deuda).toFixed(2) + "</td>";
+      block_credit_status += "</tr>";
+    }
+
+    );
+
+    html = html.replace("{{block_credit_status}}", block_credit_status);
+    html = html.replace("{{block_deuda}}", block_deuda);
+
+    html = html.replace("{{blockaddressblock}}", blockaddressblock);
+
+    res.json({ html: html });
+  }
+);
 
 function executeAllPromises(promises) {
   // Wrap all Promises in a Promise that will always "resolve"
