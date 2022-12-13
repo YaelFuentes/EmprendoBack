@@ -1,3 +1,4 @@
+const { info } = require("console");
 const { resolve } = require("path");
 var commonFormulas = require("../common/formulas");
 
@@ -24,7 +25,7 @@ async function calculate(credit_id) {
   const cuotas = credit[0].cuotas;
 
   let sql =
-    "SELECT * FROM cayetano.credits_items WHERE credit_id = ? AND (capital+intereses+safe) > payed AND  DATE_ADD(DATE(period),INTERVAL 4 DAY) < NOW()";
+    "SELECT * FROM cayetano.credits_items WHERE credit_id = ? AND (punitorios+capital+intereses+safe) > payed AND  DATE_ADD(DATE(period),INTERVAL 4 DAY) < NOW()";
   let insertado = 0;
   const creditsItems = await query(sql, [credit_id]);
 
@@ -36,8 +37,24 @@ async function calculate(credit_id) {
     ) {
       moment.duration().asDays();
       const today = moment();
-      const initialperiod = creditsItems[indexCredit].period;
-      const period = moment(creditsItems[indexCredit].period).add(4, "days");
+      let initialperiod = creditsItems[indexCredit].period;
+      let period = moment(creditsItems[indexCredit].period).add(4, "days");
+      //Punitorios existentes
+      let sqlCheck =
+      "SELECT * FROM punitorios WHERE period = ? and credit_id = ? ";
+      const sqlCheckResult = await query(sqlCheck, [
+      initialperiod,
+      credit_id,
+      ]);
+      if(Array.isArray(sqlCheckResult) && sqlCheckResult.length > 0){
+        let punitoriosItem = sqlCheckResult.filter(item=>item.closed_date!=null).sort((item1, item2)=>item2.closed_date - item1.closed_date)
+        console.log(punitoriosItem);
+        if (punitoriosItem.length>0){
+          period = moment(punitoriosItem[0].closed_date);
+        }
+      }
+
+
       const days = period.diff(today, "days");
       const payed = creditsItems[indexCredit].payed;
       const cuota =
@@ -62,6 +79,7 @@ async function calculate(credit_id) {
             ingreso.ingresado;
         });
       }
+    
       if (Number(days) < 0) {
         let diasDeAtraso = Math.abs(days);
         fecha = moment(initialperiod)
@@ -86,19 +104,16 @@ async function calculate(credit_id) {
           console.log("INTERES", interes);
 
           let gastoAdministrativo = 650;
-          interes += gastoAdministrativo;
+          if(sqlCheckResult.length < 2 && (sqlCheckResult.filter(item=>item.closed_date!=null)).length === 0){
+            interes += gastoAdministrativo;
+          }
 
-          let sqlCheck =
-            "SELECT id FROM punitorios WHERE period = ? and credit_id = ?";
-          const sqlCheckResult = await query(sqlCheck, [
-            initialperiod,
-            credit_id,
-          ]);
-
-          if (sqlCheckResult.length > 0) {
+          interes = Math.round(interes*100)/100
+          initialperiod = moment(initialperiod).format("YYYY-MM-DD");
+          if (sqlCheckResult.length > 0 && (sqlCheckResult.filter(item=>item.closed_date===null).length > 0)) {
             console.log("UPDATE dias de atraso", diasDeAtraso);
             let sqlUpdate =
-              "UPDATE punitorios SET amount = ?, days_past = ? WHERE period = ? AND credit_id = ?";
+              "UPDATE punitorios SET amount = ?, days_past = ? WHERE period = ? AND credit_id = ? AND closed_date is null";
             await query(sqlUpdate, [
               interes,
               diasDeAtraso,
@@ -107,18 +122,22 @@ async function calculate(credit_id) {
             ]);
           } else {
             let sqlInsert =
-              "INSERT IGNORE INTO punitorios (fecha,amount,credit_id,period,days_past) VALUES (?,?,?,?,?)";
+              "INSERT IGNORE INTO punitorios (fecha,amount,credit_id,period,days_past) VALUES (now(),?,?,?,?)";
             await query(sqlInsert, [
-              fecha,
               interes,
               credit_id,
               initialperiod,
               diasDeAtraso,
             ]);
           }
+        let amountPunitorios = "SELECT coalesce(sum(amount),0) as punitorioAmount FROM punitorios WHERE period = ? and credit_id = ? ";
+        const amountResult = await query(amountPunitorios, [
+        initialperiod,
+        credit_id,
+        ]);
           let sqlUpdate2 =
             "UPDATE credits_items SET punitorios = ?, update_by_cron = NOW() WHERE id = ?";
-          await query(sqlUpdate2, [interes, creditsItems[indexCredit].id]);
+          await query(sqlUpdate2, [amountResult[0].punitorioAmount, creditsItems[indexCredit].id]);
         }
       } // if
     } //foreach

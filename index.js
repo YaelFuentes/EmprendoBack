@@ -22,6 +22,7 @@ const cajaRoutes = require('./api/resourses/caja/caja.routes');
 const cronCheques = require('./api/resourses/cheques/cheques.controller');
 const chequesRoutes = require('./api/resourses/cheques/cheques.routes');
 const cronStateCredits = require('./api/resourses/credits/credits.controller');
+const auth = require('./api/resourses/auth');
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -394,7 +395,7 @@ FROM
   cayetano.credits_items T1
   LEFT JOIN cayetano.credits T2 ON T1.credit_id = T2.id
 WHERE
-  (T1.amount + T1.safe ) > T1.payed
+  (T1.capital+T1.intereses+ T1.safe+ T1.punitorios ) > T1.payed
       AND  DATE_ADD(DATE(T1.period),INTERVAL 4 DAY)  < NOW()
       AND T2.status = 1
       GROUP BY T1.credit_id;
@@ -431,4 +432,8 @@ cron.schedule("00 1 * * 1-5" , async function(){
    cronStateCredits.cronUpdateSubState()
 });
 
-/////////////////////////////////////////////////////////////////////////
+app.get("/puni/:id",auth.required,async function (req, res) {
+  let id = req.params.id;
+  await punitoriosController.calculate(id);
+  res.sendStatus(200)
+});

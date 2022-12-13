@@ -8,6 +8,7 @@ chequesRouter.post('/createcheques', auth.required, function (req, res) {
   const fecha_emision = req.body.fecha_emision;
   const fecha_vencimientos = req.body.fecha_vencimientos;
   const amount = req.body.amount;
+  const banco = req.body.banco;
   const nroCheque = req.body.nroCheque;
   const descripcion = req.body.descripcion;
   const tipoFormaCobros = req.body.tipoFormaCobros;
@@ -20,8 +21,8 @@ chequesRouter.post('/createcheques', auth.required, function (req, res) {
   chequesController.createCheques(
     fecha_emision,
     fecha_vencimientos,
-
     amount,
+    banco,
     nroCheque,
     descripcion,
     tipoFormaCobros,

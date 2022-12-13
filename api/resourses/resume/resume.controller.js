@@ -775,7 +775,7 @@ async function getCapitalVigente() {
 async function getCreditosVigentes(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(amount+safe+punitorios) deuda FROM credits_items WHERE (amount+safe+punitorios) > payed AND period BETWEEN ? AND ?;`;
+  const dataQuery = `SELECT SUM(amount+safe+punitorios+nota_debito) deuda FROM credits_items WHERE (amount+safe+punitorios+nota_debito) > payed AND period BETWEEN ? AND ?;`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].deuda;
@@ -787,7 +787,7 @@ async function getCreditosVigentes(start, end) {
 async function getCreditosEnMora(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(amount+safe+punitorios) deuda FROM credits_items WHERE period < NOW() AND (amount+safe+punitorios) > payed AND period BETWEEN ? AND ?;`;
+  const dataQuery = `SELECT SUM(amount+safe+punitorios+nota_debito) deuda FROM credits_items WHERE period < NOW() AND (amount+safe+punitorios+nota_debito) > payed AND period BETWEEN ? AND ?;`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].deuda;
@@ -813,7 +813,7 @@ async function getGastosPrevistos(start, end) {
 async function getClientsWithDebt() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const sql = `SELECT COUNT(*) withDebt FROM (SELECT id FROM credits_items WHERE (amount+punitorios+safe) > payed AND period < NOW() GROUP BY credit_id) AS A;`;
+  const sql = `SELECT COUNT(*) withDebt FROM (SELECT id FROM credits_items WHERE (amount+punitorios+safe+nota_debito) > payed AND period < NOW() GROUP BY credit_id) AS A;`;
   const result = await query(sql, []);
   if (result) {
     return result[0].withDebt;
@@ -825,7 +825,7 @@ async function getClientsWithDebt() {
 async function getClientsUpToDate() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const sql = `SELECT COUNT(*) upToDate FROM (SELECT id FROM credits_items WHERE (amount+punitorios+safe) <= payed AND period < NOW() GROUP BY credit_id) AS A;`;
+  const sql = `SELECT COUNT(*) upToDate FROM (SELECT id FROM credits_items WHERE (amount+punitorios+safe+nota_debito) <= payed AND period < NOW() GROUP BY credit_id) AS A;`;
   const result = await query(sql, []);
   if (result) {
     return result[0].upToDate;

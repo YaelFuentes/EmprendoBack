@@ -132,7 +132,7 @@ FROM
     LEFT JOIN cayetano.cash_flow_accounts ON A.account_id = cash_flow_accounts.id
     LEFT JOIN cayetano.investments ON A.investment_id = investments.id
     JOIN cayetano.caja B ON A.caja_id = B.id
-    where A.caja_id = 2 and operation_type not in ('ingreso_interes_cuotas', 'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas')
+    where A.caja_id = 2 and operation_type not in ('ingreso_interes_cuotas','ingreso_nota_debito', 'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas')
 ORDER BY
   A.created_at DESC`;
   const resultGetSql = await query(getSql, []);
@@ -148,7 +148,7 @@ FROM
     LEFT JOIN cayetano.cash_flow_accounts ON A.account_id = cash_flow_accounts.id
     LEFT JOIN cayetano.investments ON A.investment_id = investments.id
     JOIN cayetano.caja B ON A.caja_id = B.id
-    where A.caja_id = 2 and account_id = 1 and operation_type not in ('ingreso_interes_cuotas', 'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas')
+    where A.caja_id = 2 and account_id = 1 and operation_type not in ('ingreso_interes_cuotas', 'ingreso_nota_debito','ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas')
 ORDER BY
   A.created_at DESC;`;
   const resultGetSqlTotalEfectivo = await query(getSqlTotalEfectivo, [])
@@ -164,7 +164,7 @@ FROM
     LEFT JOIN cayetano.cash_flow_accounts ON A.account_id = cash_flow_accounts.id
     LEFT JOIN cayetano.investments ON A.investment_id = investments.id
     JOIN cayetano.caja B ON A.caja_id = B.id
-    where A.caja_id = 2 and account_id = 8 and operation_type not in ('ingreso_interes_cuotas', 'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas')
+    where A.caja_id = 2 and account_id = 8 and operation_type not in ('ingreso_interes_cuotas','ingreso_nota_debito', 'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas')
 ORDER BY
   A.created_at DESC;`;
   const resultGetSqlTotalSantanderTotal = await query(getSqlTotalSantander, [])
@@ -180,7 +180,7 @@ FROM
     LEFT JOIN cayetano.cash_flow_accounts ON A.account_id = cash_flow_accounts.id
     LEFT JOIN cayetano.investments ON A.investment_id = investments.id
     JOIN cayetano.caja B ON A.caja_id = B.id
-    where A.caja_id = 2 and account_id = 5 and operation_type not in ('ingreso_interes_cuotas', 'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas')
+    where A.caja_id = 2 and account_id = 5 and operation_type not in ('ingreso_interes_cuotas', 'ingreso_nota_debito' ,'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas')
 ORDER BY
   A.created_at DESC;`;
   const resultGetSqlTotalBrubank = await query(getSqlTotalBrubank, [])

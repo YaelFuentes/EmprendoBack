@@ -2,7 +2,8 @@
 
 <head>
   <meta charset="utf8" />
-  <title>Detalle crédito</title>
+  <title>Detalle de los pagos realizados</title>
+
   <style>
     html,
     body {
@@ -25,7 +26,7 @@
       border: solid 1px darkgray;
       width: 90%;
       margin-top: 20px;
-      font-size: 10px;
+      font-size: 8px;
       margin-left: 10mm;
     }
 
@@ -49,21 +50,20 @@
 
 <body>
   <div class="page">
-    <table style="
-          border: solid 1px darkgray;
-          width: 90%;
-          margin-left: 10mm;
-          margin-right: 10mm;
-        " border="0" cellpadding="0" cellspacing="0">
+    <table style="border: solid 1px darkgray;
+    width: 90%;
+    margin-left: 10mm;
+    margin-right: 10mm;
+  " border="0" cellpadding="0" cellspacing="0">
       <tr rowspan="2">
         <td style="
-              width: 50%;
-              border-right: solid 1px darkgray;
-              text-align: center;
-            ">
+        width: 50%;
+        border-right: solid 1px darkgray;
+        text-align: center;
+      ">
           <img src="{{logo}}" style="width: 40mm; padding: 5mm;" />
         </td>
-        <td style="padding-right: 10mm; text-align: right; font-size: 10px; text-align: center;">
+        <td style="padding-right: 10mm; text-align: right; font-size: 10px;">
           <div><b>Fecha:</b> {{fecha}}</div>
         </td>
       </tr>
@@ -73,11 +73,10 @@
               border-top: solid 1px darkgray;
               padding: 5mm;
             ">
-          <span style="font-weight: 700; font-size: 11px;">INFORMACION GENERAL DEL CREDITO NRO: {{idCredito}}</span>
+          <span style="font-weight: 700; font-size: 11px;">INFORMACION CREDITO DE: {{apellido_nombre}}</span>
         </td>
       </tr>
     </table>
-
     <table class="table" border="0" cellpadding="0" cellspacing="0">
       <tr>
         <td style="background-color: lightgray;" colspan="2">
@@ -108,23 +107,8 @@
         </td>
         <td>{{email}}</td>
       </tr>
-      <tr>
-        <td style="border-right: solid 1px darkgray;">
-          <b>OBSERVACIONES</b>
-        </td>
-        <td>{{additionaldata}}</td>
-      </tr>
+      
     </table>
-
-    <table class="table" border="0" cellpadding="0" cellspacing="0">
-      <tr>
-        <td style="background-color: lightgray;" colspan="2">
-          <b>DIRECCIONES</b>
-        </td>
-      </tr>
-      {{blockaddressblock}}
-    </table>
-
     <table class="table" border="0" cellpadding="0" cellspacing="0">
       <tr>
         <td style="background-color: lightgray;" colspan="2">
@@ -162,37 +146,6 @@
         <td>{{car_details}}</td>
       </tr>
     </table>
-    <table class="table" border="0" cellpadding="0" cellspacing="0">
-      <tr>
-        <td style="background-color: lightgray;" colspan="2">
-          <b>DATOS DE LA SOLICITUD</b>
-        </td>
-      </tr>
-      <tr>
-        <td style="width: 30%; border-right: solid 1px darkgray;">
-          <b>MONTO</b>
-        </td>
-        <td>${{budget_amount}}</td>
-      </tr>
-      <tr>
-        <td style="border-right: solid 1px darkgray;">
-          <b>CUOTAS</b>
-        </td>
-        <td>{{budget_cuotas}}</td>
-      </tr>
-      <tr>
-        <td style="border-right: solid 1px darkgray;">
-          <b>FECHA OTORGAMIENTO</b>
-        </td>
-        <td>{{budget_otorgamiento}}</td>
-      </tr>
-      <tr>
-        <td style="border-right: solid 1px darkgray;">
-          <b>FECHA PRIMERA CUOTA</b>
-        </td>
-        <td>{{budget_primera_cuota}}</td>
-      </tr>
-    </table>
     <div style="page-break-before: always;"></div>
     <table class="table" border="0" cellpadding="0" cellspacing="0">
       <tr>
@@ -205,50 +158,29 @@
           <table border="0" cellpadding="0" cellspacing="0" style="font-size: 8px; width: 100%;">
             <tr>
               <td>
-                <b>FECHA</b>
+                <b>N° CUOTA</b>
               </td>
               <td>
-                <b>CUOTA</b>
+                <b>PERIODO</b>
               </td>
               <td>
-                <b>SEGURO</b>
-              </td>
-              <td>
-                <b>PUNITORIOS</b>
-              </td>
-              <td>
-                <b>TOTAL</b>
-              </td>
-              <td>
-                <b>ESTADO</b>
-              </td>
-              <td>
-                <b>SALDO</b>
-              </td>
-              <td>
-                <b>DEUDA</b>
+                <b>MONTO</b>
               </td>
             </tr>
-            {{block_credit_status}}
+            {{block_seguros}}
             <tfoot>
               <tr>
                 <td colspan="8" style="text-align: right;">
-                  <b>Deuda acumulada a la fecha {{block_deuda}}</b>
                 </td>
               </tr>
             </tfoot>
             <tfoot>
               <tr>
                 <td colspan="8" style="text-align: justify; font-size: 9px; margin:25px 0">
-                  <p>La fecha de vencimiento de las cuotas son inamovibles, a la fecha del vencimiento.
-                    Se debera cancelar la cuota mas el seguro del vehiculo, en caso de atraso el interes
-                    punitorio sera del 1% diario.</p>
                   <p>Si el vencimiento es un dia inhabil o feriado, se debera cancelar el dia habil posterior.
                     CONDICIONES DE CANCELACIÓN</p>
-                  <p>El deudor podra cancelar el credito solicitado, a partir de la cuarta cuota, con una quita de hasta
-                    el 50% de los intereses</p>
                   <p>
-                    La cuota del seguro es semestral y varía segun suma asegurada .
+                    La cuota del seguro es semestral y varia segun suma asegurada .
                   </p>
                 </td>
               </tr>
