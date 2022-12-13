@@ -835,7 +835,6 @@ creditsRouter.post(
     html = html.replace("{{notaC_deuda}}", `$ ${total.nota_credito}`)
     html = html.replace("{{notaC_payed}}", `$ ${notaCredito}`)
     html = html.replace("{{credit_payed_notC}}", `$ ${(total.nota_credito - payed.notaCreditoPagado).toFixed(2)}`)
-    console.log(creditInfo.status);
     let block_credit_status = "";
     let block_deuda = 0;
 
