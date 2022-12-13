@@ -522,7 +522,7 @@ creditsRouter.get(
   },
 )
 
-creditsRouter.get(
+creditsRouter.post(
   "/download/:creditid",
   auth.required,
   async function (req, res, next) {
@@ -632,7 +632,7 @@ creditsRouter.get(
     });
 
     html = html.replace("{{block_credit_status}}", block_credit_status);
-    html = html.replace("{{block_deuda}}", block_deuda);
+    html = html.replace("{{block_deuda}}", `$ ${block_deuda.toFixed(2)}`);
 
     html = html.replace("{{blockaddressblock}}", blockaddressblock);
 
@@ -750,7 +750,7 @@ creditsRouter.post(
     });
 
     html = html.replace("{{block_credit_status}}", block_credit_status);
-    html = html.replace("{{block_deuda}}", block_deuda);
+    html = html.replace("{{block_deuda}}", `$ ${block_deuda.toFixed(2)}`);
 
     html = html.replace("{{blockaddressblock}}", blockaddressblock);
 
@@ -881,7 +881,7 @@ creditsRouter.post(
     );
 
     html = html.replace("{{block_credit_status}}", block_credit_status);
-    html = html.replace("{{block_deuda}}", block_deuda);
+    html = html.replace("{{block_deuda}}", `$ ${block_deuda.toFixed(2)}`);
 
     html = html.replace("{{blockaddressblock}}", blockaddressblock);
 
