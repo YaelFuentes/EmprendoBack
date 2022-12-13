@@ -30,17 +30,13 @@ mediaRouter.delete("/:id", auth.required, function (req, res, next) {
   });
 });
 
-mediaRouter.post(
-  "/upload/:creditid",
-  auth.required,
-  upload.array("files"),
-  async function (req, res, next) {
+mediaRouter.post("/upload/:creditid",auth.required, 
+upload.array("files"),async function (req, res, next) {
     const creditid = req.params.creditid;
-
+    const juicio = req.body.juicio;
     req.files.forEach(async (file) => {
       // uploading to AWS S3
       const s3Response = await uploadFile(file);
-
       // Deleting from local if uploaded in S3 bucket
       await unlinkFile(file.path);
       //Insertamos en la base de datos
@@ -48,6 +44,7 @@ mediaRouter.post(
         file,
         s3Response,
         creditid,
+        Number(juicio),
         function (err, result) {}
       );
     });

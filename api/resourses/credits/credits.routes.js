@@ -8,7 +8,6 @@ const { add } = require("../cash_flow/cashflow.controller");
 const jwt_decode = require("jwt-decode");
 
 const creditsRouter = express.Router();
-
 creditsRouter.get("/list/:clientid", auth.required, function (req, res, next) {
   const clientid = req.params.clientid;
   creditsController.getClientList(clientid, function (err, result) {
@@ -16,8 +15,105 @@ creditsRouter.get("/list/:clientid", auth.required, function (req, res, next) {
   });
 });
 
-creditsRouter.get("/getcsv", auth.required, function(req,res,next){
-  creditsController.getCsv(function(err, result){
+creditsRouter.get("/getsubstates", auth.required, async function (req, res, next) {
+  creditsController.getCreditSubState()
+    .then((data) => {
+      res.json(data).status(200)
+    })
+    .catch((err) => {
+      console.log(err);
+      res.send(500).json({ response: "Error al obtener los datos del controllador o del router" })
+    })
+});
+
+creditsRouter.post("/addpayments", auth.required, async function (req, res, next) {
+  const creditID = req.body.creditID;
+  const nroExpediente = req.body.nroExpediente;
+  const items = req.body.items;
+  console.log(items)
+  creditsController.addpaymentupdate(creditID, nroExpediente, items)
+    .then((data) => {
+      res.json(data).status(200)
+    })
+    .catch((err) => {
+      console.log(err);
+      res.send(500).json({ response: "Error al obtener los datos del enrutador" })
+    })
+});
+
+creditsRouter.get("/substate/:creditID", auth.required, async function (req, res) {
+  const creditID = req.params.creditID;
+  creditsController.getSetSubState(creditID)
+    .then((data) => {
+      res.json(data).status(200)
+    })
+    .catch((err) => {
+      console.log(err);
+      res.send(500).json({ response: "Error al obtener los datos del controlador o del router" })
+    })
+});
+
+creditsRouter.post("/updateadditionalinfo", auth.required, function (req, res) {
+  const NroExpediente = req.body.nroExpediente;
+  const creditID = req.body.creditID;
+  creditsController.updateAdditionalInfo(NroExpediente, creditID)
+    .then((data) => {
+      res.json(data).status(200)
+    })
+    .catch((err) => {
+      res.send(500).json({ response: "Error al obtener los datos del controlador" });
+      console.log(err);
+    })
+});
+creditsRouter.get("/additionalinfo/:creditID", auth.required, function (req, res) {
+  const NroExpediente = req.body.nroExpediente;
+  const creditID = req.params.creditID;
+  creditsController.getAdditionalInfo(/* NroExpediente, */ creditID)
+    .then((data) => {
+      res.json(data).status(200)
+    })
+    .catch((err) => {
+      res.send(500).json({ res: "Error al obtener los datos." })
+      console.log(err)
+    })
+});
+creditsRouter.get("/demandas/:userID", auth.required, function (req, res) {
+  const userID = req.params.userID;
+  console.log(userID + ' userID')
+  creditsController.getDemandasUser(userID)
+    .then((data) => {
+      res.json(data).status(200)
+    })
+    .catch((err) => {
+      res.send(500).json({ res: "Error al obtener los datos." })
+      console.log(err)
+    });
+});
+
+creditsRouter.put("/updatesubstate", auth.required, function (req, res) {
+  const sub_state = req.body.sub_state;
+  const creditID = req.body.creditID;
+  const user_id = req.body.user_id;
+  console.log(user_id);
+  creditsController.updateSubState(sub_state, user_id, creditID)
+    .then((data) => {
+      res.json(data).status(200)
+    })
+    .catch((err) => {
+      console.log(err);
+      res.send(500).json({ response: "Error al updatear los datos en el controlador." })
+    })
+});
+
+creditsRouter.get("/automaticupdate", auth.required, function (req, res, next) {
+  const clientid = req.params.clientid;
+  creditsController.updateAutoState(clientid, function (err, result) {
+    res.json(result);
+  });
+});
+
+creditsRouter.get("/getcsv", auth.required, function (req, res, next) {
+  creditsController.getCsv(function (err, result) {
     res.json(result)
   });
 });

@@ -19,8 +19,9 @@ const futurosRouter = require("./api/resourses/futuros/futuros.routes");
 const cash_flow_deposit = require('./api/resourses/cash_flow_deposit/cashflowdeposit.routes');
 const notasRoutes = require('./api/resourses/notas/notas.routes');
 const cajaRoutes = require('./api/resourses/caja/caja.routes');
-const cronCheques = require('./api/resourses/caja/caja.controller')
-const chequesRoutes = require('./api/resourses/cheques/cheques.routes')
+const cronCheques = require('./api/resourses/cheques/cheques.controller');
+const chequesRoutes = require('./api/resourses/cheques/cheques.routes');
+const cronStateCredits = require('./api/resourses/credits/credits.controller');
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -411,13 +412,23 @@ WHERE
   }
 });
 
+////////////////////////////////////////////////////////////////////////
+
 cron.schedule("* * * * *", async function () {
   //Ejecutar a cada minuto
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
+    /* cronStateCredits.cronUpdateSubState() */ 
+   
 });
 cron.schedule("0 7 * * *", async function () {
-  const util = require("util");
-  const query = util.promisify(mysqli.query).bind(mysqli);
   cronCheques.cronCheques();
 });
+cron.schedule("00 1 * * 1-5", async function () {
+  cronStateCredits.updateAutoState()
+});
+cron.schedule("00 1 * * 1-5" , async function(){
+   cronStateCredits.cronUpdateSubState()
+});
+
+/////////////////////////////////////////////////////////////////////////

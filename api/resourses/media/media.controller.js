@@ -22,13 +22,18 @@ function deleteMedia(id, callback) {
   });
 }
 
-function addFileToDb(file, s3Response, creditid, callback) {
+function addFileToDb(file, s3Response, creditid, juicio, callback) {
   try {
     let originalname = file.originalname;
     let path = file.filename;
     let url = s3Response.Location;
+    console.log(Number(juicio))
 
-    let sql = `INSERT INTO files (originalname,path,url,credit_id) VALUES (?,?,?,?) `;
+    let sql = `INSERT INTO files (originalname,path,url,credit_id) VALUES (concat('Juicio : ' ?),?,?,?) `;
+    if(juicio === 1){
+      let updateSql = `UPDATE credits SET updated_at = NOW() WHERE id = ?;`;
+      mysqli.query(updateSql, [creditid])
+    }
     console.log(sql);
     mysqli.query(sql, [originalname, path, url, creditid], (err, rows) => {
       var response = [];
