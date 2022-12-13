@@ -29,6 +29,20 @@
       margin-left: 10mm;
     }
 
+    .table2 {
+      border: solid 1px darkgray;
+      width: 90%;
+      margin-top: 20px;
+      font-size: 10px;
+      margin-left: 10mm;
+    }
+
+    .table2 tr>td {
+      padding: 5px;
+      border-bottom: solid 1px gray;
+    }
+
+
     .table tr>td {
       padding: 5px;
       border-bottom: solid 1px gray;
@@ -112,6 +126,7 @@
       <td>{{car_domain}}</td>
     </tr>
   </table>
+
   <table class="table" border="0" cellpadding="0" cellspacing="0">
     <tr>
       <td style="background-color: lightgray;" colspan="2">
@@ -138,9 +153,9 @@
     </tr>
   </table>
 
-  <table class="table" border="0" cellpadding="0" cellspacing="0">
+  <table class="table2" border="0" cellpadding="0" cellspacing="0">
     <tr text-align: center;>
-      <td style="background-color: lightgray; text-align: center;" colspan="2">
+      <td style="background-color: lightgray;  border-right: solid 1px darkgray ; text-align: center;" colspan="2">
         <b>ITEM</b>
       </td>
       <td style="width: 17%; border-right: solid 1px darkgray; text-align: center;background-color: lightgray">
@@ -163,7 +178,7 @@
       </td>
     </tr>
     <tr style="text-align: center;">
-      <td style="background-color: lightgray; " colspan="2">
+      <td style="background-color: lightgray; border-right: solid 1px darkgray; " colspan="2">
         <b>DEUDA</b>
       </td>
       <td style="border-right: solid 1px darkgray ;">{{interes_deuda}}</td>
@@ -174,7 +189,7 @@
       <td>-</td>
     </tr>
     <tr style="text-align: center;">
-      <td style="background-color: lightgray;" colspan="2">
+      <td style="background-color: lightgray;  border-right:  solid 1px darkgray" colspan="2">
         <b>PAGADO</b>
       </td>
       <td style="border-right: solid 1px darkgray ;">{{interes_payed}}</td>
@@ -196,8 +211,6 @@
       </td>
     </tr>
   </table>
-
-
 </body>
 
 </html>
