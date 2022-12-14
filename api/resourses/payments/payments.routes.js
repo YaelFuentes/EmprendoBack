@@ -166,7 +166,7 @@ paymentsRouter.get(
   }
 );
 
-paymentsRouter.get(
+paymentsRouter.post(
   "/download/:paymentid",
   auth.required,
   async function (req, res, next) {
