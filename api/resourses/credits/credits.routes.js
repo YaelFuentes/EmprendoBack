@@ -221,7 +221,7 @@ creditsRouter.post("/create", auth.required, async function (req, res, next) {
   //logueamos quien realizo la accion
   const decoded = jwt_decode(auth.getToken(req));
   const USER_ID = decoded.id;
-
+  const interesInicial = req.body.interesInicial
   const address = req.body.address;
   const number = req.body.number;
   const department = req.body.department;
@@ -304,6 +304,7 @@ creditsRouter.post("/create", auth.required, async function (req, res, next) {
                             creditID,
                             primera_cuota,
                             budgetInfo,
+                            interesInicial,
                             function (err, result) {
                               if (result) {
                                 res.send(JSON.stringify(result));

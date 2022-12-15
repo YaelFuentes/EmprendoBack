@@ -5,13 +5,16 @@ module.exports = {
     (capital + capital * ((comision * cuotas) / 100)) / cuotas;
     return +cuotaMensual.toFixed(2);
   },
-  generarCuotas: function (cuotas, valorUnitarioCuota, saldo, rateValue) {
+  generarCuotas: function (cuotas, valorUnitarioCuota, saldo, rateValue,interesInicial) {
     let cuotasArray = [];
     
     for (let index = 0; index < cuotas; index++) {
       let interes = +saldo * +rateValue;
       let capital = +valorUnitarioCuota - +interes;
       saldo = +saldo - +capital;
+      if (index === 0){
+        interes += interesInicial
+      }
       cuotasArray.push({
         interes: +interes.toFixed(2),
         capital: +capital.toFixed(2),

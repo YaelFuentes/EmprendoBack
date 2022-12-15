@@ -592,6 +592,7 @@ async function createItems(
   creditID,
   primera_cuota,
   budgetInfo,
+  interesInicial,
   callback
 ) {
   const util = require("util");
@@ -618,7 +619,8 @@ async function createItems(
     cuotas,
     cuotaamount,
     capitalBaseMasOtorgamiento,
-    rateValue
+    rateValue,
+    interesInicial
   );
 
   try {
