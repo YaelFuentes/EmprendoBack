@@ -231,6 +231,29 @@ FROM
   });
 }
 
+async function dataSimulador(body) {
+  const fs = require("fs");
+  let tmpl = fs.readFileSync("./templates/simuladorPropuesta.html", "utf8");
+  let options = {
+    format: "A4",
+    phantomPath: "./node_modules/phantomjs-prebuilt/bin/phantomjs",
+  };
+  const moment = require("moment", );
+  
+  let html = tmpl.replace(
+    "{{logo}}",
+    `https://emprendo-public-assets.s3.us-east-2.amazonaws.com/logo.png`
+  );
+  html = html.replace("{{monto}}", `$ ${body.montoCredito}`);
+  html = html.replace("{{cuotas}}", body.cuotas);
+  html = html.replace("{{primercuota}}", moment(body.fechaPrimerCuota).format("DD/MM/YYYY"));
+  html = html.replace("{{fechaotorgamiento}}", moment(body.fechaOtorgamiento).format("DD/MM/YYYY"));
+  html = html.replace("{{primer_cuota}}", body.primerCuota);
+  html = html.replaceAll("{{resto_cuota}}", body.cuotas - 1);
+  html = html.replace("{{resto_cuota_amount}}",`$ ${(body.granTotal / body.cuotas).toFixed(2)}`)
+  return html
+}
+
 function getInfo(creditid, callback) {
   let sql = `SELECT
               T1.id creditid,
@@ -319,13 +342,13 @@ async function getInfoCredit(creditid, callback) {
     //si queremos imprimir el mensaje ponemos err.sqlMessage
     var response = [];
     let contador = 0;
-    if (Array.isArray(rows) && rows.length>0) {
+    if (Array.isArray(rows) && rows.length > 0) {
       rows.map((item) => {
         if (item.pagado >= item.cuota + item.seguro + item.punitorios) {
           contador += 1;
         }
       })
-      Object.assign(rows[0],{NroCuotasPagas : contador})
+      Object.assign(rows[0], { NroCuotasPagas: contador })
     };
     response = rows;
     return callback(err, response);
@@ -1135,6 +1158,7 @@ function formatNumber(num) {
 module.exports = {
   create,
   getCsv,
+  dataSimulador,
   getInfo,
   getList,
   getClientList,

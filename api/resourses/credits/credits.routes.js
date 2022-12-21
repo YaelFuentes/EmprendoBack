@@ -760,6 +760,15 @@ creditsRouter.post(
 );
 
 creditsRouter.post(
+  "/downloadsimulador",
+  async function (req,res) {
+    const result = await creditsController.dataSimulador(req.body);
+    console.log(result)
+    res.json({ html: result });
+  }
+)
+
+creditsRouter.post(
   "/downloadestado/:creditid",
   auth.required,
   async function (req, res, next) {
