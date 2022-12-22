@@ -3,6 +3,7 @@ const creditsController = require("./credits.controller");
 const addressController = require("../address/address.controller");
 const carsController = require("../cars/cars.controller");
 const budgetsController = require("../budgets/budgets.controller");
+const expensesController = require("../expenses/expenses.controller");
 const auth = require("../auth");
 const { add } = require("../cash_flow/cashflow.controller");
 const jwt_decode = require("jwt-decode");
@@ -220,6 +221,7 @@ creditsRouter.post("/prenda/update", auth.required, function (req, res, next) {
 creditsRouter.post("/create", auth.required, async function (req, res, next) {
   //logueamos quien realizo la accion
   const decoded = jwt_decode(auth.getToken(req));
+  const expenses = req.body.expenses
   const USER_ID = decoded.id;
   const interesInicial = req.body.interesInicial
   const address = req.body.address;
@@ -307,6 +309,8 @@ creditsRouter.post("/create", auth.required, async function (req, res, next) {
                             interesInicial,
                             function (err, result) {
                               if (result) {
+                                expensesController.addExpenses(expenses,creditID
+                                  )
                                 res.send(JSON.stringify(result));
                               }
                             }
