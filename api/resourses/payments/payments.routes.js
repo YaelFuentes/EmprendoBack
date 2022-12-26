@@ -193,7 +193,7 @@ paymentsRouter.post(
         "{{cuota}}",
         moment(quote.period).format("DD/MM/YYYY")
       );
-      thisQuote = thisQuote.replace(
+      thisQuote = thisQuote.replaceAll(
         "{{numerocuota}}",
         quote.cuota.toString().replace(/\./g, ",")
       );
