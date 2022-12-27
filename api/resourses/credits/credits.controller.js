@@ -330,9 +330,10 @@ async function updateAutoState(state, credit_id, callback, user_id) {
       </table>
     </body>`;
     mailOptions.html = html2
-
-    /* sendMail(mailOptions); */
-    console.log(mailOptions)
+     if(response.map((item) => item.state === 3) || response.map((item) => item.status === 1)){
+      /* sendMail(mailOptions); */
+     console.log(mailOptions) 
+     }
     /////////////////////////////////////////////////////
     //mandar mail con el usuario extraido de la base de datos con state 8 (abogados)
     let mailOptions2 = {
@@ -384,10 +385,10 @@ async function updateAutoState(state, credit_id, callback, user_id) {
     mailOptions2.html = html1
     response.map((item) => {
       if (item.state == 4 && item.status == 1 && item.sub_state == null) {
-        return /* sendMail(mailOptions2) */console.log(mailOptions2)
+        return /* sendMail(mailOptions2) */ console.log(mailOptions2) 
       }
     })
-  });
+  })
   return updateState;
 };
 async function addpaymentupdate(creditID, nroExpediente, items) {
@@ -427,7 +428,6 @@ async function cronUpdateSubState() {
     
     response.map((item) => {
       if (item.created_at !== null && moment(item.created_at).add(3, 'days').format('DD/MM/YYYY') >= moment().format('DD/MM/YYYY')) {
-        console.log(moment(item.created_at).add(3, 'days').format('DD/MM/YYYY'))
         const mailOptions = {
           from: process.env.MAIL_FROM,
           to: [...sendMailFunction7, ...sendMailFunction1],
@@ -510,7 +510,6 @@ async function updateSubState(sub_state, user_id, creditID) {
         return "Secuestrado a subastar"
       }
     }
-   /*  console.log([...emailJuicio(7),...emailJuicio(1)], 'emailJuicio') */
    const sendMailFunction7 = await emailJuicio(7);
    const sendMailFunction1 = await emailJuicio(1);
     let mailOptions = {
@@ -541,12 +540,12 @@ async function updateSubState(sub_state, user_id, creditID) {
     mailOptions.html = html
 
     resultGetInfoSubState.map((item) => {
-      if (item.sub_state > 1) {
-        sendMail(mailOptions)
+      if (item.sub_state >= 1) {
+        /* sendMail(mailOptions) */
         console.log(mailOptions)
       }
     })
-    const sendMailFunction = await emailJuicio(7)
+    const sendMailFunction = await emailJuicio(10)
     if (sub_state === 3) {
       let mailOptionsMartillero = {
         from: process.env.MAIL_FROM,
@@ -576,7 +575,7 @@ async function updateSubState(sub_state, user_id, creditID) {
       })}
     </body>`;
       mailOptionsMartillero.html = html
-      console.log(mailOptionsMartillero)
+       console.log(mailOptionsMartillero) 
          /* sendMail(mailOptionsMartillero) */
       return result;
     }
@@ -609,6 +608,8 @@ async function updateAdditionalInfo(NroExpediente, creditID) {
   const query = util.promisify(mysqli.query).bind(mysqli);
   let sql1 = `SELECT * FROM credit_additional_info WHERE creditID = ? AND operation_type = 'numero_expediente';`;
   const getResult = await query(sql1, [creditID]);
+  const sendMailFunction7 = await emailJuicio(7);
+  const sendMailFunction1 = await emailJuicio(1);
   let sql2 = sqlDatos;
   const getResultSqlDatos = await query(sql2, [creditID]);
   if (Array.isArray(getResult) && getResult.length == 0) {
@@ -619,7 +620,7 @@ async function updateAdditionalInfo(NroExpediente, creditID) {
     if (NroExpediente !== null) {
       let mailOptions = {
         from: process.env.MAIL_FROM,
-        to: {...emailJuicio(7),...emailJuicio(1)},
+        to: [...sendMailFunction7, ...sendMailFunction1],
         subject: `Demanda iniciada del cliente ${getResultSqlDatos[0].lastname} ${getResultSqlDatos[0].name} Nro Expediente: ${NroExpediente}`,
         html: ''
       }
@@ -1592,8 +1593,6 @@ async function saveCredit(data, clientID, budgetID, carID) {
       formatNumber(data.monto_sin_impuestos),
       rateValue
     );
-
-    //console.log(generarCuotasArray);
 
     let totalCapital = 0;
     let totalIntereses = 0;

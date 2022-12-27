@@ -38,7 +38,6 @@ creditsRouter.post("/addpayments", auth.required, async function (req, res, next
   const creditID = req.body.creditID;
   const nroExpediente = req.body.nroExpediente;
   const items = req.body.items;
-  console.log(items)
   creditsController.addpaymentupdate(creditID, nroExpediente, items)
     .then((data) => {
       res.json(data).status(200)
@@ -87,7 +86,6 @@ creditsRouter.get("/additionalinfo/:creditID", auth.required, function (req, res
 });
 creditsRouter.get("/demandas/:userID", auth.required, function (req, res) {
   const userID = req.params.userID;
-  console.log(userID + ' userID')
   creditsController.getDemandasUser(userID)
     .then((data) => {
       res.json(data).status(200)
@@ -102,7 +100,6 @@ creditsRouter.put("/updatesubstate", auth.required, function (req, res) {
   const sub_state = req.body.sub_state;
   const creditID = req.body.creditID;
   const user_id = req.body.user_id;
-  console.log(user_id);
   creditsController.updateSubState(sub_state, user_id, creditID)
     .then((data) => {
       res.json(data).status(200)
@@ -460,7 +457,6 @@ creditsRouter.post("/import", auth.required, function (req, res, next) {
       fs.createReadStream(req.file.path)
         .pipe(csv())
         .on("data", (row) => {
-          //console.log("row", row);
           if (
             // row.hasOwnProperty("pepe") &&
             row.hasOwnProperty("monto_sin_impuestos") &&
@@ -693,7 +689,6 @@ creditsRouter.post(
 
     creditInfo.status.forEach(function (item) {
       block_deuda += Number(item.deuda);
-      console.log(creditInfo.status);
       block_credit_status += "<tr>";
       block_credit_status +=
         "<td>" + moment(item.period).format("DD/MM/YYYY") + "</td>";
@@ -786,7 +781,6 @@ creditsRouter.post(
       "{{budget_primera_cuota}}",
       moment(creditInfo.budget.budget_primera_cuota).format("DD/MM/YYYY")
     );
-    console.log(creditInfo.status);
     let block_credit_status = "";
     let block_deuda = 0;
 
@@ -811,7 +805,6 @@ creditsRouter.post(
 
     creditInfo.status.forEach(function (item) {
       block_deuda += Number(item.deuda);
-      console.log(creditInfo.status);
       block_credit_status += "<tr>";
       block_credit_status +=
         "<td>" + moment(item.period).format("DD/MM/YYYY") + "</td>";
@@ -862,7 +855,6 @@ creditsRouter.post(
     const fs = require("fs");
     const creditid = req.params.creditid;
     const { total, payed, notaCredito } = req.body
-    console.log(total, "total", payed, "payed", notaCredito, "nc")
     let tmpl = fs.readFileSync("./templates/estado.html", "utf8");
     let options = {
       format: "A4",
@@ -874,7 +866,6 @@ creditsRouter.post(
     creditsController.getInfo(creditid, function (error, result) {
       creditNumbers = result
     })
-    console.log(creditNumbers)
     let html = tmpl.replace(
       "{{logo}}",
       `https://emprendo-public-assets.s3.us-east-2.amazonaws.com/logo.png`
@@ -932,7 +923,6 @@ creditsRouter.post(
     html = html.replace("{{notaC_deuda}}", `$ ${total.nota_credito}`)
     html = html.replace("{{notaC_payed}}", `$ ${notaCredito}`)
     html = html.replace("{{credit_payed_notC}}", `$ ${(total.nota_credito - payed.notaCreditoPagado).toFixed(2)}`)
-    console.log(creditInfo.status);
     let block_credit_status = "";
     let block_deuda = 0;
 
@@ -940,7 +930,6 @@ creditsRouter.post(
 
     creditInfo.status.forEach(function (item) {
       block_deuda += Number(item.deuda);
-      console.log(creditInfo.status);
       block_credit_status += "<tr>";
       block_credit_status +=
         "<td>" + moment(item.period).format("DD/MM/YYYY") + "</td>";
