@@ -166,7 +166,7 @@ paymentsRouter.get(
   }
 );
 
-paymentsRouter.get(
+paymentsRouter.post(
   "/download/:paymentid",
   auth.required,
   async function (req, res, next) {
@@ -193,7 +193,7 @@ paymentsRouter.get(
         "{{cuota}}",
         moment(quote.period).format("DD/MM/YYYY")
       );
-      thisQuote = thisQuote.replace(
+      thisQuote = thisQuote.replaceAll(
         "{{numerocuota}}",
         quote.cuota.toString().replace(/\./g, ",")
       );
