@@ -165,6 +165,13 @@ var upload = multer({
   storage: storage,
 }).array("file");
 
+app.get("/prueba/:creditId",async function(req,res) {
+  const creditId = req.params.creditId;
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const result = await punitoriosController.calculate(creditId);
+  res.send({response:result})
+})
 app.post("/upload", function (req, res) {
   upload(req, res, function (err) {
     if (err instanceof multer.MulterError) {

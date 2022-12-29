@@ -1,6 +1,11 @@
 const { query } = require("express");
+const moment = require("moment");
 
 async function getFuturos(start, end) {
+  
+  start = moment(start).format("YYYY/MM/DD 00:00:00")
+  end = moment(end).format("YYYY/MM/DD 23:59:59")
+  console.log(start, end );
   //Inversiones
   const totalCapitalInversiones = await getTotalCapitalInversiones();
   const totalCapitalInversionesMensual = await getTotalCapitalInversionesMensual(
@@ -16,6 +21,10 @@ async function getFuturos(start, end) {
     start,
     end
   );
+  const totalCreditosOtorgadosNotaCredito= await getTotalCreditosOtorgadosNotasCredito(
+    start,
+    end
+  );
   const totalCreditosOtorgadosCapitalIntereses =
   await getTotalCreditosOtorgadosCapitalIntereses(start, end);
   const totalCreditosOtorgadosCapitalInteresesGO =
@@ -25,9 +34,17 @@ async function getFuturos(start, end) {
   const totalDeudaCreditosMora = await getTotalDeudaCreditosMora();
   const totalDeudaCreditosJuicio = await getTotalDeudaCreditosJuicio();
   const totalACobrar = await getTotalACobrar(start, end);
+  const totalACobrarCapitalIntereses = await getTotalACobrarCapitalIntereses(start, end);
+  const totalACobrarSeguros= await getTotalACobrarSeguros(start, end);
+  const totalACobrarPunitorios= await getTotalACobrarPunitorios(start, end);
   const totalCobrado = await getTotalCobrado(start, end);
+  const totalCobradoCapitalIntereses = await getTotalCobradoCapitalInteres(start, end);
+  const totalCobradoSeguro = await getTotalCobradoSeguro(start, end);
+  const totalCobradoPunitorios = await getTotalCobradoPunitorios(start, end);
   const totalCreditosCapitalGO = totalGastosOtorgamiento + totalCreditosOtorgadosCapital
   const totalHistoricoCapitalGO = await getTotalHistoricoCapitalGO()
+  const totalHistoricoCapitalGOJuicio = await getTotalHistoricoCapitalGOJuicio()
+  const totalHistoricoCapitalGOInactivos = await getTotalHistoricoCapitalGOInactivos()
   const saldoRestanteCapitalHistorico = await getSaldoRestanteCapitalHistorico()
   //Caja
   const totalEgresoSinInversiones = await getTotalEgresoSinInversiones(start, end);
@@ -40,6 +57,7 @@ async function getFuturos(start, end) {
     totalAPagarInversionesMesActual,
     inversionesARetirarConInteresesPagados,
     totalCreditosOtorgadosCapital,
+    totalCreditosOtorgadosNotaCredito,
     totalCreditosOtorgadosCapitalIntereses,
     totalCreditosOtorgadosCapitalInteresesGO,
     saldoRestanteCapitalHistorico,
@@ -47,9 +65,17 @@ async function getFuturos(start, end) {
     totalDeudaCreditosMora,
     totalDeudaCreditosJuicio,
     totalACobrar,
+    totalACobrarCapitalIntereses,
+    totalACobrarSeguros,
+    totalACobrarPunitorios,
     totalCobrado,
+    totalCobradoCapitalIntereses,
+    totalCobradoSeguro,
+    totalCobradoPunitorios,
     totalCreditosCapitalGO,
     totalHistoricoCapitalGO,
+    totalHistoricoCapitalGOJuicio,
+    totalHistoricoCapitalGOInactivos,
     totalEgresoSinInversiones,
     totalEgresoConInversiones,
     totalEgresosFijos
@@ -133,6 +159,18 @@ async function getTotalCreditosOtorgadosCapital(start, end) {
     return 0;
   }
 }
+// Otorgados: NOTAS DE CRÉDITO
+async function getTotalCreditosOtorgadosNotasCredito(start, end) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT sum(amount) as amount FROM cayetano.payments where account_id=12 and paymentDate between ? and ?;`;
+  const result = await query(dataQuery, [start, end]);
+  if (result) {
+    return result[0].amount;
+  } else {
+    return 0;
+  }
+}
 // Otorgados: capital + intereses
 async function getTotalCreditosOtorgadosCapitalIntereses(start, end) {
   const util = require("util");
@@ -193,7 +231,7 @@ RIGHT JOIN cayetano.credits_items ci ON ci.credit_id = p.credit_id
   AND YEAR(p.period) = YEAR(ci.period)
 INNER JOIN cayetano.credits c ON c.id = ci.credit_id
 WHERE
-  1 AND ci.period < NOW() AND c.status=1 AND c.state IN ('4', '0','5','6','2') IS NOT TRUE
+  1 AND ci.period < NOW() AND c.status=1 AND c.state IN ('4','0','5','6','2') IS NOT TRUE
 GROUP BY ci.credit_id , ci.period , c.id
 HAVING deudas > 0
 ORDER BY c.clientID , ci.period) A`;
@@ -229,6 +267,45 @@ async function getTotalACobrar(start, end) {
     return 0;
   }
 }
+// Total a cobrar capital + intereses sin contar lo pagado
+async function getTotalACobrarCapitalIntereses(start, end) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT credit_id,coalesce(sum(A.capital+ A.intereses),0) aCobrar FROM cayetano.credits_items A INNER JOIN cayetano.credits B ON A.credit_id = B.id 
+  WHERE B.status=1 and B.state IN ('2','4','5','6') IS NOT TRUE AND period BETWEEN ? AND ?;`;
+  const result = await query(dataQuery, [start, end]);
+  if (result) {
+    return result[0].aCobrar;
+  } else {
+    return 0;
+  }
+}
+// Total a cobrar seguro sin contar lo pagado
+async function getTotalACobrarSeguros(start, end) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT credit_id,coalesce(SUM(A.safe),0) aCobrar FROM cayetano.credits_items A INNER JOIN cayetano.credits B ON A.credit_id = B.id 
+  WHERE B.status=1 and B.state IN ('2','4','5','6') IS NOT TRUE AND period BETWEEN ? AND ?;`;
+  const result = await query(dataQuery, [start, end]);
+  if (result) {
+    return result[0].aCobrar;
+  } else {
+    return 0;
+  }
+}
+// Total a cobrar punitorios sin contar lo pagado
+async function getTotalACobrarPunitorios(start, end) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT credit_id,coalesce(SUM(A.punitorios),0) aCobrar FROM cayetano.credits_items A INNER JOIN cayetano.credits B ON A.credit_id = B.id 
+  WHERE B.status=1 and B.state IN ('2','4','5','6') IS NOT TRUE AND period BETWEEN ? AND ?;`;
+  const result = await query(dataQuery, [start, end]);
+  if (result) {
+    return result[0].aCobrar;
+  } else {
+    return 0;
+  }
+}
 // Total cobrado
 async function getTotalCobrado(start, end) {
   const util = require("util");
@@ -242,12 +319,85 @@ async function getTotalCobrado(start, end) {
     return 0;
   }
 }
+// Total cobrado capital + interes
+async function getTotalCobradoCapitalInteres(start, end) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `  SELECT sum(A.amount) AS total,A.created_at,A.operation_type,C.* FROM cayetano.cash_flow A 
+  inner join  cayetano.credits B on A.credit_id = B.id 
+  inner join cayetano.credits_items C on A.credit_item_id = C.id
+  WHERE B.status = 1 and  A.operation_type in ('ingreso_interes_cuotas','ingreso_capital_cuotas') AND C.period
+    BETWEEN ? AND ? and B.state IN ('2','4','5','6') IS NOT TRUE;`;
+  const result = await query(dataQuery, [start, end]);
+  if (result) {
+    return result[0].total;
+  } else {
+    return 0;
+  }
+}
+// Total cobrado seguro 
+async function getTotalCobradoSeguro(start, end) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `      
+  SELECT sum(A.amount) AS total,A.created_at,A.operation_type,C.* FROM cayetano.cash_flow A 
+inner join  cayetano.credits B on A.credit_id = B.id 
+inner join cayetano.credits_items C on A.credit_item_id = C.id
+WHERE B.status = 1 and  A.operation_type in ('ingreso_seguro_cuotas') AND C.period
+  BETWEEN ? AND ? and B.state IN ('2','4','5','6') IS NOT TRUE;`;
+  const result = await query(dataQuery, [start, end]);
+  if (result) {
+    return result[0].total;
+  } else {
+    return 0;
+  }
+}
+// Total cobrado punitorios 
+async function getTotalCobradoPunitorios(start, end) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT sum(A.amount) AS total,A.created_at,A.operation_type,C.* FROM cayetano.cash_flow A 
+  inner join  cayetano.credits B on A.credit_id = B.id 
+  inner join cayetano.credits_items C on A.credit_item_id = C.id
+  WHERE B.status = 1 and  A.operation_type in ('ingreso_punitorios_cuotas') AND C.period
+    BETWEEN ? AND ? and B.state IN ('2','4','5','6') IS NOT TRUE;`;
+  const result = await query(dataQuery, [start, end]);
+  if (result) {
+    return result[0].total;
+  } else {
+    return 0;
+  }
+}
 
 // total historico capital + G.Otorgamiento
 async function getTotalHistoricoCapitalGO() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(A.capital) amount FROM cayetano.credits A WHERE status = 1;`;
+  const dataQuery = `SELECT SUM(A.capital) amount FROM cayetano.credits A WHERE state in (4,2) is not true and status = 1;`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].amount;
+  } else {
+    return 0;
+  }
+}
+// total historico capital + G.Otorgamiento para creditos en juicio
+async function getTotalHistoricoCapitalGOJuicio() {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT SUM(A.capital) amount FROM cayetano.credits A WHERE state = 4 and status = 1;`;
+  const result = await query(dataQuery, []);
+  if (result) {
+    return result[0].amount;
+  } else {
+    return 0;
+  }
+}
+// total historico capital + G.Otorgamiento para creditos inactivos
+async function getTotalHistoricoCapitalGOInactivos() {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT SUM(A.capital) amount FROM cayetano.credits A WHERE state = 2 and status = 1;`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].amount;
