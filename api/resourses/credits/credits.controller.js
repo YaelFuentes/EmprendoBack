@@ -454,7 +454,7 @@ async function cronUpdateSubState() {
         /* sendMail(mailOptions) */
       }
       
-      if (moment(response.updated_at).add(3, 'days').format('DD/MM/YYYY') < moment().format('DD/MM/YYYY') && sub_state > 1) {
+      if (moment(response.updated_at).add(3, 'days').format('DD/MM/YYYY') < moment().format('DD/MM/YYYY') && item.sub_state > 1) {
         
         const mailOptions = {
           from: process.env.MAIL_FROM,
