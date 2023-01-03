@@ -422,21 +422,16 @@ WHERE
 
 ////////////////////////////////////////////////////////////////////////
 
-cron.schedule("* * * * *", async function () {
-  //Ejecutar a cada minuto
-  const util = require("util");
-  const query = util.promisify(mysqli.query).bind(mysqli);
-    /* cronStateCredits.cronUpdateSubState() */ 
-   
-});
 cron.schedule("0 7 * * *", async function () {
   cronCheques.cronCheques();
 });
 cron.schedule("00 1 * * 1-5", async function () {
-  cronStateCredits.updateAutoState()
+  console.log('en ejecucion')
+  cronStateCredits.updateCreditsState()
+   /* cronStateCredits.notificacionClients() */ 
 });
 cron.schedule("00 1 * * 1-5" , async function(){
-   cronStateCredits.cronUpdateSubState()
+  cronStateCredits.cronUpdateSubState()
 });
 
 app.get("/puni/:id",auth.required,async function (req, res) {

@@ -56,7 +56,7 @@ async function getEfectivoDiario() {
 /////////////////////////////////////////////////////////////////////////////////////
 async function PagoJuiciosFinalizados(jsonDataObject) {
   const util = require("util");
-  const query = util.promisify(mysqli.query).bind(mysqli); 
+  const query = util.promisify(mysqli.query).bind(mysqli);
   const arrayInsertedID = []
   jsonDataObject.map(async (item) => {
     const dataQuery = `INSERT INTO cash_flow (type, amount, created_at, description, user, credit_id, operation_type, account_id, caja_id, additional_info_id)  
@@ -298,11 +298,46 @@ async function repocisionCajaDiaria(amount, USER_ID) {
   };
 };
 
+/* -------------------------------------------------------------------------- */
+/*  notificaciones para avisar a los administradores de los pagos de juicios     */
+/* -------------------------------------------------------------------------- */
+async function getNotificacionesPagos(data) {
+  console.log(data);
+  const dataPagos = await getPagoJuiciosFinalizados(data[0].creditID)
+  console.log('dataPagos : ',dataPagos)
+  const mailOptions = {
+    from: process.env.MAIL_FROM,
+    to: process.env.MAIL_TO.split(' '),
+    subject: '',
+    html: 'Pagos cargados por juicios'
+  };
+  html = `<!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+  </head>
+  <body>
+    <p>
+      Se notifica los pagos cargados por abogados para ser reintegrados : <br/>
+      ${data.map((item) => {
+        return `Detalle de pago : ${item.additionalInfo} por el monto $ ${item.monto} `
+      })}
+    </p>
+  </body>`;
+  mailOptions.html = html
+  console.log(mailOptions)
+  
+};
+
 module.exports = {
   getCajas,
   getResumeCaja,
   updateCaja,
   repocisionCajaDiaria,
   PagoJuiciosFinalizados,
-  getPagoJuiciosFinalizados
+  getPagoJuiciosFinalizados,
+  getNotificacionesPagos
 };

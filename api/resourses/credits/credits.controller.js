@@ -120,13 +120,13 @@ ORDER BY status ASC, state,dias DESC;`;
 
 const emailJuicio = async (type) => {
   const result = await usersTypeController.usersType(type)
-  if(Array.isArray(result)&& result.length>0){
+  if (Array.isArray(result) && result.length > 0) {
     const returnValue = result.map(item => item.email)
-      return returnValue
+    return returnValue
   }
   return []
-  }
-  
+}
+
 
 
 function create(
@@ -258,30 +258,60 @@ function createState(state, callback) {
     }
     return callback(err, response);
   });
+};
+const dataRanges = () => {
+  const startDate = new Date(moment().format('YYYY-12-15'))
+  const endDate = new Date(moment().format('YYYY-12-31'))
+  const startDateNewYear = new Date(moment().format('YYYY-01-01'))
+  const endDateNewYear = new Date(moment().format('YYYY-02-01'))
+  const Range = moment().isBetween(startDate, endDate)
+  const RangeJanuary = moment().isBetween(startDateNewYear, endDateNewYear);
+  let isBetweenDate = true;
+  if (!Range && !RangeJanuary) {
+    isBetweenDate = false
+  }
+  return isBetweenDate
 }
-async function updateAutoState(state, credit_id, callback, user_id) {
+async function updateCreditsState() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
   let sql = sqlDatosDiasAtraso;
-  const sendMailFunction8 = await emailJuicio(1);
   const updateState = await query(sql, [], (err, rows) => {
     let response = []
     if (rows) {
       response = rows
     }
+    var startDate = new Date(moment().format('YYYY'), 12, 15)
+    var endDate = new Date(moment().add(1, 'Y').format('YYYY'), 2, 1)
+    var Range = moment().range(startDate, endDate)
     response.map((item) => {
-      if (item.dias == null && item.state != 1 && item.status == 1) {
+      if (item.dias == null && item.state != 1 && item.status == 1 && item.sub_state == null) {
         let sql2 = `UPDATE credits SET state = 1 WHERE id = ${item.id}`;
         mysqli.query(sql2, []);
-      } else if (item.dias > 1 && item.dias < 45 && item.state != 3 && item.status == 1) {
+      } else if (item.dias >= 1 && item.dias < 45 && item.state != 3 && item.status == 1 && item.sub_state === null) {
         let sql3 = `UPDATE credits SET state = 3 WHERE id = ${item.id}`;
         mysqli.query(sql3, []);
-      } else if (item.dias >= 50 && item.state != 4 && item.status == 1) {
+      } else if (item.dias >= 50 && item.state != 4 && item.status == 1 && dataRanges()) {
         let sql4 = `UPDATE credits SET state = 4 WHERE id = ${item.id}`;
         mysqli.query(sql4, []);
       }
     });
-    //separar mail cobrador en otra funcion. Traer mails de cobradores de la base de datos
+  })
+  console.log('Actualizacion de estado Am 1:00 lun a vie')
+  return updateState;
+};
+
+
+async function notificacionClients() {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  let sql = sqlDatosDiasAtraso;
+  const sendMailFunction8 = await emailJuicio(8);
+  const updateState = await query(sql, [], (err, rows) => {
+    let response = []
+    if (rows) {
+      response = rows
+    }
     let mailOptions = {
       from: process.env.MAIL_FROM,
       to: sendMailFunction8,
@@ -312,7 +342,7 @@ async function updateAutoState(state, credit_id, callback, user_id) {
         </thead>
         <tbody>
           ${response.map((item) => {
-      if (item.status == 1 && item.state != 4 && item.state != 1) {
+      if (item.status == 1 && item.state === 3) {
         return `<tr>
             <td>${item.deuda ? item.deuda : " - "}</td>
             <td>${item.dias ? item.dias : " - "}</td>
@@ -330,10 +360,12 @@ async function updateAutoState(state, credit_id, callback, user_id) {
       </table>
     </body>`;
     mailOptions.html = html2
-     if(response.map((item) => item.state === 3) || response.map((item) => item.status === 1)){
+    const dataFilter = response.filter((item) => item.status == 1 && item.dias >= 1 && item.state == 3).map(item => item.dias)
+    /* console.log('dias', dataFilter.length) */
+    if (dataFilter.length > 0) {
+      console.log(mailOptions)
       /* sendMail(mailOptions); */
-     console.log(mailOptions) 
-     }
+    }
     /////////////////////////////////////////////////////
     //mandar mail con el usuario extraido de la base de datos con state 8 (abogados)
     let mailOptions2 = {
@@ -383,11 +415,11 @@ async function updateAutoState(state, credit_id, callback, user_id) {
       </table>
     </body>`;
     mailOptions2.html = html1
-    response.map((item) => {
-      if (item.state == 4 && item.status == 1 && item.sub_state == null) {
-        return /* sendMail(mailOptions2) */ console.log(mailOptions2) 
-      }
-    })
+    const dataFilterJuicio = response.filter(data => data.status == 1 && data.dias >= 50 && data.sub_state == null)
+    if (dataFilterJuicio.length > 0) {
+      console.log(mailOptions2)
+      /* sendMail(mailOptions2) */
+    }
   })
   return updateState;
 };
@@ -412,12 +444,9 @@ async function addpaymentupdate(creditID, nroExpediente, items) {
 async function cronUpdateSubState() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  let getInfo = `SELECT * FROM cayetano.credits A 
+  let getInfo = `SELECT *,A.id idCredit FROM cayetano.credits A 
   LEFT JOIN users B ON A.clientID = B.id 
-  LEFT JOIN cayetano.cars C ON A.carID = C.id 
-  LEFT JOIN cayetano.address D ON A.clientID = D.clientID 
-  LEFT JOIN cayetano.credit_additional_info E ON A.id = E.creditID 
-  WHERE A.state = 4 GROUP BY operation_type, A.id;`;
+  WHERE A.state = 4 AND A.status = 1 GROUP BY A.id;`;
   const sendMailFunction7 = await emailJuicio(7);
   const sendMailFunction1 = await emailJuicio(1);
   const resultGetInfo = await query(getInfo, [], (err, rows) => {
@@ -425,9 +454,11 @@ async function cronUpdateSubState() {
     if (rows) {
       response = rows
     }
-    
+    let idCreditUpdate = []
     response.map((item) => {
-      if (item.created_at !== null && moment(item.created_at).add(3, 'days').format('DD/MM/YYYY') >= moment().format('DD/MM/YYYY')) {
+      if (moment(item.updated_at).add(3, 'days').format('DD/MM/YYYY') == moment().format('DD/MM/YYYY')) {
+        idCreditUpdate.push(item.idCredit)
+        console.log(item.idCredit)
         const mailOptions = {
           from: process.env.MAIL_FROM,
           to: [...sendMailFunction7, ...sendMailFunction1],
@@ -453,35 +484,13 @@ async function cronUpdateSubState() {
         console.log(mailOptions)
         /* sendMail(mailOptions) */
       }
-      
-      if (moment(response.updated_at).add(3, 'days').format('DD/MM/YYYY') < moment().format('DD/MM/YYYY') && sub_state > 1) {
-        
-        const mailOptions = {
-          from: process.env.MAIL_FROM,
-          to: [...sendMailFunction7, ...sendMailFunction1],
-          subject: 'Clientes que aun no se ha cambiado el estado judicial.',
-          html: ''
-        }
-        html = `
-      <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta http-equiv="X-UA-Compatible" content="IE=edge">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Document</title>
-        </head>
-        <body>
-            <p>
-            Se notifica que el credito del cliente ${item.name} ${item.lastname} con DNI nro : ${item.dni} <br>
-            no se ah modificado el estado judicial hace mas de 3 dias.
-            </p>
-        </body>`;
-        mailOptions.html = html
-        console.log(mailOptions)
-        /* sendMail(mailOptions) */
-      }
     })
+    if (idCreditUpdate.length > 0) {
+      let sql = `UPDATE credits SET updated_at = now() WHERE id in (?);`;
+      const resultSql = query(sql, [idCreditUpdate])
+    }
+    console.log('idCreditUpdate : ', idCreditUpdate)
+
   }); //obtenemos info para enviarle al martillero
 };
 
@@ -510,8 +519,8 @@ async function updateSubState(sub_state, user_id, creditID) {
         return "Secuestrado a subastar"
       }
     }
-   const sendMailFunction7 = await emailJuicio(7);
-   const sendMailFunction1 = await emailJuicio(1);
+    const sendMailFunction7 = await emailJuicio(7);
+    const sendMailFunction1 = await emailJuicio(1);
     let mailOptions = {
       from: process.env.MAIL_FROM,
       to: [...sendMailFunction7, ...sendMailFunction1],
@@ -568,15 +577,15 @@ async function updateSubState(sub_state, user_id, creditID) {
         <p>
         Se notifica que el cliente: <br>
         <a href='http://localhost:3000/newcreditos/${item.creditID}'>${item.lastname} ${item.name}</a> con DNI Nro : ${item.dni} , Tel Nro : ${item.phone}<br>
-        ah entrado en estado judicial. Por lo que debe ejecutarse la quita del vehiculo marca : ${item.brand} modelo : ${item.modelo} año : ${item.year}<br>
+        ah entrado en estado judicial. Por lo que debe ejecutarse la quita del vehiculo marca : ${item.brand} modelo : ${item.model} año : ${item.year}<br>
         patente : ${item.domain} ${item.details.length > 1 ? `, Detalles del mismo : ${item.details}` : ` `}, el domicilio particular notificado por el cliente es : ${item.type == 1 ? item.address + " " + item.number + " " + item.department : ""} <br>
         domicilio laboral : ${item.type == 2 ? item.address + " " + item.number + " " + item.department : ""}
         </p>`
       })}
     </body>`;
       mailOptionsMartillero.html = html
-       console.log(mailOptionsMartillero) 
-         /* sendMail(mailOptionsMartillero) */
+      console.log(mailOptionsMartillero)
+      /* sendMail(mailOptionsMartillero) */
       return result;
     }
   } catch (e) {
@@ -775,8 +784,8 @@ async function dataSimulador(body) {
     format: "A4",
     phantomPath: "./node_modules/phantomjs-prebuilt/bin/phantomjs",
   };
-  const moment = require("moment", );
-  
+  const moment = require("moment",);
+
   let html = tmpl.replace(
     "{{logo}}",
     `https://emprendo-public-assets.s3.us-east-2.amazonaws.com/logo.png`
@@ -787,7 +796,7 @@ async function dataSimulador(body) {
   html = html.replace("{{fechaotorgamiento}}", moment(body.fechaOtorgamiento).format("DD/MM/YYYY"));
   html = html.replace("{{primer_cuota}}", body.primerCuota);
   html = html.replaceAll("{{resto_cuota}}", body.cuotas - 1);
-  html = html.replace("{{resto_cuota_amount}}",`$ ${(body.granTotal / body.cuotas).toFixed(2)}`)
+  html = html.replace("{{resto_cuota_amount}}", `$ ${(body.granTotal / body.cuotas).toFixed(2)}`)
   return html
 }
 
@@ -1711,7 +1720,7 @@ module.exports = {
   updateState,
   getCashFlow,
   getCashFlowPerCreditItem,
-  updateAutoState,
+  notificacionClients,
   getCreditSubState,
   updateSubState,
   getSetSubState,
@@ -1723,5 +1732,6 @@ module.exports = {
   cronUpdateSubState,
   getPrintInfoSeguros,
   getPrintInfoPagos,
-  getInfoCredit
+  getInfoCredit,
+  updateCreditsState,
 };

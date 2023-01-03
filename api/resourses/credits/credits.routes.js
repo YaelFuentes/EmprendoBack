@@ -112,7 +112,7 @@ creditsRouter.put("/updatesubstate", auth.required, function (req, res) {
 
 creditsRouter.get("/automaticupdate", auth.required, function (req, res, next) {
   const clientid = req.params.clientid;
-  creditsController.updateAutoState(clientid, function (err, result) {
+  creditsController.notificacionClients(clientid, function (err, result) {
     res.json(result);
   });
 });

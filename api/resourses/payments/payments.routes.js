@@ -5,7 +5,7 @@ const paymentsRouter = express.Router();
 const auth = require("../auth");
 const jwt_decode = require("jwt-decode");
 const fs = require("fs");
-
+const creditsController = require('../credits/credits.controller')
 
 paymentsRouter.post(
   "/add",
@@ -36,6 +36,7 @@ paymentsRouter.post(
 
     const decoded = jwt_decode(auth.getToken(req));
     const USER_ID = decoded.id;
+    
     if (id !== 0 && name !== "") {
       const paymentNCD = await paymentsController.createNCreditOrDebit(
         client_id,
@@ -72,9 +73,10 @@ paymentsRouter.post(
         account_id,
         caja_id
       )
-
+        
       .then((data) => {
         console.log(data, "Data");
+        const updateSubState = creditsController.updateCreditsState();
         res.json(data);
       })
       .catch((error) => {

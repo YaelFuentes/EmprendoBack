@@ -42,6 +42,17 @@ cajaRouter.get("/itemjuicios/:creditID", auth.required, function (req, res){
     res.send(500).json({ response: "Error al obtener los datos" });
   });
 });
+cajaRouter.post("/notificarpagos", auth.required, function (req,res) {
+  const data = req.body.data;
+  cajaController.getNotificacionesPagos(data)
+  .then((data) => {
+    res.json(data).status(200);
+  })
+  .catch((err) => {
+    console.log(err);
+    res.send(500).json({ response: "Error al obtener los datos"})
+  });
+});
 ///////////////////////////////////////////////////////////////////////////////////
 cajaRouter.get("/resumecaja", auth.required, function (req, res) {
   cajaController.getResumeCaja()
