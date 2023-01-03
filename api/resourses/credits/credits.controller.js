@@ -477,7 +477,7 @@ async function cronUpdateSubState() {
         <body>
             <p>
             Se notifica que el credito del cliente ${item.name} ${item.lastname} con DNI nro : ${item.dni} <br>
-            no se ah modificado el estado judicial hace mas de 3 dias. 
+            no se a modificado el estado judicial hace mas de 3 dias. 
             </p>
         </body>`;
         mailOptions.html = html
@@ -542,7 +542,7 @@ async function updateSubState(sub_state, user_id, creditID) {
         <p>
         Se notifica que el cliente: <br>
         ${item.lastname} ${item.name} con DNI Nro : ${item.dni}<br>
-        Se le ah cambiado el estado judicial de "${infoSubState(item.sub_state)}" a "${infoSubState(sub_state)}"
+        Se le ha cambiado el estado judicial del credito de "${infoSubState(item.sub_state)}" al estado "${infoSubState(sub_state)}"
         </p>`
     })}
     </body>`;
@@ -577,7 +577,7 @@ async function updateSubState(sub_state, user_id, creditID) {
         <p>
         Se notifica que el cliente: <br>
         <a href='http://localhost:3000/newcreditos/${item.creditID}'>${item.lastname} ${item.name}</a> con DNI Nro : ${item.dni} , Tel Nro : ${item.phone}<br>
-        ah entrado en estado judicial. Por lo que debe ejecutarse la quita del vehiculo marca : ${item.brand} modelo : ${item.model} año : ${item.year}<br>
+        a entrado en estado judicial. Por lo que debe ejecutarse la quita del vehiculo marca : ${item.brand} modelo : ${item.modelo} año : ${item.year}<br>
         patente : ${item.domain} ${item.details.length > 1 ? `, Detalles del mismo : ${item.details}` : ` `}, el domicilio particular notificado por el cliente es : ${item.type == 1 ? item.address + " " + item.number + " " + item.department : ""} <br>
         domicilio laboral : ${item.type == 2 ? item.address + " " + item.number + " " + item.department : ""}
         </p>`
@@ -647,7 +647,7 @@ async function updateAdditionalInfo(NroExpediente, creditID) {
         return `
           <p>
           Se notifica que el credito del cliente ${item.lastname} ${item.name} con DNI nro : ${item.dni} <br>
-          ah entrado en demanda judicial por el estudio de abogados con el nro de expediente : ${NroExpediente}
+          a entrado en demanda judicial por el estudio de abogados con el nro de expediente : ${NroExpediente}
           </p>`
       })}
       </body>`;
