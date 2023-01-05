@@ -801,37 +801,37 @@ async function dataSimulador(body) {
 }
 
 function getInfo(creditid, callback) {
-  let sql = `SELECT
-              T1.id creditid,
-              T1.status creditStatus,
-              T1.carID,
-              T1.clientID clientid,
-              T1.additionalInfo,
-              T1.state internalState,
-              T4.id,
-              T2.amount,
-              DATE(T4.period) period,
-              T4.amount cuota,
-              T4.payed pagado,
-              T4.safe seguro,
-              T4.nota_debito,
-              COALESCE(SUM(T8.amount),0) punitorios,
-              T8.days_past,
-              CASE WHEN T4.period <= DATE(NOW())
-              	THEN
-              		((T4.safe + COALESCE(SUM(T8.amount),0) +T4.nota_debito+ T4.capital+T4.intereses) - T4.payed)
-              	ELSE 0
-              	END deuda,
-                T4.intereses,
-            T4.saldo,
-            T4.capital
-            FROM
-              credits T1
-              INNER JOIN budget T2 ON T1.budget = T2.id
-              LEFT JOIN credits_items T4 ON T1.id = T4.credit_id
-              LEFT JOIN punitorios T8 ON T1.id = T8.credit_id AND T4.period = T8.period
-            WHERE T1.id = ?
-            GROUP BY T4.period`;
+  let sql = `SELECT T1.id creditid,
+  T1.status creditStatus,
+  T1.carID,
+  T1.otorgamiento,
+  T1.clientID clientid,
+  T1.additionalInfo,
+  T1.state internalState,
+  T4.id,
+  T2.amount,
+  DATE(T4.period) period,
+  T4.amount cuota,
+  T4.payed pagado,
+  T4.safe seguro,
+  T4.nota_debito,
+  COALESCE(SUM(T8.amount),0) punitorios,
+  T8.days_past,
+  CASE WHEN T4.period <= DATE(NOW())
+    THEN
+      ((T4.safe + COALESCE(SUM(T8.amount),0) +T4.nota_debito+ T4.capital+T4.intereses) - T4.payed)
+    ELSE 0
+    END deuda,
+    T4.intereses,
+T4.saldo,
+T4.capital
+FROM
+  credits T1
+  INNER JOIN budget T2 ON T1.budget = T2.id
+  LEFT JOIN credits_items T4 ON T1.id = T4.credit_id
+  LEFT JOIN punitorios T8 ON T1.id = T8.credit_id AND T4.period = T8.period
+WHERE T1.id = 71
+GROUP BY T4.period`;
   mysqli.query(sql, [creditid], (err, rows) => {
     //si queremos imprimir el mensaje ponemos err.sqlMessage
     var response = [];
