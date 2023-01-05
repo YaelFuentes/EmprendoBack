@@ -397,7 +397,7 @@ FROM
 WHERE
   (T1.capital+T1.intereses+ T1.safe+ T1.punitorios ) > T1.payed
       AND  DATE_ADD(DATE(T1.period),INTERVAL 4 DAY)  < NOW()
-      AND T2.status = 1
+      AND T2.status = 1 AND T2.state NOT IN (2,4)
       GROUP BY T1.credit_id;
       `;
   const punitorios = await query(punitoriosQuery, []);
