@@ -1,3 +1,7 @@
+const moment = require('moment');
+const creditController = require('../credits/credits.controller')
+const sendMail = require('../nodemailer/mail')
+
 function insert(content) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
@@ -12,6 +16,42 @@ function list(clientID) {
   const sql = `SELECT * FROM notifications n
                 WHERE id NOT IN (SELECT notificationId FROM notifications_read WHERE clientId =?) ORDER BY id DESC`;
   return query(sql, [clientID]);
+}
+
+//notificaciones clientes envio de mail
+async function NotificacionesClientes() {
+  const DiasAtraso = creditController.getList(function (err, result) {
+    const dataFilter = result.filter(data => data.status === 1 && data.state === 3).map(item => {
+      let mailOptions = {
+        from: process.env.MAIL_FROM,
+        to: process.env.MAIL_TO.split(' '),
+        subject: `Tu cuota de Emprendo presenta ${item.dias} dias de atraso.`,
+        html: ''
+      }
+      html = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+    </head>
+    <body>
+      Su cuenta del credito de emprendo presenta dias de atraso ${item.name} ${item.lastname}. 
+    </body>`;
+    mailOptions.html = html
+    if(item.dias % 5 === 0){
+      console.log(mailOptions)
+      /* sendMail(mailOptions) */
+    }
+    })
+  });
+};
+async function NotificacionesClientesCuotas (){
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const sql = ``
 }
 
 function read(notificationID, clientID) {
@@ -106,4 +146,5 @@ module.exports = {
   list,
   read,
   gen,
+  NotificacionesClientes
 };

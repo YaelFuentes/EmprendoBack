@@ -22,6 +22,7 @@ const cajaRoutes = require('./api/resourses/caja/caja.routes');
 const cronCheques = require('./api/resourses/cheques/cheques.controller')
 const chequesRoutes = require('./api/resourses/cheques/cheques.routes')
 const auth = require('./api/resourses/auth');
+const notificacionClientes = require('./api/resourses/notifications/notifications.controller')
 
 
 const dotenv = require("dotenv");
@@ -429,3 +430,5 @@ app.get("/puni/:id",auth.required,async function (req, res) {
   await punitoriosController.calculate(id);
   res.sendStatus(200)
 });
+
+notificacionClientes.NotificacionesClientes()
