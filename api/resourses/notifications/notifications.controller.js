@@ -1,3 +1,4 @@
+const userController =  require("../users/users.controller")
 function insert(content) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
@@ -13,6 +14,41 @@ function list(clientID) {
                 WHERE id NOT IN (SELECT notificationId FROM notifications_read WHERE clientId =?) ORDER BY id DESC`;
   return query(sql, [clientID]);
 }
+
+async function notificationInactivo() {
+  const moment = require("moment");
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const sql = `SELECT * FROM cayetano.credits WHERE status = 1 AND state = 2;`;
+  const data = await query(sql, [], (err, rows) => {
+    rows.map( async (item) => {
+      const sql = 'UPDATE credits SET updated_at = NOW() WHERE id = ?'
+      const result = query(sql, [item.id])
+      const infoUser = await userController.getUser(item.clientID);
+      console.log(infoUser)
+      let mailOptions = {
+        from: process.env.MAIL_FROM,
+        to: process.env.MAIL_TO.split(' '),
+        subject: 'Cliente en estado inactivo',
+        html: ''
+      }
+      html = `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Document</title>
+      </head>
+      <body>
+          <h1>prueba estado inactivo</h1>
+          <h3>${infoUser.name}</h3>
+        </body>`
+      mailOptions.html = html
+      console.log(mailOptions)
+      /* sendMail(mailOptions) */ 
+    })
+  })};
 
 function read(notificationID, clientID) {
   const util = require("util");
@@ -106,4 +142,5 @@ module.exports = {
   list,
   read,
   gen,
+  notificationInactivo
 };
