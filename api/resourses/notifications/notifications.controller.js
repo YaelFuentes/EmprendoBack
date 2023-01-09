@@ -1,4 +1,4 @@
-const userController =  require("../users/users.controller")
+const userController = require("../users/users.controller")
 function insert(content) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
@@ -21,18 +21,17 @@ async function notificationInactivo() {
   const query = util.promisify(mysqli.query).bind(mysqli);
   const sql = `SELECT * FROM cayetano.credits WHERE status = 1 AND state = 2;`;
   const data = await query(sql, [], (err, rows) => {
-    rows.map( async (item) => {
-      const sql = 'UPDATE credits SET updated_at = NOW() WHERE id = ?'
-      const result = query(sql, [item.id])
+    rows.map(async (item) => {
       const infoUser = await userController.getUser(item.clientID);
-      console.log(infoUser)
-      let mailOptions = {
-        from: process.env.MAIL_FROM,
-        to: process.env.MAIL_TO.split(' '),
-        subject: 'Cliente en estado inactivo',
-        html: ''
-      }
-      html = `<!DOCTYPE html>
+      console.log(moment(item.updated_at).add(2, 'days').format('DD/MM/YYYY'))
+      if (moment(item.updated_at).add(2, 'days').format('DD/MM/YYYY') == moment().format('DD/MM/YYYY')) {
+        let mailOptions = {
+          from: process.env.MAIL_FROM,
+          to: process.env.MAIL_TO.split(' '),
+          subject: 'Cliente en estado inactivo',
+          html: ''
+        }
+        html = `<!DOCTYPE html>
         <html lang="en">
         <head>
           <meta charset="UTF-8">
@@ -41,14 +40,16 @@ async function notificationInactivo() {
           <title>Document</title>
       </head>
       <body>
-          <h1>prueba estado inactivo</h1>
-          <h3>${infoUser.name}</h3>
+          <h1>Credito en estado inactivo</h1>
+          <h3>Se informa que el credito de ${infoUser.name} ${infoUser.lastname} se encuentra en estado inactivo hace 50 días, por favor, si es necesario cambiar el estado del credito</h3>
         </body>`
-      mailOptions.html = html
-      console.log(mailOptions)
-      /* sendMail(mailOptions) */ 
+        mailOptions.html = html
+        console.log(mailOptions)
+      }
+      /* sendMail(mailOptions) */
     })
-  })};
+  })
+};
 
 function read(notificationID, clientID) {
   const util = require("util");

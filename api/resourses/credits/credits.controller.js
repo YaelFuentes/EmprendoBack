@@ -145,6 +145,10 @@ function updateState(state, credit_id, callback) {
     if (rows) {
       response = rows;
     }
+    if(state == 2){
+      const sqlUpdate = `UPDATE credits SET updated_at = NOW() WHERE id = ?`;
+      mysqli.query(sqlUpdate,[credit_id])
+    }
     return callback(err, response);
   });
 }

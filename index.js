@@ -422,6 +422,7 @@ cron.schedule("0 7 * * *", async function () {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   cronCheques.cronCheques();
+  notificationController.notificationInactivo()
 });
 
 app.get("/puni/:id",auth.required,async function (req, res) {
@@ -430,4 +431,3 @@ app.get("/puni/:id",auth.required,async function (req, res) {
   res.sendStatus(200)
 });
 
-notificationController.notificationInactivo()
