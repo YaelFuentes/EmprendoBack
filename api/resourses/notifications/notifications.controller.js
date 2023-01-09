@@ -22,7 +22,7 @@ const emailJuicio = async (type) => {
 function list(clientID) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const sql = `SELECT * FROM notif ications n
+  const sql = `SELECT * FROM notifications n
                 WHERE id NOT IN (SELECT notificationId FROM notifications_read WHERE clientId =?) ORDER BY id DESC`;
   return query(sql, [clientID]);
 }
