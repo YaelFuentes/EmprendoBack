@@ -835,7 +835,7 @@ FROM
   INNER JOIN budget T2 ON T1.budget = T2.id
   LEFT JOIN credits_items T4 ON T1.id = T4.credit_id
   LEFT JOIN punitorios T8 ON T1.id = T8.credit_id AND T4.period = T8.period
-WHERE T1.id = 71
+WHERE T1.id = ?
 GROUP BY T4.period`;
   mysqli.query(sql, [creditid], (err, rows) => {
     //si queremos imprimir el mensaje ponemos err.sqlMessage
