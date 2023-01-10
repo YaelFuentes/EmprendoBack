@@ -63,8 +63,7 @@ function create(
 
 function getCsv(callback) {
   let sql = `SELECT 
-  B.id,
-      C.lastname,
+  C.lastname,
       C.name,
       C.phone,
       D.brand,
@@ -74,23 +73,19 @@ function getCsv(callback) {
       A.safe,
       A.punitorios,
       (A.amount + A.safe + A.punitorios + A.nota_debito) AS total,
-      A.payed,
-      B.additionalInfo,
-      GROUP_CONCAT(concat_ws(' ', E.fecha, E.notas) SEPARATOR ' , ')
-      
+      A.payed
   FROM
       cayetano.credits_items A
-          INNER JOIN
+          LEFT JOIN
       cayetano.credits B ON A.credit_id = B.id
-          INNER JOIN
+          LEFT JOIN
       cayetano.users C ON B.clientID = C.id
-          INNER JOIN
+          LEFT JOIN
       cayetano.cars D ON B.carID = D.id
-          INNER JOIN
+          LEFT JOIN
       cayetano.notas E ON A.credit_id = E.creditID
   WHERE
-      B.status = 1
-          AND B.state IN ('4') IS NOT TRUE group by A.id;`;
+      B.status IN (1,2) group by A.id;`;
   mysqli.query(sql, [], (err, rows) => {
     var response = []
     if (rows) {
@@ -145,9 +140,9 @@ function updateState(state, credit_id, callback) {
     if (rows) {
       response = rows;
     }
-    if(state == 2){
+    if (state == 2) {
       const sqlUpdate = `UPDATE credits SET updated_at = NOW() WHERE id = ?`;
-      mysqli.query(sqlUpdate,[credit_id])
+      mysqli.query(sqlUpdate, [credit_id])
     }
     return callback(err, response);
   });
@@ -242,8 +237,8 @@ async function dataSimulador(body) {
     format: "A4",
     phantomPath: "./node_modules/phantomjs-prebuilt/bin/phantomjs",
   };
-  const moment = require("moment", );
-  
+  const moment = require("moment",);
+
   let html = tmpl.replace(
     "{{logo}}",
     `https://emprendo-public-assets.s3.us-east-2.amazonaws.com/logo.png`
@@ -254,7 +249,7 @@ async function dataSimulador(body) {
   html = html.replace("{{fechaotorgamiento}}", moment(body.fechaOtorgamiento).format("DD/MM/YYYY"));
   html = html.replace("{{primer_cuota}}", body.primerCuota);
   html = html.replaceAll("{{resto_cuota}}", body.cuotas - 1);
-  html = html.replace("{{resto_cuota_amount}}",`$ ${(body.granTotal / body.cuotas).toFixed(2)}`)
+  html = html.replace("{{resto_cuota_amount}}", `$ ${(body.granTotal / body.cuotas).toFixed(2)}`)
   return html
 }
 
