@@ -266,9 +266,9 @@ const dataRanges = () => {
   const endDateNewYear = new Date(moment().format('YYYY-02-01'))
   const Range = moment().isBetween(startDate, endDate)
   const RangeJanuary = moment().isBetween(startDateNewYear, endDateNewYear);
-  let isBetweenDate = true;
-  if (!Range && !RangeJanuary) {
-    isBetweenDate = false
+  let isBetweenDate = false;
+  if (Range || RangeJanuary) {  
+    isBetweenDate = true;
   }
   return isBetweenDate
 }
@@ -281,26 +281,29 @@ async function updateCreditsState() {
     if (rows) {
       response = rows
     }
-    if(state == 2){
+    /* console.log('response : ',response) */
+    if(response.state == 2){
       const sqlUpdate = `UPDATE credits SET updated_at = NOW() WHERE id = ?`;
       mysqli.query(sqlUpdate,[credit_id])
     }
-    var startDate = new Date(moment().format('YYYY'), 12, 15)
-    var endDate = new Date(moment().add(1, 'Y').format('YYYY'), 2, 1)
-    var Range = moment().range(startDate, endDate)
+    
     response.map((item) => {
+      if(item.id == 71){
+        console.log('dataRange: ',dataRanges())
+      }
       if (item.dias == null && item.state != 1 && item.status == 1 && item.sub_state == null) {
         let sql2 = `UPDATE credits SET state = 1 WHERE id = ${item.id}`;
         mysqli.query(sql2, []);
       } else if (item.dias >= 1 && item.dias < 45 && item.state != 3 && item.status == 1 && item.sub_state === null) {
         let sql3 = `UPDATE credits SET state = 3 WHERE id = ${item.id}`;
         mysqli.query(sql3, []);
-      } else if (item.dias >= 50 && item.state != 4 && item.status == 1 && dataRanges()) {
+      } else if (item.dias >= 45 && item.state != 4 && item.status == 1 && !dataRanges()) {
         let sql4 = `UPDATE credits SET state = 4 WHERE id = ${item.id}`;
         mysqli.query(sql4, []);
       }
     });
   })
+  
   console.log('Actualizacion de estado Am 1:00 lun a vie')
   return updateState;
 };
@@ -350,7 +353,7 @@ async function notificacionClients() {
         return `<tr>
             <td>${item.deuda ? item.deuda : " - "}</td>
             <td>${item.dias ? item.dias : " - "}</td>
-            <a href='http://localhost:3000/newcreditos/${item.id}'>${item.lastname} ${item.name}</a>
+            <a href='http://emprendofrontend.s3-website-us-west-2.amazonaws.com/newcreditos/${item.id}'>${item.lastname} ${item.name}</a>
             <td> ${item.phone ? item.phone : " - "}</td>
             <td>${item.brand ? item.brand : " - "}</td>
             <td>${item.model ? item.model : " - "}</td>
@@ -365,10 +368,8 @@ async function notificacionClients() {
     </body>`;
     mailOptions.html = html2
     const dataFilter = response.filter((item) => item.status == 1 && item.dias >= 1 && item.state == 3).map(item => item.dias)
-    /* console.log('dias', dataFilter.length) */
     if (dataFilter.length > 0) {
-      console.log(mailOptions)
-      /* sendMail(mailOptions); */
+      sendMail(mailOptions);
     }
     /////////////////////////////////////////////////////
     //mandar mail con el usuario extraido de la base de datos con state 8 (abogados)
@@ -405,7 +406,7 @@ async function notificacionClients() {
         return `<tr>
             <td>${item.deuda ? item.deuda : " - "}</td>
             <td>${item.dias ? item.dias : " - "}</td>
-            <a href='http://localhost:3000/newcreditos/${item.id}'>${item.lastname} ${item.name}</a>
+            <a href='http://emprendofrontend.s3-website-us-west-2.amazonaws.com/newcreditos/${item.id}'>${item.lastname} ${item.name}</a>
             <td> ${item.phone ? item.phone : " - "}</td>
             <td>${item.brand ? item.brand : " - "}</td>
             <td>${item.model ? item.model : " - "}</td>
@@ -421,8 +422,8 @@ async function notificacionClients() {
     mailOptions2.html = html1
     const dataFilterJuicio = response.filter(data => data.status == 1 && data.dias >= 50 && data.sub_state == null)
     if (dataFilterJuicio.length > 0) {
-      console.log(mailOptions2)
-      /* sendMail(mailOptions2) */
+      
+       sendMail(mailOptions2) 
     }
   })
   return updateState;
