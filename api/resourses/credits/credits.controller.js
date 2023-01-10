@@ -281,6 +281,10 @@ async function updateCreditsState() {
     if (rows) {
       response = rows
     }
+    if(state == 2){
+      const sqlUpdate = `UPDATE credits SET updated_at = NOW() WHERE id = ?`;
+      mysqli.query(sqlUpdate,[credit_id])
+    }
     var startDate = new Date(moment().format('YYYY'), 12, 15)
     var endDate = new Date(moment().add(1, 'Y').format('YYYY'), 2, 1)
     var Range = moment().range(startDate, endDate)

@@ -23,6 +23,7 @@ const cronCheques = require('./api/resourses/cheques/cheques.controller');
 const chequesRoutes = require('./api/resourses/cheques/cheques.routes');
 const cronStateCredits = require('./api/resourses/credits/credits.controller');
 const auth = require('./api/resourses/auth');
+const notificationController = require('../EmprendoBack/api/resourses/notifications/notifications.controller')
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -404,7 +405,7 @@ FROM
 WHERE
   (T1.capital+T1.intereses+ T1.safe+ T1.punitorios ) > T1.payed
       AND  DATE_ADD(DATE(T1.period),INTERVAL 4 DAY)  < NOW()
-      AND T2.status = 1
+      AND T2.status = 1 AND T2.state NOT IN (2,4)
       GROUP BY T1.credit_id;
       `;
   const punitorios = await query(punitoriosQuery, []);
@@ -424,6 +425,15 @@ WHERE
 
 cron.schedule("0 7 * * *", async function () {
   cronCheques.cronCheques();
+  notificationController.notificationInactivo()
+});
+cron.schedule("00 1 * * 1-5", async function () {
+  console.log('en ejecucion')
+  cronStateCredits.updateCreditsState()
+   /* cronStateCredits.notificacionClients() */ 
+});
+cron.schedule("00 1 * * 1-5" , async function(){
+  cronStateCredits.cronUpdateSubState()
 });
 cron.schedule("00 1 * * 1-5", async function () {
   console.log('en ejecucion')
