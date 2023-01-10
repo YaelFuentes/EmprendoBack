@@ -430,19 +430,18 @@ cron.schedule("0 7 * * *", async function () {
 cron.schedule("00 1 * * 1-5", async function () {
   console.log('en ejecucion')
   cronStateCredits.updateCreditsState()
-   /* cronStateCredits.notificacionClients() */ 
-});
+}); 
 cron.schedule("00 1 * * 1-5" , async function(){
   cronStateCredits.cronUpdateSubState()
 });
-cron.schedule("00 1 * * 1-5", async function () {
+/* cron.schedule("00 1 * * 1-5", async function () {
   console.log('en ejecucion')
   cronStateCredits.updateCreditsState()
-   /* cronStateCredits.notificacionClients() */ 
+  cronStateCredits.notificacionClients()
 });
 cron.schedule("00 1 * * 1-5" , async function(){
   cronStateCredits.cronUpdateSubState()
-});
+}); */
 
 app.get("/puni/:id",auth.required,async function (req, res) {
   let id = req.params.id;
