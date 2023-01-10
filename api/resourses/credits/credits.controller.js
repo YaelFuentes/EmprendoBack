@@ -667,7 +667,7 @@ async function updateAdditionalInfo(NroExpediente, creditID) {
 async function getAdditionalInfo(creditID) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  let sql = `select A.*,B.state, B.sub_state,B.id as creditID,B.status from cayetano.credit_additional_info A left join cayetano.credits B on A.creditID = B.id where A.creditID = ?;`;
+  let sql = `select A.*,B.state, B.sub_state,B.id as creditID,B.status, B.update_sub_state from cayetano.credit_additional_info A left join cayetano.credits B on A.creditID = B.id where A.creditID = ?;`;
   const result = await query(sql, [creditID]);
   return result;
 };
