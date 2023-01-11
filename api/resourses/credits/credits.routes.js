@@ -68,7 +68,7 @@ creditsRouter.post("/updateadditionalinfo", auth.required, function (req, res) {
       res.json(data).status(200)
     })
     .catch((err) => {
-      res.send(500).json({ response: "Error al obtener los datos del controlador" });
+      res.sendStatus(500).json({ response: "Error al obtener los datos del controlador" });
       console.log(err);
     })
 });
