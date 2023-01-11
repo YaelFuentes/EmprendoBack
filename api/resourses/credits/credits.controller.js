@@ -282,14 +282,14 @@ async function updateCreditsState() {
       response = rows
     }
     /* console.log('response : ',response) */
-    if(response.state == 2){
+    if (response.state == 2) {
       const sqlUpdate = `UPDATE credits SET updated_at = NOW() WHERE id = ?`;
-      mysqli.query(sqlUpdate,[credit_id])
+      mysqli.query(sqlUpdate, [credit_id])
     }
-    
+
     response.map((item) => {
-      if(item.id == 71){
-        console.log('dataRange: ',dataRanges())
+      if (item.id == 71) {
+        console.log('dataRange: ', dataRanges())
       }
       if (item.dias == null && item.state != 1 && item.status == 1 && item.sub_state == null) {
         let sql2 = `UPDATE credits SET state = 1 WHERE id = ${item.id}`;
@@ -303,7 +303,7 @@ async function updateCreditsState() {
       }
     });
   })
-  
+
   console.log('Actualizacion de estado Am 1:00 lun a vie')
   return updateState;
 };
@@ -422,8 +422,8 @@ async function notificacionClients() {
     mailOptions2.html = html1
     const dataFilterJuicio = response.filter(data => data.status == 1 && data.dias >= 50 && data.sub_state == null)
     if (dataFilterJuicio.length > 0) {
-      
-       sendMail(mailOptions2) 
+
+      sendMail(mailOptions2)
     }
   })
   return updateState;
@@ -463,7 +463,7 @@ async function cronUpdateSubState() {
     response.map((item) => {
       if (moment(item.updated_at).add(3, 'days').format('DD/MM/YYYY') == moment().format('DD/MM/YYYY')) {
         idCreditUpdate.push(item.idCredit)
-        console.log(item.idCredit)
+        /* console.log(item.idCredit) */
         const mailOptions = {
           from: process.env.MAIL_FROM,
           to: [...sendMailFunction7, ...sendMailFunction1],
@@ -486,16 +486,14 @@ async function cronUpdateSubState() {
             </p>
         </body>`;
         mailOptions.html = html
-        console.log(mailOptions)
-        /* sendMail(mailOptions) */
+        /* console.log(mailOptions) */
+        sendMail(mailOptions)
       }
     })
     if (idCreditUpdate.length > 0) {
       let sql = `UPDATE credits SET updated_at = now() WHERE id in (?);`;
       const resultSql = query(sql, [idCreditUpdate])
     }
-    console.log('idCreditUpdate : ', idCreditUpdate)
-
   }); //obtenemos info para enviarle al martillero
 };
 
@@ -555,8 +553,7 @@ async function updateSubState(sub_state, user_id, creditID) {
 
     resultGetInfoSubState.map((item) => {
       if (item.sub_state >= 1) {
-        /* sendMail(mailOptions) */
-        console.log(mailOptions)
+        sendMail(mailOptions)
       }
     })
     const sendMailFunction = await emailJuicio(10)
@@ -581,7 +578,7 @@ async function updateSubState(sub_state, user_id, creditID) {
         return `
         <p>
         Se notifica que el cliente: <br>
-        <a href='http://localhost:3000/newcreditos/${item.creditID}'>${item.lastname} ${item.name}</a> con DNI Nro : ${item.dni} , Tel Nro : ${item.phone}<br>
+        <a href='http://emprendofrontend.s3-website-us-west-2.amazonaws.com/newcreditos/${item.creditID}'>${item.lastname} ${item.name}</a> con DNI Nro : ${item.dni} , Tel Nro : ${item.phone}<br>
         a entrado en estado judicial. Por lo que debe ejecutarse la quita del vehiculo marca : ${item.brand} modelo : ${item.modelo} año : ${item.year}<br>
         patente : ${item.domain} ${item.details.length > 1 ? `, Detalles del mismo : ${item.details}` : ` `}, el domicilio particular notificado por el cliente es : ${item.type == 1 ? item.address + " " + item.number + " " + item.department : ""} <br>
         domicilio laboral : ${item.type == 2 ? item.address + " " + item.number + " " + item.department : ""}
@@ -589,8 +586,7 @@ async function updateSubState(sub_state, user_id, creditID) {
       })}
     </body>`;
       mailOptionsMartillero.html = html
-      console.log(mailOptionsMartillero)
-      /* sendMail(mailOptionsMartillero) */
+      sendMail(mailOptionsMartillero) 
       return result;
     }
   } catch (e) {
@@ -648,7 +644,7 @@ async function updateAdditionalInfo(NroExpediente, creditID) {
         <title>Document</title>
       </head>
       <body>
-        ${getResultSqlDatos.map((item) => {
+        ${getResultSqlDatos[0].map((item) => {
         return `
           <p>
           Se notifica que el credito del cliente ${item.lastname} ${item.name} con DNI nro : ${item.dni} <br>
@@ -657,8 +653,7 @@ async function updateAdditionalInfo(NroExpediente, creditID) {
       })}
       </body>`;
       mailOptions.html = html
-      console.log(mailOptions);
-      /* sendMail(mailOptions)  */
+      sendMail(mailOptions)
     }
     return result, resultUpdateAdditionalInfo
   } else {

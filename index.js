@@ -428,8 +428,8 @@ cron.schedule("0 7 * * *", async function () {
   notificationController.notificationInactivo()
 });
 cron.schedule("00 1 * * 1-5", async function () {
-  console.log('en ejecucion')
   cronStateCredits.updateCreditsState()
+  cronStateCredits.notificacionClients()
 }); 
 cron.schedule("00 1 * * 1-5" , async function(){
   cronStateCredits.cronUpdateSubState()
