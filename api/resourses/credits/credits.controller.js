@@ -644,7 +644,7 @@ async function updateAdditionalInfo(NroExpediente, creditID) {
         <title>Document</title>
       </head>
       <body>
-        ${getResultSqlDatos[0].map((item) => {
+        ${getResultSqlDatos.map((item) => {
         return `
           <p>
           Se notifica que el credito del cliente ${item.lastname} ${item.name} con DNI nro : ${item.dni} <br>
