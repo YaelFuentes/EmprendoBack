@@ -23,7 +23,7 @@ const cronCheques = require('./api/resourses/cheques/cheques.controller');
 const chequesRoutes = require('./api/resourses/cheques/cheques.routes');
 const cronStateCredits = require('./api/resourses/credits/credits.controller');
 const auth = require('./api/resourses/auth');
-const notificationController = require('../EmprendoBack/api/resourses/notifications/notifications.controller')
+const notificationController = require('./api/resourses/notifications/notifications.controller')
 
 const dotenv = require("dotenv");
 dotenv.config();
