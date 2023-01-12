@@ -75,22 +75,18 @@ function getCsv(callback) {
       A.punitorios,
       (A.amount + A.safe + A.punitorios + A.nota_debito) AS total,
       A.payed,
-      B.additionalInfo,
-      GROUP_CONCAT(concat_ws(' ', E.fecha, E.notas) SEPARATOR ' , ')
-      
+      B.status,
+      B.state
   FROM
       cayetano.credits_items A
-          INNER JOIN
+          LEFT JOIN
       cayetano.credits B ON A.credit_id = B.id
-          INNER JOIN
+          LEFT JOIN
       cayetano.users C ON B.clientID = C.id
-          INNER JOIN
+          LEFT JOIN
       cayetano.cars D ON B.carID = D.id
-          INNER JOIN
-      cayetano.notas E ON A.credit_id = E.creditID
-  WHERE
-      B.status = 1
-          AND B.state IN ('4') IS NOT TRUE group by A.id;`;
+          LEFT JOIN
+      cayetano.notas E ON A.credit_id = E.creditID`;
   mysqli.query(sql, [], (err, rows) => {
     var response = []
     if (rows) {
