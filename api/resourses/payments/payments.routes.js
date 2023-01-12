@@ -4,8 +4,8 @@ const { check, validationResult } = require("express-validator");
 const paymentsRouter = express.Router();
 const auth = require("../auth");
 const jwt_decode = require("jwt-decode");
-const puppeteer = require("puppeteer");
 const fs = require("fs");
+
 
 paymentsRouter.post(
   "/add",
@@ -21,29 +21,45 @@ paymentsRouter.post(
         checkFalsy: true,
       }),
       check("formData.credit_id").exists({ checkNull: true, checkFalsy: true }),
-      check("formData.client_id").exists({ checkNull: true, checkFalsy: true }),
     ],
   ],
-  function (req, res, next) {
+  async (req, res, next) => {
     const cash_flow_list = req.body.cash_flow_list;
     const gran_total = req.body.gran_total;
     const payment_amount = req.body.formData.payment_amount;
-    const payment_date = req.body.formData.payment_date;
+    const payment_date = new Date();
     const credit_id = req.body.formData.credit_id;
     const client_id = req.body.formData.client_id;
     const account_id = req.body.formData.account_id;
+    const { id, name } = req.body.notaCreditoDebito;
     const caja_id = req.body.formData.caja_id;
+
+    const decoded = jwt_decode(auth.getToken(req));
+    const USER_ID = decoded.id;
+    if (id !== 0 && name !== "") {
+      const paymentNCD = await paymentsController.createNCreditOrDebit(
+        client_id,
+        payment_date,
+        payment_amount,
+        credit_id,
+        account_id,
+        req.body.notaCreditoDebito,
+        req.body.formData.description,
+        USER_ID
+      );
+      if (paymentNCD.error) {
+        return res.status(500).json({ error: paymentNCD.error });
+      } else {
+        return res.status(200).json({ response: paymentNCD.response })
+      }
+    }
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res
         .status(400)
         .json({ response: "Campos requeridos, debe elegir un monto y fecha" });
     }
-    
-    const decoded = jwt_decode(auth.getToken(req));
-    const USER_ID = decoded.id;
-    console.log(USER_ID)
-
     paymentsController
       .insertPayment(
         payment_amount,
@@ -67,12 +83,10 @@ paymentsRouter.post(
   }
 );
 
-paymentsRouter.get("/list/:creditid", auth.required, function (req, res, next) {
+paymentsRouter.get("/list/:creditid", auth.required, async function (req, res, next) {
   let credit_id = req.params.creditid;
-
-  paymentsController.getList(credit_id, function (err, result) {
-    res.json(result);
-  });
+  const result = await paymentsController.getList(credit_id)
+  res.status(200).send(result)
 });
 
 paymentsRouter.get(
@@ -135,8 +149,24 @@ paymentsRouter.post(
     );
   }
 );
-
 paymentsRouter.get(
+  "/listnotas/:creditId",
+  auth.required,
+  async function (req, res, next) {
+    let creditId = req.params.creditId;
+    const listNotas = await paymentsController.getNCreditoDebito(
+      creditId,
+      function (err, response) {
+        if (err) {
+          res.status(400).send({ message: "Error getting credit", error: err });
+        }
+        res.json(response);
+      }
+    );
+  }
+);
+
+paymentsRouter.post(
   "/download/:paymentid",
   auth.required,
   async function (req, res, next) {

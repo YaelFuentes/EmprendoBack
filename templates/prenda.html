@@ -1,0 +1,129 @@
+<html>
+
+<head>
+  <meta charset="utf8" />
+  <title>Detalle crédito</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-weight: 500;
+      font-size: 10px;
+      -webkit-print-color-adjust: exact;
+      box-sizing: border-box;
+    }
+
+    .page {
+      position: relative;
+      display: block;
+      background: white;
+    }
+
+    .table {
+      border: solid 1px darkgray;
+      width: 90%;
+      margin-top: 20px;
+      font-size: 10px;
+      margin-left: 10mm;
+    }
+
+    .table tr>td {
+      padding: 5px;
+      border-bottom: solid 1px gray;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .page {
+        margin-top: 10mm;
+        margin-bottom: 10mm;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+<h1 style="text-align:center ;">Información de la prenda</h1>
+    <table class="table" border="0" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="background-color: lightgray;" colspan="2">
+          <b>DATOS PERSONALES</b>
+        </td>
+      </tr>
+      <tr>
+        <td style="width: 30%; border-right: solid 1px darkgray;">
+          <b>APELLIDO Y NOMBRE</b>
+        </td>
+        <td>{{apellido_nombre}}</td>
+      </tr>
+      <tr>
+        <td style="border-right: solid 1px darkgray;">
+          <b>DNI</b>
+        </td>
+        <td>{{dni}}</td>
+      </tr>
+      <tr>
+        <td style="border-right: solid 1px darkgray;">
+          <b>TELEFONO</b>
+        </td>
+        <td>{{telefono}}</td>
+      </tr>
+      <tr>
+        <td style="border-right: solid 1px darkgray;">
+          <b>EMAIL</b>
+        </td>
+        <td>{{email}}</td>
+      </tr>
+    </table>
+
+    <table class="table" border="0" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="background-color: lightgray;" colspan="2">
+          <b>DIRECCIONES</b>
+        </td>
+      </tr>
+      {{blockaddressblock}}
+    </table>
+
+    <table class="table" border="0" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="background-color: lightgray;" colspan="2">
+          <b>DATOS DEL VEHICULO</b>
+        </td>
+      </tr>
+      <tr>
+        <td style="width: 30%; border-right: solid 1px darkgray;">
+          <b>MARCA</b>
+        </td>
+        <td>{{car_brand}}</td>
+      </tr>
+      <tr>
+        <td style="border-right: solid 1px darkgray;">
+          <b>MODELO</b>
+        </td>
+        <td>{{car_model}}</td>
+      </tr>
+      <tr>
+        <td style="border-right: solid 1px darkgray;">
+          <b>A&Ntilde;O</b>
+        </td>
+        <td>{{car_year}}</td>
+      </tr>
+      <tr>
+        <td style="border-right: solid 1px darkgray;">
+          <b>PATENTE</b>
+        </td>
+        <td>{{car_domain}}</td>
+      </tr>
+    </table>
+
+  </div>
+</body>
+
+</html>

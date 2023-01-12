@@ -19,8 +19,10 @@ const futurosRouter = require("./api/resourses/futuros/futuros.routes");
 const cash_flow_deposit = require('./api/resourses/cash_flow_deposit/cashflowdeposit.routes');
 const notasRoutes = require('./api/resourses/notas/notas.routes');
 const cajaRoutes = require('./api/resourses/caja/caja.routes');
-const cronCheques = require('./api/resourses/caja/caja.controller')
+const cronCheques = require('./api/resourses/cheques/cheques.controller')
 const chequesRoutes = require('./api/resourses/cheques/cheques.routes')
+const auth = require('./api/resourses/auth');
+
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -400,7 +402,7 @@ FROM
   cayetano.credits_items T1
   LEFT JOIN cayetano.credits T2 ON T1.credit_id = T2.id
 WHERE
-  (T1.amount + T1.safe ) > T1.payed
+  (T1.capital+T1.intereses+ T1.safe+ T1.punitorios ) > T1.payed
       AND  DATE_ADD(DATE(T1.period),INTERVAL 4 DAY)  < NOW()
       AND T2.status = 1
       GROUP BY T1.credit_id;
@@ -427,4 +429,10 @@ cron.schedule("0 7 * * *", async function () {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   cronCheques.cronCheques();
+});
+
+app.get("/puni/:id",auth.required,async function (req, res) {
+  let id = req.params.id;
+  await punitoriosController.calculate(id);
+  res.sendStatus(200)
 });

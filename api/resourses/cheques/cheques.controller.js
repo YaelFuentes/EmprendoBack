@@ -1,7 +1,11 @@
+const sendMail = require('../nodemailer/mail');
+const moment = require("moment");
+
 async function createCheques(
   fecha_emision,
   fecha_vencimientos,
   amount,
+  banco,
   nroCheque,
   descripcion,
   tipoFormaCobros,
@@ -14,13 +18,14 @@ async function createCheques(
   const query = util.promisify(mysqli.query).bind(mysqli);
   if (type === '1') {
     let sql = `INSERT INTO cheques 
-      (emision, vencimiento, monto, numeroCheque, descripcion,formaCobro,created_at,user,tipo, typeMovement) 
+      (emision, vencimiento, monto, banco,numeroCheque, descripcion,formaCobro,created_at,user,tipo, typeMovement) 
       VALUES 
-      (?,?,?,?,?,?, now(),?,?,?)`;
+      (?,?,?,?,?,?,?, now(),?,?,?)`;
     var result = await query(sql, [
       fecha_emision,        //fechas
       fecha_vencimientos,   //fechas
       amount,
+      banco,
       nroCheque,
       descripcion,
       tipoFormaCobros,
@@ -30,13 +35,14 @@ async function createCheques(
     ]);
   } else {
     let sql = `INSERT INTO cheques 
-      (emision, vencimiento, monto, numeroCheque, descripcion,formaCobro,created_at,user,tipo, typeMovement) 
+      (emision, vencimiento, monto, banco,numeroCheque, descripcion,formaCobro,created_at,user,tipo, typeMovement) 
       VALUES 
-      (?,?,?,?,?,?, now(),?,?,?)`;
+      (?,?,?,?,?,?,?, now(),?,?,?)`;
     var result2 = await query(sql, [
       fecha_emision,        //fechas
       fecha_vencimientos,   //fechas
       amount - amount * 2,
+      banco,
       nroCheque,
       descripcion,
       tipoFormaCobros,
@@ -86,6 +92,7 @@ async function cronCheques() {
   const query = util.promisify(mysqli.query).bind(mysqli);
   let sql = `select * from cayetano.cheques where  date_sub(vencimiento, interval 2 day) = date(now());`;
   const result = await query(sql, []);
+  console.log(result);
   var mailOptions = {
     from: process.env.MAIL_FROM,
     to: process.env.MAIL_TO.split(' '),
@@ -104,26 +111,36 @@ async function cronCheques() {
       <table class="u-full-width">
       <thead>
         <tr>
+          <th>Fecha Emision</th>
           <th>Fecha vencimiento</th>
           <th>Monto</th>
           <th>nro Cheque</th>
           <th>descripcion</th>
+          <th>Banco</th>
+          <th>Forma de cobro</th>
+          <th>Movimiento</th>
         </tr>
       </thead>
       <tbody>
       ${result.map(function (items) {
     return `<tr>
-          <td>${items.vencimiento}</td>
+          <td>${moment(items.emision).format("DD/MM/YYYY")}</td>
+          <td>${moment(items.vencimiento).format("DD/MM/YYYY")}</td>
           <td>${items.monto}</td>
           <td>${items.numeroCheque}</td>
           <td>${items.descripcion}</td>
+          <td>${items.banco}</td>
+          <td>${items.formaCobro}</td>
+          <td>${items.typeMovement == 1 ? "Ingreso" : "Egreso"}</td>
         </tr>`
   })}
       </tbody>
     </table>
     </body>`
   mailOptions.html = html
-  sendMail(mailOptions)
+  if (Array.isArray(result) && result.length > 0) {
+    sendMail(mailOptions)
+  } 
   return result;
 }
 

@@ -3,6 +3,9 @@ const moment = require("moment");
 const paymentsController = require("../payments/payments.controller");
 var commonFormulas = require("../common/formulas");
 
+
+
+
 function create(
   clientid,
   carID,
@@ -70,7 +73,7 @@ function getCsv(callback) {
       A.amount,
       A.safe,
       A.punitorios,
-      (A.amount + A.safe + A.punitorios) AS total,
+      (A.amount + A.safe + A.punitorios + A.nota_debito) AS total,
       A.payed,
       B.additionalInfo,
       GROUP_CONCAT(concat_ws(' ', E.fecha, E.notas) SEPARATOR ' , ')
@@ -90,7 +93,7 @@ function getCsv(callback) {
           AND B.state IN ('4') IS NOT TRUE group by A.id;`;
   mysqli.query(sql, [], (err, rows) => {
     var response = []
-    if(rows) {
+    if (rows) {
       response = rows
     }
     return callback(err, response)
@@ -228,6 +231,29 @@ FROM
   });
 }
 
+async function dataSimulador(body) {
+  const fs = require("fs");
+  let tmpl = fs.readFileSync("./templates/simuladorPropuesta.html", "utf8");
+  let options = {
+    format: "A4",
+    phantomPath: "./node_modules/phantomjs-prebuilt/bin/phantomjs",
+  };
+  const moment = require("moment", );
+  
+  let html = tmpl.replace(
+    "{{logo}}",
+    `https://emprendo-public-assets.s3.us-east-2.amazonaws.com/logo.png`
+  );
+  html = html.replace("{{monto}}", `$ ${body.montoCredito}`);
+  html = html.replace("{{cuotas}}", body.cuotas);
+  html = html.replace("{{primercuota}}", moment(body.fechaPrimerCuota).format("DD/MM/YYYY"));
+  html = html.replace("{{fechaotorgamiento}}", moment(body.fechaOtorgamiento).format("DD/MM/YYYY"));
+  html = html.replace("{{primer_cuota}}", body.primerCuota);
+  html = html.replaceAll("{{resto_cuota}}", body.cuotas - 1);
+  html = html.replace("{{resto_cuota_amount}}",`$ ${(body.granTotal / body.cuotas).toFixed(2)}`)
+  return html
+}
+
 function getInfo(creditid, callback) {
   let sql = `SELECT
               T1.id creditid,
@@ -242,11 +268,12 @@ function getInfo(creditid, callback) {
               T4.amount cuota,
               T4.payed pagado,
               T4.safe seguro,
+              T4.nota_debito,
               COALESCE(SUM(T8.amount),0) punitorios,
               T8.days_past,
               CASE WHEN T4.period <= DATE(NOW())
               	THEN
-              		((T4.safe + COALESCE(SUM(T8.amount),0) + T4.amount) - T4.payed)
+              		((T4.safe + COALESCE(SUM(T8.amount),0) +T4.nota_debito+ T4.capital+T4.intereses) - T4.payed)
               	ELSE 0
               	END deuda,
                 T4.intereses,
@@ -262,9 +289,68 @@ function getInfo(creditid, callback) {
   mysqli.query(sql, [creditid], (err, rows) => {
     //si queremos imprimir el mensaje ponemos err.sqlMessage
     var response = [];
-    if (rows) {
-      response = rows;
-    }
+    response = rows;
+    return callback(err, response);
+  });
+};
+
+async function getInfoCredit(creditid, callback) {
+  let sql = `SELECT
+  sum(T4.capital+ T4.intereses ) as deudaTotalCredito,
+  T1.id creditid,
+  T1.status creditStatus,
+  T1.carID,
+  T1.clientID clientid,
+  T1.additionalInfo,
+  T1.state internalState,
+  T4.id,
+  T2.cuotas,
+  T2.amount,
+  T2.total,
+  DATE(T4.period) period,
+  T4.amount cuota,
+  T4.payed pagado,
+  T4.safe seguro,
+  COALESCE(SUM(T8.amount),0) punitorios,
+  T8.days_past,
+  CASE WHEN T4.period <= DATE(NOW())
+    THEN
+      ((T4.safe + COALESCE(SUM(T8.amount),0) + T4.amount) - T4.payed)
+    ELSE 0
+    END deuda,
+    T4.intereses,
+  T4.saldo,
+  T4.capital,
+  T9.brand,
+  T9.model,
+  T9.year,
+  T9.details,
+  T10.name,
+  T10.lastname,
+  T10.dni,
+  T10.phone
+  FROM
+  cayetano.credits T1
+  INNER JOIN cayetano.budget T2 ON T1.budget = T2.id
+  LEFT JOIN cayetano.credits_items T4 ON T1.id = T4.credit_id
+  LEFT JOIN cayetano.punitorios T8 ON T1.id = T8.credit_id AND T4.period = T8.period
+  left JOIN cayetano.cars T9 ON T1.carID = T9.id
+  left JOIN cayetano.users T10 ON T1.clientid = T10.id
+  WHERE T1.id = ?
+  GROUP BY T4.period;`;
+  mysqli.query(sql, [creditid], (err, rows) => {
+    //si queremos imprimir el mensaje ponemos err.sqlMessage
+    var response = [];
+    let contador = 0;
+    if (Array.isArray(rows) && rows.length > 0) {
+      rows.map((item) => {
+        if (item.pagado >= item.cuota + item.seguro + item.punitorios) {
+          contador += 1;
+        }
+      })
+      Object.assign(rows[0], { NroCuotasPagas: contador })
+    };
+    response = rows;
     return callback(err, response);
   });
 }
@@ -282,9 +368,9 @@ function getCashFlow(creditid, callback) {
 }
 
 function getCashFlowPerCreditItem(creditidid, callback) {
-  let sql = `SELECT SUM(amount) pagado, credit_item_id, operation_type,description FROM cash_flow WHERE credit_item_id = ? AND credit_item_id > 0 AND deleted_at IS NULL GROUP BY operation_type,credit_item_id`;
+  let sql = `SELECT SUM(amount) pagado, credit_item_id, operation_type, description, created_at FROM cayetano.cash_flow 
+  WHERE credit_item_id = ? AND credit_item_id > 0 AND deleted_at IS NULL GROUP BY operation_type;`;
   mysqli.query(sql, [creditidid], (err, rows) => {
-    //si queremos imprimir el mensaje ponemos err.sqlMessage
     var response = [];
     if (rows) {
       response = rows;
@@ -419,12 +505,13 @@ function getList(callback) {
   lastname,
   phone,
   status,
-  additionalInfo,
   state,
+  additionalInfo,
+  state,coalesce(B.deudas,0) as deuda,
   (SUM(seguro) + (CASE
       WHEN SUM(punitorios) IS NULL THEN 0
       ELSE SUM(punitorios)
-  END) + SUM(cuota)) - SUM(pagado) deuda,
+  END) + SUM(capital)+ SUM(intereses) + SUM(nota_debito) )  - SUM(pagado) deudass,
   case when state in('2', '5', '6') then NULL
   else B.dias end as dias
 FROM
@@ -448,6 +535,18 @@ FROM
               ELSE 0
           END cuota,
           CASE
+              WHEN T4.period <= DATE(NOW()) THEN T4.capital
+              ELSE 0
+          END capital,
+          CASE
+              WHEN T4.period <= DATE(NOW()) THEN T4.intereses
+              ELSE 0
+          END intereses,
+            CASE
+              WHEN T4.period <= DATE(NOW()) THEN T4.nota_debito
+              ELSE 0
+          END nota_debito,
+          CASE
               WHEN T4.period <= DATE(NOW()) THEN T4.payed
               ELSE 0
           END pagado,
@@ -456,7 +555,7 @@ FROM
               ELSE 0
           END seguro,
           CASE
-              WHEN T4.period <= DATE(NOW()) THEN T8.amount
+              WHEN T4.period <= DATE(NOW()) THEN T4.punitorios
               ELSE 0
           END punitorios
   FROM
@@ -466,7 +565,7 @@ FROM
   INNER JOIN cayetano.users T5 ON T1.clientID = T5.id
   LEFT JOIN cayetano.credits_items T4 ON T1.id = T4.credit_id
   LEFT JOIN cayetano.punitorios T8 ON T1.id = T8.credit_id
-      AND T4.period = T8.period) A
+      AND T4.period = T8.period ) A
       LEFT JOIN
   (SELECT 
       SUM(A.deudas) AS deudas, A.dias, A.id
@@ -475,13 +574,13 @@ FROM
       c.id,
           c.clientID,
           ci.period,
-          (ci.amount + safe + (CASE
+          coalesce((ci.capital + ci.intereses + safe + nota_debito + (CASE
               WHEN SUM(p.amount) THEN SUM(p.amount)
               ELSE 0
           END)) - (CASE
               WHEN ci.payed THEN ci.payed
               ELSE 0
-          END) AS deudas,
+          END),0) AS deudas,
           DATEDIFF(NOW(), ci.period) AS dias
   FROM
       cayetano.punitorios p
@@ -516,6 +615,7 @@ async function createItems(
   creditID,
   primera_cuota,
   budgetInfo,
+  interesInicial,
   callback
 ) {
   const util = require("util");
@@ -542,7 +642,8 @@ async function createItems(
     cuotas,
     cuotaamount,
     capitalBaseMasOtorgamiento,
-    rateValue
+    rateValue,
+    interesInicial
   );
 
   try {
@@ -653,6 +754,58 @@ async function getPaymentCoupons(creditId) {
   const coupons = await query(sql, [creditId]);
   return coupons;
 }
+async function getPrintInfoSeguros(creditID) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const seguroDataQuery = `SELECT
+  T1.id,
+  T1.amount,
+  T1.imputationDate,
+  T2.brand,
+  T2.model,
+  T2.year,
+  T2.domain,
+  CONCAT(T4.lastname,' ', T4.name)  apellido_nombre,
+  T4.email,
+  T4.phone telefono,
+  T4.dni
+FROM
+  cayetano.insurances T1 
+  LEFT JOIN cayetano.cars T2 ON T1.carID = T2.id INNER JOIN cayetano.credits T3 ON T1.carID = T3.carID INNER JOIN cayetano.users T4 ON T3.clientID = T4.id
+  WHERE T3.id = ?
+ORDER BY
+  imputationDate DESC`;
+  const printSeguros = await query(seguroDataQuery, [creditID]);
+  const seguroDataInfo = `  select A.* from cayetano.insurances A inner join cayetano.credits B on A.carID = B.carID where B.id = ? and A.status = 1 order by A.imputationDate desc`;
+  const seguroData = await query(seguroDataInfo, [creditID]);
+  const seguroDataInfoCar = `SELECT brand car_brand
+  , model car_model
+  , year car_year
+  , domain car_domain
+  , details car_details
+  FROM cayetano.cars c
+  INNER JOIN cayetano.users u on u.id = c.clientID
+  INNER JOIN cayetano.credits cr on cr.clientID = u.id
+  WHERE cr.id=?;`;
+  const seguroDataCar = await query(seguroDataInfoCar, [creditID]);
+  return {
+    printSeguros: printSeguros[0],
+    seguroDataCar: seguroDataCar[0],
+    seguroData: seguroData
+  }
+};
+
+async function getPrintInfoPagos(creditID) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const pagosDataQuery = `select A.clientID, A.paymentDate, A.id, A.amount,A.credit_id, B.user, B.payment_id , C.id as idUser, C.name, C.lastname 
+  from cayetano.payments A join cayetano.cash_flow B on A.id = B.payment_id left join cayetano.users C  on B.user = C.id 
+  where A.credit_id = ? AND A.status = 1 group by A.id  ORDER BY paymentDate ASC;`;
+  const pagos = await query(pagosDataQuery, [creditID]);
+  return {
+    pagos: pagos[0]
+  }
+};
 
 async function getPrintInfo(creditID) {
   const util = require("util");
@@ -703,10 +856,11 @@ async function getPrintInfo(creditID) {
                           T4.safe,
                           T4.payed pagado,
                           T4.safe seguro,
+                          T4.nota_debito,
                           SUM(T8.amount) punitorios,
                           CASE WHEN T4.period <= DATE(NOW())
                           	THEN
-                          		(T4.safe +
+                          		(T4.safe + T4.nota_debito +
                           		(CASE WHEN SUM(T8.amount) IS NULL THEN 0 ELSE SUM(T8.amount) END) +
                           		T4.amount) - T4.payed
                           	ELSE 0
@@ -918,18 +1072,12 @@ async function saveCredit(data, clientID, budgetID, carID) {
     const safe = data.seguro ? formatNumber(data.seguro) : 0;
     const promises = [];
 
-    //console.log(data);
-    //console.log(formatNumber(data.cuotas));
-    //console.log(formatNumber(data.monto_final));
-    //console.log(valorCuota);
-
     const rateValue = commonFormulas.rate(
       formatNumber(data.cuotas),
       valorCuota,
       formatNumber(data.monto_sin_impuestos)
     );
 
-    //console.log(`rateValue = ${rateValue}`);
 
     const generarCuotasArray = commonFormulas.generarCuotas(
       formatNumber(data.cuotas),
@@ -1010,6 +1158,7 @@ function formatNumber(num) {
 module.exports = {
   create,
   getCsv,
+  dataSimulador,
   getInfo,
   getList,
   getClientList,
@@ -1031,4 +1180,7 @@ module.exports = {
   updateState,
   getCashFlow,
   getCashFlowPerCreditItem,
+  getPrintInfoSeguros,
+  getPrintInfoPagos,
+  getInfoCredit
 };

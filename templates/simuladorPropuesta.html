@@ -1,0 +1,128 @@
+<html>
+
+<head>
+  <meta charset="utf8" />
+  <title>Detalle crédito</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-weight: 500;
+      font-size: 10px;
+      -webkit-print-color-adjust: exact;
+      box-sizing: border-box;
+    }
+
+    .page {
+      position: relative;
+      display: block;
+      background: white;
+    }
+
+    .table {
+      border: solid 1px darkgray;
+      width: 90%;
+      margin-top: 20px;
+      font-size: 10px;
+      margin-left: 10mm;
+    }
+
+    .table2 {
+      border: solid 1px darkgray;
+      width: 90%;
+      margin-top: 20px;
+      font-size: 10px;
+      margin-left: 10mm;
+    }
+
+    .table2 tr>td {
+      padding: 5px;
+      border-bottom: solid 1px gray;
+    }
+
+
+    .table tr>td {
+      padding: 5px;
+      border-bottom: solid 1px gray;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .page {
+        margin-top: 10mm;
+        margin-bottom: 10mm;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h1 style="text-align:center; padding-bottom: 10px;"> Propuesta para el cliente </h1>
+  <table style="
+  border: solid 1px darkgray;
+  width: 90%;
+  margin-left: 10mm;
+  margin-right: 10mm;
+" border="0" cellpadding="0" cellspacing="0">
+    <tr rowspan="2">
+      <td style="
+      width: 100%;
+      border-right: solid 1px darkgray;
+      text-align: center;
+    ">
+        <img src="{{logo}}" style="width: 40mm; padding: 5mm;" />
+      </td>
+    </tr>
+  </table>
+  <table class="table" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="background-color: lightgray;" colspan="2">
+        <b>DATOS DE LA COTIZACIÓN</b>
+      </td>
+    </tr>
+    <tr>
+      <td style="width: 30%; border-right: solid 1px darkgray;">
+        <b>MONTO SOLICITADO</b>
+      </td>
+      <td>{{monto}}</td>
+    </tr>
+    <tr>
+      <td style="border-right: solid 1px darkgray;">
+        <b>CANT. CUOTAS</b>
+      </td>
+      <td>{{cuotas}}</td>
+    </tr>
+    <tr>
+      <td style="border-right: solid 1px darkgray;">
+        <b>FECHA DE COTIZACIÓN</b>
+      </td>
+      <td>{{fechaotorgamiento}}</td>
+    </tr>
+    <!-- <tr>
+      <td style="border-right: solid 1px darkgray;">
+        <b>VENCIMIENTO PRIMER CUOTA</b>
+      </td>
+      <td>{{primercuota}}</td>
+    </tr> -->
+    <tr>
+      <td style="width: 30%; border-right: solid 1px darkgray;">
+        <b>1º CUOTA</b>
+      </td>
+      <td>1º cuota por el monto de ${{primer_cuota}}</td>
+    </tr>
+    <tr>
+      <td style="border-right: solid 1px darkgray;">
+        <b>{{resto_cuota}} CUOTAS RESTANTES</b>
+      </td>
+      <td>{{resto_cuota}} cuotas por el monto de {{resto_cuota_amount}}</td>
+    </tr>
+  </table>
+  <p style="margin-left: 10mm;margin-top: 5mm;">Los montos están sujetos a posibles modificaciones dependiendo de la fecha de cotización y emisión del credito</p>
+</body>
+
+</html>
