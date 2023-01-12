@@ -302,14 +302,12 @@ async function repocisionCajaDiaria(amount, USER_ID) {
 /*  notificaciones para avisar a los administradores de los pagos de juicios     */
 /* -------------------------------------------------------------------------- */
 async function getNotificacionesPagos(data) {
-  console.log(data);
   const dataPagos = await getPagoJuiciosFinalizados(data[0].creditID)
-  console.log('dataPagos : ',dataPagos)
   const mailOptions = {
     from: process.env.MAIL_FROM,
     to: process.env.MAIL_TO.split(' '),
-    subject: '',
-    html: 'Pagos cargados por juicios'
+    subject: 'Pagos cargados por juicios',
+    html: ''
   };
   html = `<!DOCTYPE html>
   <html lang="en">
@@ -328,7 +326,8 @@ async function getNotificacionesPagos(data) {
     </p>
   </body>`;
   mailOptions.html = html
-  console.log(mailOptions)
+  /* console.log(mailOptions) */
+  sendMail(mailOptions)
   
 };
 

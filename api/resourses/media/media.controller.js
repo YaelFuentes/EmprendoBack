@@ -66,13 +66,12 @@ async function addFileToDb(file, s3Response, creditid, juicio, callback) {
     </head>
     <body>
       <p>
-        Se han realizado modificaciones en el credito del cliente ${response[0].lastname} ${response[0].name} 
+        Se han realizado modificaciones en el credito del cliente ${response[0].lastname} ${response[0].name} con DNI nro : ${response[0].dni}.
       </p>
     </body>`;
       mailOptions.html = html
       if (Number(juicio) === 1) {
-        console.log(mailOptions)
-        /* sendMail(mailOptions); */
+         sendMail(mailOptions); 
       }
       let sql = `INSERT INTO files (originalname,path,url,credit_id) VALUES (concat('Juicio : ' ?),?,?,?) `;
       if (juicio === 1) {

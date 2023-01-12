@@ -500,7 +500,12 @@ async function cronUpdateSubState() {
 async function updateSubState(sub_state, user_id, creditID) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  let sqlGetInfoSubState = sqlDatos;
+  let sqlGetInfoSubState = `SELECT * FROM cayetano.credits A 
+  LEFT JOIN users B ON A.clientID = B.id 
+  LEFT JOIN cayetano.cars C ON A.carID = C.id 
+  LEFT JOIN cayetano.address D ON A.clientID = D.clientID 
+  LEFT JOIN cayetano.credit_additional_info E ON A.id = E.creditID 
+  WHERE a.id = 45 GROUP BY A.id;`;
   let sql = `UPDATE credits SET sub_state = ?, responsable_sub_state = ?, update_sub_state = now() WHERE id = ?;`;
   try {
     const resultGetInfoSubState = await query(sqlGetInfoSubState, [Number(creditID)])
@@ -510,15 +515,12 @@ async function updateSubState(sub_state, user_id, creditID) {
         return "Demanda iniciada"
       }
       if (state === 2) {
-        return "Digitalizacion y carga de documentos"
-      }
-      if (state === 3) {
         return "Entregado a martillero"
       }
-      if (state === 4) {
+      if (state === 3) {
         return "Martillero - estado : Pendiente"
       }
-      if (state === 5) {
+      if (state === 4) {
         return "Secuestrado a subastar"
       }
     }
@@ -527,7 +529,7 @@ async function updateSubState(sub_state, user_id, creditID) {
     let mailOptions = {
       from: process.env.MAIL_FROM,
       to: [...sendMailFunction7, ...sendMailFunction1],
-      subject: `Cambio de estado judicial de ${resultGetInfoSubState.map((item) => item.lastname)} ${resultGetInfoSubState.map((item) => item.name)}`,
+      subject: `Cambio de estado judicial de ${resultGetInfoSubState[0].lastname} ${resultGetInfoSubState[0].name}`,
       html: ''
     }
     html = `
@@ -550,14 +552,11 @@ async function updateSubState(sub_state, user_id, creditID) {
     })}
     </body>`;
     mailOptions.html = html
-
-    resultGetInfoSubState.map((item) => {
-      if (item.sub_state >= 1) {
-        sendMail(mailOptions)
+      if (resultGetInfoSubState.map(item => item.sub_state >= 1)) {
+         sendMail(mailOptions) 
       }
-    })
     const sendMailFunction = await emailJuicio(10)
-    if (sub_state === 3) {
+    if (sub_state === 2) {
       let mailOptionsMartillero = {
         from: process.env.MAIL_FROM,
         to: sendMailFunction,  // colocar el mail del martillero correspondiente traido de la UI
@@ -586,7 +585,7 @@ async function updateSubState(sub_state, user_id, creditID) {
       })}
     </body>`;
       mailOptionsMartillero.html = html
-      sendMail(mailOptionsMartillero) 
+       sendMail(mailOptionsMartillero)  
       return result;
     }
   } catch (e) {
