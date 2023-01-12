@@ -354,7 +354,7 @@ async function notificacionClients() {
         return `<tr>
             <td>${item.deuda ? item.deuda : " - "}</td>
             <td>${item.dias ? item.dias : " - "}</td>
-            <a href='http://emprendofrontend.s3-website-us-west-2.amazonaws.com/newcreditos/${item.id}'>${item.lastname} ${item.name}</a>
+            <a href='${process.env.DOMAIN_FRONTEND_PAGE}/newcreditos/${item.id}'>${item.lastname} ${item.name}</a>
             <td> ${item.phone ? item.phone : " - "}</td>
             <td>${item.brand ? item.brand : " - "}</td>
             <td>${item.model ? item.model : " - "}</td>
@@ -407,7 +407,7 @@ async function notificacionClients() {
         return `<tr>
             <td>${item.deuda ? item.deuda : " - "}</td>
             <td>${item.dias ? item.dias : " - "}</td>
-            <a href='http://emprendofrontend.s3-website-us-west-2.amazonaws.com/newcreditos/${item.id}'>${item.lastname} ${item.name}</a>
+            <a href='${process.env.DOMAIN_FRONTEND_PAGE}/newcreditos/${item.id}'>${item.lastname} ${item.name}</a>
             <td> ${item.phone ? item.phone : " - "}</td>
             <td>${item.brand ? item.brand : " - "}</td>
             <td>${item.model ? item.model : " - "}</td>
@@ -578,7 +578,7 @@ async function updateSubState(sub_state, user_id, creditID) {
         return `
         <p>
         Se notifica que el cliente: <br>
-        <a href='http://emprendofrontend.s3-website-us-west-2.amazonaws.com/newcreditos/${item.creditID}'>${item.lastname} ${item.name}</a> con DNI Nro : ${item.dni} , Tel Nro : ${item.phone}<br>
+        <a href='${process.env.DOMAIN_FRONTEND_PAGE}/newcreditos/${item.creditID}'>${item.lastname} ${item.name}</a> con DNI Nro : ${item.dni} , Tel Nro : ${item.phone}<br>
         a entrado en estado judicial. Por lo que debe ejecutarse la quita del vehiculo marca : ${item.brand} modelo : ${item.modelo} año : ${item.year}<br>
         patente : ${item.domain} ${item.details.length > 1 ? `, Detalles del mismo : ${item.details}` : ` `}, el domicilio particular notificado por el cliente es : ${item.type == 1 ? item.address + " " + item.number + " " + item.department : ""} <br>
         domicilio laboral : ${item.type == 2 ? item.address + " " + item.number + " " + item.department : ""}
