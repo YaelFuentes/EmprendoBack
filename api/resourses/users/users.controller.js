@@ -35,6 +35,15 @@ function login(email, password, callback) {
   );
 }
 
+async function usersType(typeUser) {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  let sql = `SELECT email FROM users WHERE type = ? AND stateEmail = 1 AND status = 1;`;
+  const updateSql = await query(sql, [typeUser]);
+  console.log(updateSql)
+  return updateSql
+};
+
 function getUsers(type, callback) {
   let sql = `SELECT
          u.id
@@ -339,7 +348,16 @@ function updateUser(fields, id, callback) {
   } else {
     return callback(err, []);
   }
-}
+};
+
+async function usersType(typeUser) {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  let sql = `SELECT email FROM users WHERE type = ? AND stateEmail = 1 AND status = 1;`;
+  const updateSql = await query(sql, [typeUser]);
+  console.log(updateSql)
+  return updateSql
+};
 
 module.exports = {
   login,
@@ -352,4 +370,5 @@ module.exports = {
   pauseUser,
   recoverPassword,
   updateUser,
+  usersType
 };
