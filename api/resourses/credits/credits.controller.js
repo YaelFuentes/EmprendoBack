@@ -314,6 +314,7 @@ async function notificacionClients() {
   const query = util.promisify(mysqli.query).bind(mysqli);
   let sql = sqlDatosDiasAtraso;
   const sendMailFunction8 = await emailJuicio(8);
+  const sendMailFunction9 = await emailJuicio(9);
   const updateState = await query(sql, [], (err, rows) => {
     let response = []
     if (rows) {
@@ -375,7 +376,7 @@ async function notificacionClients() {
     //mandar mail con el usuario extraido de la base de datos con state 8 (abogados)
     let mailOptions2 = {
       from: process.env.MAIL_FROM,
-      to: sendMailFunction8,
+      to: sendMailFunction9, //email state 9 para abogados. 
       subject: 'Clientes en juicio',
       html: ''
     }
