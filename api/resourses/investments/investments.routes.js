@@ -6,6 +6,12 @@ const jwt_decode = require("jwt-decode");
 
 const investmentsRouter = express.Router();
 
+investmentsRouter.get("/getcsv", auth.required, function (req, res, next) {
+  investmentsController.getCsv(function (err, result) {
+    res.json(result)
+  });
+});
+
 investmentsRouter.get("/all", auth.required, async (req, res) => {
   const investments = await investmentsController.getAllInvestements();
   res.json(investments);
