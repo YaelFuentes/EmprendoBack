@@ -1,5 +1,22 @@
 const express = require("express");
 const auth = require("../auth");
 const jwt_decode = require("jwt-decode");
+const expenseController = require("./expenses.controller.js")
+const expenseRouter = express.Router();
 
-const creditsRouter = express.Router();
+expenseRouter.post('/payment/:userId',async function(req,res) {
+  let {userId} = req.params
+  userId = Number(userId)
+  const {pagos,taxes,creditInfo} = req.body
+  await expenseController.addExpenses(taxes,userId,creditInfo)
+  const response = await expenseController.addMultipleExpensesPayment(pagos,taxes,userId)
+  await expenseController.updateExpenses(response,userId)
+  res.json(response)
+})
+expenseRouter.get('/:userId',async function(req,res) {
+  const {userId} = req.params
+  const response = await expenseController.getExpenses(userId)
+  res.json(response)
+})
+
+module.exports = expenseRouter;

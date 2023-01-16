@@ -309,8 +309,7 @@ creditsRouter.post("/create", auth.required, async function (req, res, next) {
                             interesInicial,
                             function (err, result) {
                               if (result) {
-                                expensesController.addExpenses(expenses,creditID
-                                  )
+                                expensesController.assignCreditId(expenses,clientid,creditID)
                                 res.send(JSON.stringify(result));
                               }
                             }
