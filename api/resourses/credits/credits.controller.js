@@ -1,8 +1,131 @@
 /* eslint-disable no-loop-func */
 const moment = require("moment");
+const usersTypeController = require("../users/users.controller");
 const paymentsController = require("../payments/payments.controller");
 var commonFormulas = require("../common/formulas");
+const sendMail = require("../nodemailer/mail");
 
+const sqlDatos = `SELECT * FROM cayetano.credits A 
+LEFT JOIN users B ON A.clientID = B.id 
+LEFT JOIN cayetano.cars C ON A.carID = C.id 
+LEFT JOIN cayetano.address D ON A.clientID = D.clientID 
+LEFT JOIN cayetano.credit_additional_info E ON A.id = E.creditID 
+WHERE a.id = ? GROUP BY operation_type;`;
+const sqlDatosDiasAtraso = `SELECT 
+A.id,
+A.clientID,
+A.amount,
+A.cuotas,
+A.brand,
+model,
+year,
+name,
+lastname,
+phone,
+status,
+additionalInfo,
+state,
+sub_state,
+(SUM(seguro) + (CASE
+    WHEN SUM(punitorios) IS NULL THEN 0
+    ELSE SUM(punitorios)
+END) + SUM(capital)+ SUM(intereses) + SUM(nota_debito) )  - SUM(pagado) deuda,
+case when state in('2', '5', '6') then NULL
+else B.dias end as dias
+FROM
+(SELECT 
+    T1.status,
+        T1.id,
+        T1.clientID,
+        T1.additionalInfo,
+        T2.amount,
+        T2.cuotas,
+        T3.brand,
+        T3.model,
+        T3.year,
+        T5.name,
+        T5.lastname,
+        T4.period,
+        T5.phone,
+        T1.state,
+        T1.sub_state,
+        CASE
+            WHEN T4.period <= DATE(NOW()) THEN T4.amount
+            ELSE 0
+        END cuota,
+        CASE
+            WHEN T4.period <= DATE(NOW()) THEN T4.capital
+            ELSE 0
+        END capital,
+        CASE
+            WHEN T4.period <= DATE(NOW()) THEN T4.intereses
+            ELSE 0
+        END intereses,
+          CASE
+            WHEN T4.period <= DATE(NOW()) THEN T4.nota_debito
+            ELSE 0
+        END nota_debito,
+        CASE
+            WHEN T4.period <= DATE(NOW()) THEN T4.payed
+            ELSE 0
+        END pagado,
+        CASE
+            WHEN T4.period <= DATE(NOW()) THEN T4.safe
+            ELSE 0
+        END seguro,
+        CASE
+            WHEN T4.period <= DATE(NOW()) THEN T8.amount
+            ELSE 0
+        END punitorios
+FROM
+    cayetano.credits T1
+INNER JOIN cayetano.budget T2 ON T1.budget = T2.id
+INNER JOIN cayetano.cars T3 ON T1.carID = T3.id
+INNER JOIN cayetano.users T5 ON T1.clientID = T5.id
+LEFT JOIN cayetano.credits_items T4 ON T1.id = T4.credit_id
+LEFT JOIN cayetano.punitorios T8 ON T1.id = T8.credit_id
+    AND T4.period = T8.period) A
+    LEFT JOIN
+(SELECT 
+    SUM(A.deudas) AS deudas, A.dias, A.id
+FROM
+    (SELECT 
+    c.id,
+        c.clientID,
+        ci.period,
+        (ci.capital + ci.intereses + safe + nota_debito + (CASE
+            WHEN SUM(p.amount) THEN SUM(p.amount)
+            ELSE 0
+        END)) - (CASE
+            WHEN ci.payed THEN ci.payed
+            ELSE 0
+        END) AS deudas,
+        DATEDIFF(NOW(), ci.period) AS dias
+FROM
+    cayetano.punitorios p
+RIGHT JOIN cayetano.credits_items ci ON ci.credit_id = p.credit_id
+    AND MONTH(p.period) = MONTH(ci.period)
+    AND YEAR(p.period) = YEAR(ci.period)
+INNER JOIN cayetano.credits c ON c.id = ci.credit_id
+WHERE
+    1 AND ci.period < NOW()
+GROUP BY ci.credit_id , ci.period , c.id
+HAVING deudas > 0
+ORDER BY c.clientID , ci.period) A
+GROUP BY A.id) AS B ON A.id = B.id
+WHERE
+A.status > 0
+GROUP BY A.id
+ORDER BY status ASC, state,dias DESC;`;
+
+const emailJuicio = async (type) => {
+  const result = await usersTypeController.usersType(type)
+  if (Array.isArray(result) && result.length > 0) {
+    const returnValue = result.map(item => item.email)
+    return returnValue
+  }
+  return []
+}
 
 
 
@@ -112,7 +235,6 @@ function setAsFinished(creditid, userid, reason, callback) {
 }
 
 function updateCredit({ additional_info, creditid }, callback) {
-  console.log(additional_info);
   let sql = `UPDATE credits SET additionalInfo = ? WHERE id = ?`;
   mysqli.query(sql, [additional_info, creditid], (err, rows) => {
     var response = [];
@@ -132,21 +254,441 @@ function createState(state, callback) {
     }
     return callback(err, response);
   });
+};
+const dataRanges = () => {
+  const startDate = new Date(moment().format('YYYY-12-15'))
+  const endDate = new Date(moment().format('YYYY-12-31'))
+  const startDateNewYear = new Date(moment().format('YYYY-01-01'))
+  const endDateNewYear = new Date(moment().format('YYYY-02-01'))
+  const Range = moment().isBetween(startDate, endDate)
+  const RangeJanuary = moment().isBetween(startDateNewYear, endDateNewYear);
+  let isBetweenDate = false;
+  if (Range || RangeJanuary) {  
+    isBetweenDate = true;
+  }
+  return isBetweenDate
+}
+async function updateCreditsState() {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  let sql = sqlDatosDiasAtraso;
+  const updateState = await query(sql, [], (err, rows) => {
+    let response = []
+    if (rows) {
+      response = rows
+    }
+    /* console.log('response : ',response) */
+    if (response.state == 2) {
+      const sqlUpdate = `UPDATE credits SET updated_at = NOW() WHERE id = ?`;
+      mysqli.query(sqlUpdate, [credit_id])
+    }
+
+    response.map((item) => {
+      if (item.id == 71) {
+        console.log('dataRange: ', dataRanges())
+      }
+      if (item.dias == null && item.state != 1 && item.status == 1 && item.sub_state == null) {
+        let sql2 = `UPDATE credits SET state = 1 WHERE id = ${item.id}`;
+        mysqli.query(sql2, []);
+      } else if (item.dias >= 1 && item.dias < 45 && item.state != 3 && item.status == 1 && item.sub_state === null) {
+        let sql3 = `UPDATE credits SET state = 3 WHERE id = ${item.id}`;
+        mysqli.query(sql3, []);
+      } else if (item.dias >= 45 && item.state != 4 && item.status == 1 && !dataRanges()) {
+        let sql4 = `UPDATE credits SET state = 4 WHERE id = ${item.id}`;
+        mysqli.query(sql4, []);
+      }
+    });
+  })
+
+  console.log('Actualizacion de estado Am 1:00 lun a vie')
+  return updateState;
+};
+
+
+async function notificacionClients() {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  let sql = sqlDatosDiasAtraso;
+  const sendMailFunction8 = await emailJuicio(8);
+  const sendMailFunction9 = await emailJuicio(9);
+  const updateState = await query(sql, [], (err, rows) => {
+    let response = []
+    if (rows) {
+      response = rows
+    }
+    let mailOptions = {
+      from: process.env.MAIL_FROM,
+      to: sendMailFunction8,
+      subject: 'Clientes atrasados',
+      html: ''
+    }
+    html2 = `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Document</title>
+    </head>
+    <body>
+      <table class="u-full-width">
+        <thead>
+          <tr>
+            
+            <th>Deuda</th>
+            <th>Dia de atraso</th>
+            <th>Cliente</th>
+            <th>Telefono</th>
+            <th>Marca</th>
+            <th>Modelo</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${response.map((item) => {
+      if (item.status == 1 && item.state === 3) {
+        return `<tr>
+            <td>${item.deuda ? item.deuda : " - "}</td>
+            <td>${item.dias ? item.dias : " - "}</td>
+            <a href='${process.env.DOMAIN_FRONTEND_PAGE}/newcreditos/${item.id}'>${item.lastname} ${item.name}</a>
+            <td> ${item.phone ? item.phone : " - "}</td>
+            <td>${item.brand ? item.brand : " - "}</td>
+            <td>${item.model ? item.model : " - "}</td>
+            <td>${item.status == 1 ? "Activo" : "Finalizado"}</td>
+            <td>
+            </td>
+            </tr>`
+      }
+    })}
+        </tbody>
+      </table>
+    </body>`;
+    mailOptions.html = html2
+    const dataFilter = response.filter((item) => item.status == 1 && item.dias >= 1 && item.state == 3).map(item => item.dias)
+    if (dataFilter.length > 0) {
+      sendMail(mailOptions);
+    }
+    /////////////////////////////////////////////////////
+    //mandar mail con el usuario extraido de la base de datos con state 8 (abogados)
+    let mailOptions2 = {
+      from: process.env.MAIL_FROM,
+      to: sendMailFunction9, //email state 9 para abogados. 
+      subject: 'Clientes en juicio',
+      html: ''
+    }
+    html1 = `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Document</title>
+    </head>
+    <body>
+      <table class="u-full-width">
+        <thead>
+          <tr>
+            <th>Deuda</th>
+            <th>Dia de atraso</th>
+            <th>Cliente</th>
+            <th>Telefono</th>
+            <th>Marca</th>
+            <th>Modelo</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${response.map((item) => {
+      if (item.status == 1 && item.state == 4 && item.sub_state == null) {
+        return `<tr>
+            <td>${item.deuda ? item.deuda : " - "}</td>
+            <td>${item.dias ? item.dias : " - "}</td>
+            <a href='${process.env.DOMAIN_FRONTEND_PAGE}/newcreditos/${item.id}'>${item.lastname} ${item.name}</a>
+            <td> ${item.phone ? item.phone : " - "}</td>
+            <td>${item.brand ? item.brand : " - "}</td>
+            <td>${item.model ? item.model : " - "}</td>
+            <td>${item.status == 1 ? "Activo" : "Finalizado"}</td>
+            <td>
+            </td>
+            </tr>`
+      }
+    })}
+        </tbody>
+      </table>
+    </body>`;
+    mailOptions2.html = html1
+    const dataFilterJuicio = response.filter(data => data.status == 1 && data.dias >= 50 && data.sub_state == null)
+    if (dataFilterJuicio.length > 0) {
+
+      sendMail(mailOptions2)
+    }
+  })
+  return updateState;
+};
+async function addpaymentupdate(creditID, nroExpediente, items) {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const getElementSql = `select A.*,B.state, B.sub_state,B.id,B.status 
+  from cayetano.credit_additional_info A left join cayetano.credits B on A.creditID = B.id 
+  where A.creditID = ? ;`;
+  const result1 = await query(getElementSql, [creditID]);
+  if (items.id === undefined || items.id === null) {
+    const sql = `INSERT INTO credit_additional_info (id ,monto, additionalInfo ,created_at , creditID, operation_type) VALUES ( ?, ?, ? ,now() , ?, 'gastos_judiciales_cred')`;
+    const result = await query(sql, [items.id, Number(items.amount), items.additionalInfo, creditID]); //
+    return result;
+  } else {
+    const sqlUpdate = `UPDATE credit_additional_info SET monto = ?, additionalInfo = ?, updated_at = now() , creditID = ?, operation_type = 'gastos_judiciales_cred' WHERE operation_type = 'gastos_judiciales_cred' and id = ?;`;
+    const result = await query(sqlUpdate, [Number(items.amount), items.additionalInfo, creditID, items.id]);
+    return result;
+  }
+};
+
+async function cronUpdateSubState() {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  let getInfo = `SELECT *,A.id idCredit FROM cayetano.credits A 
+  LEFT JOIN users B ON A.clientID = B.id 
+  WHERE A.state = 4 AND A.status = 1 GROUP BY A.id;`;
+  const sendMailFunction7 = await emailJuicio(7);
+  const sendMailFunction1 = await emailJuicio(1);
+  const resultGetInfo = await query(getInfo, [], (err, rows) => {
+    let response = []
+    if (rows) {
+      response = rows
+    }
+    let idCreditUpdate = []
+    response.map((item) => {
+      if (moment(item.updated_at).add(3, 'days').format('DD/MM/YYYY') == moment().format('DD/MM/YYYY')) {
+        idCreditUpdate.push(item.idCredit)
+        /* console.log(item.idCredit) */
+        const mailOptions = {
+          from: process.env.MAIL_FROM,
+          to: [...sendMailFunction7, ...sendMailFunction1],
+          subject: 'Clientes que aun no se ha cambiado el estado judicial.',
+          html: ''
+        }
+        html = `
+      <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Document</title>
+        </head>
+        <body>
+            <p>
+            Se notifica que el credito del cliente ${item.name} ${item.lastname} con DNI nro : ${item.dni} <br>
+            no se a modificado el estado judicial hace mas de 3 dias. 
+            </p>
+        </body>`;
+        mailOptions.html = html
+        /* console.log(mailOptions) */
+        sendMail(mailOptions)
+      }
+    })
+    if (idCreditUpdate.length > 0) {
+      let sql = `UPDATE credits SET updated_at = now() WHERE id in (?);`;
+      const resultSql = query(sql, [idCreditUpdate])
+    }
+  }); //obtenemos info para enviarle al martillero
+};
+
+async function updateSubState(sub_state, user_id, creditID) {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  let sqlGetInfoSubState = `SELECT * FROM cayetano.credits A 
+  LEFT JOIN users B ON A.clientID = B.id 
+  LEFT JOIN cayetano.cars C ON A.carID = C.id 
+  LEFT JOIN cayetano.address D ON A.clientID = D.clientID 
+  LEFT JOIN cayetano.credit_additional_info E ON A.id = E.creditID 
+  WHERE a.id = 45 GROUP BY A.id;`;
+  let sql = `UPDATE credits SET sub_state = ?, responsable_sub_state = ?, update_sub_state = now() WHERE id = ?;`;
+  try {
+    const resultGetInfoSubState = await query(sqlGetInfoSubState, [Number(creditID)])
+    const result = await query(sql, [sub_state, user_id, Number(creditID)]);
+    const infoSubState = (state) => {
+      if (state === 1) {
+        return "Demanda iniciada"
+      }
+      if (state === 2) {
+        return "Entregado a martillero"
+      }
+      if (state === 3) {
+        return "Martillero - estado : Pendiente"
+      }
+      if (state === 4) {
+        return "Secuestrado a subastar"
+      }
+    }
+    const sendMailFunction7 = await emailJuicio(7);
+    const sendMailFunction1 = await emailJuicio(1);
+    let mailOptions = {
+      from: process.env.MAIL_FROM,
+      to: [...sendMailFunction7, ...sendMailFunction1],
+      subject: `Cambio de estado judicial de ${resultGetInfoSubState[0].lastname} ${resultGetInfoSubState[0].name}`,
+      html: ''
+    }
+    html = `
+  <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Document</title>
+    </head>
+    <body>
+      ${resultGetInfoSubState.map((item) => {
+      return `
+        <p>
+        Se notifica que el cliente: <br>
+        ${item.lastname} ${item.name} con DNI Nro : ${item.dni}<br>
+        Se le ha cambiado el estado judicial del credito de "${infoSubState(item.sub_state)}" al estado "${infoSubState(sub_state)}"
+        </p>`
+    })}
+    </body>`;
+    mailOptions.html = html
+      if (resultGetInfoSubState.map(item => item.sub_state >= 1)) {
+         sendMail(mailOptions) 
+      }
+    const sendMailFunction = await emailJuicio(10)
+    if (sub_state === 2) {
+      let mailOptionsMartillero = {
+        from: process.env.MAIL_FROM,
+        to: sendMailFunction,  // colocar el mail del martillero correspondiente traido de la UI
+        subject: 'Auto a ejecutar',
+        html: ''
+      }
+      html = `
+  <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Document</title>
+    </head>
+    <body>
+      ${resultGetInfoSubState.map((item) => {
+        return `
+        <p>
+        Se notifica que el cliente: <br>
+        <a href='${process.env.DOMAIN_FRONTEND_PAGE}/newcreditos/${item.creditID}'>${item.lastname} ${item.name}</a> con DNI Nro : ${item.dni} , Tel Nro : ${item.phone}<br>
+        a entrado en estado judicial. Por lo que debe ejecutarse la quita del vehiculo marca : ${item.brand} modelo : ${item.modelo} año : ${item.year}<br>
+        patente : ${item.domain} ${item.details.length > 1 ? `, Detalles del mismo : ${item.details}` : ` `}, el domicilio particular notificado por el cliente es : ${item.type == 1 ? item.address + " " + item.number + " " + item.department : ""} <br>
+        domicilio laboral : ${item.type == 2 ? item.address + " " + item.number + " " + item.department : ""}
+        </p>`
+      })}
+    </body>`;
+      mailOptionsMartillero.html = html
+       sendMail(mailOptionsMartillero)  
+      return result;
+    }
+  } catch (e) {
+    console.log(e)
+  }
+};
+
+async function getSetSubState(creditID) {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  let sql = `SELECT A.sub_state, A.responsable_sub_state FROM credits A LEFT JOIN users B ON A.responsable_sub_state = B.id WHERE A.id = ?;`;
+
+  const result = await query(sql, [creditID]);
+  return result;
+};
+async function getDemandasUser(userID) {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  let sql = `select A.*,B.NroExpediente,B.created_at,C.name,C.lastname,C.email,C.dni,C.phone from cayetano.credits A 
+  left join cayetano.credit_additional_info B on A.id = B.creditID 
+  left join cayetano.users C on A.clientID = C.id where A.responsable_sub_state = ?;`;
+  const result = await query(sql, [userID]);
+  return result;
 }
 
-function updateState(state, credit_id, callback) {
+
+async function updateAdditionalInfo(NroExpediente, creditID) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  let sql1 = `SELECT * FROM credit_additional_info WHERE creditID = ? AND operation_type = 'numero_expediente';`;
+  const getResult = await query(sql1, [creditID]);
+  const sendMailFunction7 = await emailJuicio(7);
+  const sendMailFunction1 = await emailJuicio(1);
+  let sql2 = sqlDatos;
+  const getResultSqlDatos = await query(sql2, [creditID]);
+  if (Array.isArray(getResult) && getResult.length == 0) {
+    let sql = `INSERT INTO credit_additional_info (NroExpediente, created_at, creditID, operation_type) VALUES(? ,now() ,? , 'numero_expediente');`;
+    const result = await query(sql, [NroExpediente, creditID]);
+    let updateAdditionalInfo = `UPDATE credits SET updated_at = now() WHERE id = ?;`;
+    const resultUpdateAdditionalInfo = await query(updateAdditionalInfo, [creditID]);
+    if (NroExpediente !== null) {
+      let mailOptions = {
+        from: process.env.MAIL_FROM,
+        to: [...sendMailFunction7, ...sendMailFunction1],
+        subject: `Demanda iniciada del cliente ${getResultSqlDatos[0].lastname} ${getResultSqlDatos[0].name} Nro Expediente: ${NroExpediente}`,
+        html: ''
+      }
+      html = `
+    <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+      </head>
+      <body>
+        ${getResultSqlDatos.map((item) => {
+        return `
+          <p>
+          Se notifica que el credito del cliente ${item.lastname} ${item.name} con DNI nro : ${item.dni} <br>
+          a entrado en demanda judicial por el estudio de abogados con el nro de expediente : ${NroExpediente}
+          </p>`
+      })}
+      </body>`;
+      mailOptions.html = html
+      sendMail(mailOptions)
+    }
+    return result, resultUpdateAdditionalInfo
+  } else {
+    let sql = `UPDATE credit_additional_info SET NroExpediente = ? WHERE creditID = ?;`;
+    let sqlUpdateCredits = `UPDATE credits SET updated_at = NOW() WHERE id = ?;`;
+    const result = await query(sql, [NroExpediente, creditID]);
+    const resultUpdateCredits = await query(sqlUpdateCredits, [creditID]);
+    return result, resultUpdateCredits
+  }
+};
+async function getAdditionalInfo(creditID) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  let sql = `select A.*,B.state, B.sub_state,B.id as creditID,B.status, B.update_sub_state from cayetano.credit_additional_info A left join cayetano.credits B on A.creditID = B.id where A.creditID = ?;`;
+  const result = await query(sql, [creditID]);
+  return result;
+};
+async function getDetallePagos(creditID) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  let sql = `SELECT * FROM credit_additional_info WHERE creditID = ?`;
+  const result = await query(sql, [creditID]);
+  return result
+}
+
+async function getCreditSubState() {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  let sql = `SELECT * FROM cayetano.credits_sub_state;`;
+  const subState = await query(sql, []);
+  return subState
+};
+
+async function updateState(state, credit_id) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
   let sql = `UPDATE credits SET state = ? WHERE id = ?`;
-  mysqli.query(sql, [state, credit_id], (err, rows) => {
-    var response = [];
-    if (rows) {
-      response = rows;
-    }
-    if(state == 2){
-      const sqlUpdate = `UPDATE credits SET updated_at = NOW() WHERE id = ?`;
-      mysqli.query(sqlUpdate,[credit_id])
-    }
-    return callback(err, response);
-  });
+  const updateSubState = await query(sql, [state, credit_id]);
+  return updateSubState
 }
 
 async function deleteCredit(creditid, user_id, callback) {
@@ -208,7 +750,7 @@ function getStateList(callback) {
     }
     return callback(err, response);
   });
-}
+};
 
 function getCreditCars(creditid, callback) {
   let sql = `SELECT
@@ -238,8 +780,8 @@ async function dataSimulador(body) {
     format: "A4",
     phantomPath: "./node_modules/phantomjs-prebuilt/bin/phantomjs",
   };
-  const moment = require("moment", );
-  
+  const moment = require("moment",);
+
   let html = tmpl.replace(
     "{{logo}}",
     `https://emprendo-public-assets.s3.us-east-2.amazonaws.com/logo.png`
@@ -250,42 +792,42 @@ async function dataSimulador(body) {
   html = html.replace("{{fechaotorgamiento}}", moment(body.fechaOtorgamiento).format("DD/MM/YYYY"));
   html = html.replace("{{primer_cuota}}", body.primerCuota);
   html = html.replaceAll("{{resto_cuota}}", body.cuotas - 1);
-  html = html.replace("{{resto_cuota_amount}}",`$ ${(body.granTotal / body.cuotas).toFixed(2)}`)
+  html = html.replace("{{resto_cuota_amount}}", `$ ${(body.granTotal / body.cuotas).toFixed(2)}`)
   return html
 }
 
 function getInfo(creditid, callback) {
-  let sql = `SELECT
-              T1.id creditid,
-              T1.status creditStatus,
-              T1.carID,
-              T1.clientID clientid,
-              T1.additionalInfo,
-              T1.state internalState,
-              T4.id,
-              T2.amount,
-              DATE(T4.period) period,
-              T4.amount cuota,
-              T4.payed pagado,
-              T4.safe seguro,
-              T4.nota_debito,
-              COALESCE(SUM(T8.amount),0) punitorios,
-              T8.days_past,
-              CASE WHEN T4.period <= DATE(NOW())
-              	THEN
-              		((T4.safe + COALESCE(SUM(T8.amount),0) +T4.nota_debito+ T4.capital+T4.intereses) - T4.payed)
-              	ELSE 0
-              	END deuda,
-                T4.intereses,
-            T4.saldo,
-            T4.capital
-            FROM
-              credits T1
-              INNER JOIN budget T2 ON T1.budget = T2.id
-              LEFT JOIN credits_items T4 ON T1.id = T4.credit_id
-              LEFT JOIN punitorios T8 ON T1.id = T8.credit_id AND T4.period = T8.period
-            WHERE T1.id = ?
-            GROUP BY T4.period`;
+  let sql = `SELECT T1.id creditid,
+  T1.status creditStatus,
+  T1.carID,
+  T1.otorgamiento,
+  T1.clientID clientid,
+  T1.additionalInfo,
+  T1.state internalState,
+  T4.id,
+  T2.amount,
+  DATE(T4.period) period,
+  T4.amount cuota,
+  T4.payed pagado,
+  T4.safe seguro,
+  T4.nota_debito,
+  COALESCE(SUM(T8.amount),0) punitorios,
+  T8.days_past,
+  CASE WHEN T4.period <= DATE(NOW())
+    THEN
+      ((T4.safe + COALESCE(SUM(T8.amount),0) +T4.nota_debito+ T4.capital+T4.intereses) - T4.payed)
+    ELSE 0
+    END deuda,
+    T4.intereses,
+T4.saldo,
+T4.capital
+FROM
+  credits T1
+  INNER JOIN budget T2 ON T1.budget = T2.id
+  LEFT JOIN credits_items T4 ON T1.id = T4.credit_id
+  LEFT JOIN punitorios T8 ON T1.id = T8.credit_id AND T4.period = T8.period
+WHERE T1.id = ?
+GROUP BY T4.period`;
   mysqli.query(sql, [creditid], (err, rows) => {
     //si queremos imprimir el mensaje ponemos err.sqlMessage
     var response = [];
@@ -431,7 +973,6 @@ async function updatePrenda(
 }
 
 function getPrendaInfo(creditid, callback) {
-  console.log(creditid);
   let sql = `SELECT
       T1.id creditid,
       T1.clientId clientid,
@@ -506,6 +1047,7 @@ function getList(callback) {
   phone,
   status,
   state,
+  sub_state,
   additionalInfo,
   state,coalesce(B.deudas,0) as deuda,
   (SUM(seguro) + (CASE
@@ -530,6 +1072,7 @@ FROM
           T4.period,
           T5.phone,
           T1.state,
+          T1.sub_state,
           CASE
               WHEN T4.period <= DATE(NOW()) THEN T4.amount
               ELSE 0
@@ -690,11 +1233,8 @@ async function createItems(
 }
 
 async function updateInsurance(domain, amount, callback) {
-  //console.log("DOMAIN", domain);
-  //console.log("AMOUNT", amount);
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  console.log(domain, amount);
   let sql = `UPDATE credits_items
       SET safe = ? WHERE credit_id = (
         SELECT
@@ -1067,8 +1607,6 @@ async function saveCredit(data, clientID, budgetID, carID) {
     const valorCuota =
       formatNumber(data.monto_final) / formatNumber(data.cuotas);
 
-    console.log(`SEGURO ${data.seguro}`);
-
     const safe = data.seguro ? formatNumber(data.seguro) : 0;
     const promises = [];
 
@@ -1085,8 +1623,6 @@ async function saveCredit(data, clientID, budgetID, carID) {
       formatNumber(data.monto_sin_impuestos),
       rateValue
     );
-
-    //console.log(generarCuotasArray);
 
     let totalCapital = 0;
     let totalIntereses = 0;
@@ -1180,7 +1716,18 @@ module.exports = {
   updateState,
   getCashFlow,
   getCashFlowPerCreditItem,
+  notificacionClients,
+  getCreditSubState,
+  updateSubState,
+  getSetSubState,
+  updateAdditionalInfo,
+  getAdditionalInfo,
+  addpaymentupdate,
+  getDetallePagos,
+  getDemandasUser,
+  cronUpdateSubState,
   getPrintInfoSeguros,
   getPrintInfoPagos,
-  getInfoCredit
+  getInfoCredit,
+  updateCreditsState,
 };

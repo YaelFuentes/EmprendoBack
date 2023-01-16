@@ -16,6 +16,33 @@ async function getAllNotas(creditID) {
   }
 }
 
+//añadimos notas para los estado en juicio para que haya una comunicacion entre el que administra y el martillero.
+async function updateNotasCreditosState({userID, creditID, notas, USER_ID, fecha, credit_state}){
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  try{
+  const sql = `INSERT INTO notas (userID, creditID, notas, fecha, credit_state) VALUES(?, ?, ?, now(), ?)`;
+  const result = await query(sql, [userID, creditID, notas, /* fecha, */ credit_state]);
+  const sqlUpdate = `UPDATE credits SET updated_at = now() WHERE id = ?;`;
+  const resultUpdate = await query(sqlUpdate, [creditID]);
+  return result;
+  }catch(err){
+    console.log("error al insertar los datos", err)
+    return{
+      message : ["error al insertar los datos"]
+    }
+  }
+};
+
+//tomamos las notas con el state 4 y las mostramos en el estado de juicios.
+async function getNotasCreditosState(creditID){
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const sql = `SELECT * FROM cayetano.notas left join cayetano.users on notas.userID = users.id  WHERE credit_state = 4 AND creditID = ?`;
+  const result = await query(sql,[creditID]);
+  return result;
+}
+
 
 //agregar notas con post
 async function addNotas({
@@ -78,5 +105,7 @@ module.exports = {
   getAllNotas,
   addNotas,
   deleteNotas,
-  editNotas
+  editNotas,
+  updateNotasCreditosState,
+  getNotasCreditosState
 }

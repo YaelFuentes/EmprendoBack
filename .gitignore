@@ -109,3 +109,6 @@ files/*
 
 # json
 package-lock.json
+
+# carpeta secret
+config/

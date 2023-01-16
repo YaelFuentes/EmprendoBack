@@ -11,6 +11,40 @@ notasRoutes.get("/getnotas/:creditID", auth.required, async (req, res) => {
   res.json(getNotas);
 });
 
+notasRoutes.get("/getnotasstate/:creditID", auth.required, async (req, res) => {
+  const creditID = req.params.creditID;
+  const getNotasState = await notasController.getNotasCreditosState(creditID)
+  .then((data) => {
+    res.json(data).status(200)
+  })
+  .catch((err) => {
+    console.log(err);
+    res.send(500).json({response : "Error al obtener los datos del router"})
+  })
+});
+
+notasRoutes.post("/addnotasstate", auth.required, async (req, res) => {
+  const decoded = jwt_decode(auth.getToken(req));
+  const USER_ID = decoded.id;
+
+  const postNotas = {
+    userID: req.body.userID,
+    creditID: req.body.creditID,
+    notas: req.body.notas,
+    fecha: req.body.fecha,
+    credit_state: req.body.credit_state,
+    USER_ID
+  };
+  notasController.updateNotasCreditosState(postNotas)
+  .then((data) => {
+    res.json(data)
+  })
+  .catch((err) => {
+    console.log(err)
+    res.send(500).json({response : "error por parte del controlador o del router."})
+  });
+});
+
 notasRoutes.post("/addnotas", auth.required, async (req, res) => {
   const decoded = jwt_decode(auth.getToken(req));
   const USER_ID = decoded.id;

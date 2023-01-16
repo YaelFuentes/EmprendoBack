@@ -51,7 +51,32 @@ async function getEfectivoDiario() {
   } else {
     return 0
   }
+};
+
+/////////////////////////////////////////////////////////////////////////////////////
+async function PagoJuiciosFinalizados(jsonDataObject) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const arrayInsertedID = []
+  jsonDataObject.map(async (item) => {
+    const dataQuery = `INSERT INTO cash_flow (type, amount, created_at, description, user, credit_id, operation_type, account_id, caja_id, additional_info_id)  
+      VALUES ('2', ?, NOW(), ?, ? , ?,'pago_item_juicio', ?, 1, ?);`;
+    const result = await query(dataQuery, [-item.monto, item.additionalInfo, item.userID, item.credit_id, item.accountID, jsonDataObject[0].idPago], (err, result) => {
+      arrayInsertedID.push(result.insertId)
+      let sql = `UPDATE credit_additional_info SET cash_flow_id = ? WHERE id = ? ;`;
+      mysqli.query(sql, [arrayInsertedID.join(','), jsonDataObject[0].idPago])
+    });
+  });
+};
+async function getPagoJuiciosFinalizados(creditID) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT * FROM cash_flow WHERE credit_id = ? AND operation_type = 'pago_item_juicio';`;
+  const result = await query(dataQuery, [creditID]);
+  return result
 }
+/////////////////////////////////////////////////////////////////////////////////////
+
 async function getBrubankDiario() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
@@ -62,7 +87,7 @@ async function getBrubankDiario() {
   } else {
     return 0
   }
-}
+};
 async function getSantanderDiario() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
@@ -73,7 +98,7 @@ async function getSantanderDiario() {
   } else {
     return 0
   }
-}
+};
 async function getEfectivoMayor() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
@@ -204,11 +229,11 @@ ORDER BY
       <tr>
           <th>Totales</th>
           <th>Efectivo</th>
-          <th>${resultGetSqlTotalEfectivo.map((item) => {return item.amount ? item.amount : 0})}</th>
+          <th>${resultGetSqlTotalEfectivo.map((item) => { return item.amount ? item.amount : 0 })}</th>
           <th>Santander</th>
-          <th>${resultGetSqlTotalSantanderTotal.map((item) => {return item.amount ? item.amount : 0})}</th>
+          <th>${resultGetSqlTotalSantanderTotal.map((item) => { return item.amount ? item.amount : 0 })}</th>
           <th>brubank</th>
-          <th>${resultGetSqlTotalBrubank.map((item) => {return item.amount ? item.amount : 0})}</th>
+          <th>${resultGetSqlTotalBrubank.map((item) => { return item.amount ? item.amount : 0 })}</th>
           <th></th>
         </tr>
         <br/>
@@ -227,7 +252,7 @@ ORDER BY
       <tbody>
       ${resultGetSql.map(function (items) {
     return `<tr>
-          <td>${items.tipoMovimiento ? items.tipoMovimiento : " - " }</td>
+          <td>${items.tipoMovimiento ? items.tipoMovimiento : " - "}</td>
           <td>${items.amount ? items.amount : 0}</td>
           <td>${items.fecha ? items.fecha : " - "}</td>
           <td>${items.description ? items.description : " - "}</td>
@@ -265,8 +290,6 @@ async function repocisionCajaDiaria(amount, USER_ID) {
   const query = util.promisify(mysqli.query).bind(mysqli);
   let insertlog = `INSERT INTO cash_flow (type,amount,created_at,description,user,operation_type,account_id,caja_id) VALUES (2,?,NOW(),'Egreso por renovacion caja diaria',?,'renovacion_caja_diaria',1,1);`;
   const result = await query(insertlog, [amount - amount * 2, USER_ID]);
-  // result.then(function (result) { console.log(result)}).catch(function (err) { throw err; });
-  console.log("resul", result);
   let insertlog2 = `INSERT INTO cash_flow (type,amount,created_at,description,user,operation_type,account_id,caja_id) VALUES (1,?,NOW(),'Ingreso por renovacion caja diaria',?,'ingreso_renovacion_diaria',1,2);`;
   const result2 = await query(insertlog2, [amount, USER_ID])
   return {
@@ -275,9 +298,45 @@ async function repocisionCajaDiaria(amount, USER_ID) {
   };
 };
 
+/* -------------------------------------------------------------------------- */
+/*  notificaciones para avisar a los administradores de los pagos de juicios     */
+/* -------------------------------------------------------------------------- */
+async function getNotificacionesPagos(data) {
+  const dataPagos = await getPagoJuiciosFinalizados(data[0].creditID)
+  const mailOptions = {
+    from: process.env.MAIL_FROM,
+    to: process.env.MAIL_TO.split(' '),
+    subject: 'Pagos cargados por juicios',
+    html: ''
+  };
+  html = `<!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+  </head>
+  <body>
+    <p>
+      Se notifica los pagos cargados por abogados para ser reintegrados : <br/>
+      ${data.map((item) => {
+        return `Detalle de pago : ${item.additionalInfo} por el monto $ ${item.monto} `
+      })}
+    </p>
+  </body>`;
+  mailOptions.html = html
+  /* console.log(mailOptions) */
+  sendMail(mailOptions)
+  
+};
+
 module.exports = {
   getCajas,
   getResumeCaja,
   updateCaja,
   repocisionCajaDiaria,
+  PagoJuiciosFinalizados,
+  getPagoJuiciosFinalizados,
+  getNotificacionesPagos
 };
