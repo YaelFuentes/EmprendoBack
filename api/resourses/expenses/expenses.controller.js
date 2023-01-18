@@ -40,7 +40,7 @@ const addExpenses = async (expenses, userID,creditInfo) => {
   }
 
 }
-const addMultipleExpensesPayment = async (pagos,taxes,userId) => {
+const addMultipleExpensesPayment = async (pagos,taxes,userId,USER_ID) => {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   try {
@@ -91,9 +91,9 @@ const addMultipleExpensesPayment = async (pagos,taxes,userId) => {
       }
     })
    })
-   const sql = `insert into cayetano.cash_flow (type,amount,created_at,description,operation_type,account_id,caja_id) values (2,?,now(),?,"gasto_otorgamiento",?,1)`
+   const sql = `insert into cayetano.cash_flow (type,amount,created_at,description,operation_type,account_id,caja_id,user,responsable_id) values (2,?,now(),?,"gasto_otorgamiento",?,1,?,?)`
      insertPaymentArray.map(async payedItem =>{
-      await query(sql,[payedItem.amount,payedItem.description,payedItem.accountId])
+      await query(sql,[-Number(payedItem.amount),payedItem.description,payedItem.accountId,userId,USER_ID])
     })
   
     return payedArray
@@ -114,6 +114,9 @@ const assignCreditId = async (expenses,userId, creditId) => {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   try {
+    /* -------------------------------------------------------------------------- */
+    /*                               updateExpenses                               */
+    /* -------------------------------------------------------------------------- */
     const getExpenses = await query("select * from expenses where credit_id is null AND client_id = ?",[userId])
     if(getExpenses.length > 0) {
       getExpenses.map(async item=>{
@@ -124,10 +127,21 @@ const assignCreditId = async (expenses,userId, creditId) => {
           await query(sql,[creditId,expenseId])
       }) 
     }
+    /* -------------------------------------------------------------------------- */
+    /*                              updateSimulation                              */
+    /* -------------------------------------------------------------------------- */
     const getSimulation = await query("select * from cayetano.simulation where user_id = ?",[userId])
     if(getSimulation.length > 0) {
       const sqlSimulation = "update cayetano.simulation set simulation_amount = null,quotes = null, commision_id = null, viatic = null, imported = 1, updated_at=now() where user_id = ? "
       await query(sqlSimulation,[userId])
+    }
+    /* -------------------------------------------------------------------------- */
+    /*                               updateCashFlow                               */
+    /* -------------------------------------------------------------------------- */
+    const getCashFlow = await query(`select * from cayetano.cash_flow where user=? and operation_type="gasto_otorgamiento" and credit_id is null`,[userId])
+    if (getCashFlow.length>0) {
+      const getIds = getCashFlow.map(item=>item.id)
+      await query(`update cayetano.cash_flow set credit_id =? where id in(?)`,[creditId,getIds])
     }
     return
   } catch (error) {
