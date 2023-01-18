@@ -23,6 +23,8 @@ const cronCheques = require('./api/resourses/cheques/cheques.controller');
 const chequesRoutes = require('./api/resourses/cheques/cheques.routes');
 const cronStateCredits = require('./api/resourses/credits/credits.controller');
 const auth = require('./api/resourses/auth');
+const expenseRouter = require('./api/resourses/expenses/expenses.routes')
+const simulationRoutes = require('./api/resourses/simulation/simulation.routes')
 const notificationController = require('./api/resourses/notifications/notifications.controller')
 
 const dotenv = require("dotenv");
@@ -86,6 +88,8 @@ app.use("/cashflowdeposit", cash_flow_deposit);
 app.use("/notas", notasRoutes);
 app.use("/cajas", cajaRoutes);
 app.use("/cheques", chequesRoutes);
+app.use("/expense",expenseRouter)
+app.use("/simulation",simulationRoutes)
 
 app.use(function (req, res, next) {
   setTimeout(next, 1000);
