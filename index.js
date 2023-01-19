@@ -399,10 +399,10 @@ WHERE
   //Cargar punitorios automaticamente
   const punitoriosQuery = `SELECT 
   T1.credit_id
-FROM
+  FROM
   cayetano.credits_items T1
   LEFT JOIN cayetano.credits T2 ON T1.credit_id = T2.id
-WHERE
+  WHERE
   (T1.capital+T1.intereses+ T1.safe+ T1.punitorios ) > T1.payed
       AND  DATE_ADD(DATE(T1.period),INTERVAL 4 DAY)  < NOW()
       AND T2.status = 1 AND T2.state NOT IN (2,4)

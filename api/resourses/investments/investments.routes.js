@@ -138,6 +138,7 @@ investmentsRouter.post(
       check("termID").exists({ checkNull: true, checkFalsy: true }),
       check("period").exists({ checkNull: true, checkFalsy: true }),
       check("ts").exists({ checkNull: true, checkFalsy: true }),
+      check("primera_cuota").exists({ checkNull: true, checkFalsy: true }),
       check("account_id").exists({ checkNull: true, checkFalsy: true }),
     ],
   ],
@@ -156,12 +157,15 @@ investmentsRouter.post(
     let investment = req.body;
     let account_id = req.body.account_id;
     let caja_id = req.body.caja_id;
+    let firstQuote = req.body.firstQuote
+    console.log("req.body",req.body)
     try {
       const newInvestment = await investmentsController.createInvestment(
         investment,
         USER_ID,
         account_id,
-        caja_id
+        caja_id,
+        firstQuote
       );
       res.json(newInvestment);
     } catch (e) {

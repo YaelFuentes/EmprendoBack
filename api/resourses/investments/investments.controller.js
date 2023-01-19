@@ -2,19 +2,67 @@ const usersController = require("../users/users.controller");
 const resumeController = require("../resume/resume.controller");
 const moment = require("moment");
 
-function createInvestment(investment, USER_ID, account_id, caja_id) {
+function createInvestment(investment, USER_ID, account_id, caja_id, firstQuote) {
+  console.log("investment", investment)
+  let sqlState = "INSERT INTO investments (investorID, amount, percentage, termID, period,ts,recapitalizar,recapitalizacion_status,firstQuote) VALUES(?, ?, ?, ?, ?,?,?,?,?)"
+  let dataRecap = investment.tipoInversion == true ? "1" : " 0"
+  let dataRecapStatus = investment.tipoInversion == true ? "1" : "0"
+  console.log("dataRecap", dataRecap, dataRecapStatus)
+  const promises = [];
   return new Promise((resolve, reject) => {
     mysqli.query(
-      "INSERT INTO investments (investorID, amount, percentage, termID, period, ts) VALUES(?, ?, ?, ?, ?, ?)",
-      [
-        investment.investorID,
-        investment.amount,
-        investment.percentage,
-        investment.termID,
-        investment.period,
-        investment.ts,
-      ],
+      sqlState, [
+      investment.investorID,
+      investment.amount,
+      investment.percentage,
+      investment.termID,
+      investment.period,
+      investment.ts,
+      dataRecap,
+      dataRecapStatus,
+      firstQuote,
+
+    ],
       (err, results, rows) => {
+        if (investment.tipoInversion) {
+          let recapitalizacionArray = []
+          if (firstQuote >= 0) {
+            const newFirstAmount = Number(investment.amount) + firstQuote
+            console.log("newfirst", newFirstAmount)
+
+            for (let i = 0; i < investment.period; i++) {
+              if (recapitalizacionArray.length == 0) {
+                const new_amount = +newFirstAmount * (1 + +investment.percentage / 100);
+                recapitalizacion = {
+                  investmentid: results.insertId,
+                  prev_amount: investment.newFirstAmount,
+                  new_amount: new_amount,
+                  USER_ID: USER_ID,
+                };
+
+              } else {
+
+                const new_amount = recapitalizacionArray[recapitalizacionArray.length - 1].new_amount * (1 + +investment.percentage / 100);
+
+                recapitalizacion = {
+                  investmentid: results.insertId,
+                  prev_amount: recapitalizacionArray[recapitalizacionArray.length - 1].new_amount,
+                  new_amount: new_amount,
+                  USER_ID: USER_ID,
+                };
+              }
+              recapitalizacionArray.push(
+                recapitalizacion
+              )
+            }
+          }
+
+          console.log(recapitalizacionArray)
+          const promises = recapitalizacionArray.map(tipoRecapitalizacion => recapitalizar(tipoRecapitalizacion))
+          Promise.all(promises)
+        }
+
+
         if (err) {
           console.error(err);
           reject({ response: "Error al insertar inversión" });
