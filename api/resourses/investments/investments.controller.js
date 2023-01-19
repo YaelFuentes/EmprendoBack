@@ -26,7 +26,7 @@ function createInvestment(investment, USER_ID, account_id, caja_id) {
               // INSERTAMOS EL INGRESO DE DINERO A LA CAJA TYPE=1 PARA INGRESOS, TYPE=2 PARA EGRESOS
               mysqli.query(
                 "INSERT INTO cash_flow (type,amount,created_at,description,user,investment_id,operation_type,account_id,caja_id) VALUES (1,?,?,'ingreso de dinero por nueva inversion',?,?,'inversion_nueva',?,?)",
-                [investment.amount, investment.ts, USER_ID, results.insertId,account_id, caja_id],
+                [investment.amount, investment.ts, USER_ID, results.insertId, account_id, caja_id],
                 (err2, rows2) => {
                   resolve(rows[0]);
                 }
@@ -44,6 +44,8 @@ async function getAllInvestements() {
   const query = util.promisify(mysqli.query).bind(mysqli);
 
   const sql = `SELECT 
+  T1.id,
+  T1.investorID,
   T1.amount monto_inversion,
   T1.percentage porcentaje,
   T1.period cuotas,
@@ -63,13 +65,13 @@ async function getAllInvestements() {
   GROUP BY T1.id
   `;
   const investments = await query(sql, []);
-
-  if (investments) {
-    return investments;
-  } else {
-    return [];
-  }
+  const dataMap = investments.map((item) => {
+    const addDate = moment(item.fecha_inversion).add(item.cuotas, "months").format("DD-MM-YYYY")
+    return { ...item, addDate: addDate }
+  })
+  return dataMap
 }
+
 
 async function getInvestementInfo(investmentId) {
   const util = require("util");
@@ -248,7 +250,7 @@ function recapitalizar_status({ investmentId, status, USER_ID }) {
   });
 }
 
-function payInvestment(investment, USER_ID, account_id,caja_id) {
+function payInvestment(investment, USER_ID, account_id, caja_id) {
   return new Promise((resolve, reject) => {
     //ACA CHEQUEAMOS SI SE HA HECHO UNA RECAPITALIZACION, SI ES ASI NO DEBERIA PODER RECIBIR PAGOS
     mysqli.query(

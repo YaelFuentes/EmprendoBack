@@ -25,7 +25,7 @@
       border: solid 1px darkgray;
       width: 90%;
       margin-top: 20px;
-      font-size: 8px;
+      font-size: 10px;
       margin-left: 10mm;
     }
 
@@ -63,7 +63,7 @@
             ">
           <img src="{{logo}}" style="width: 40mm; padding: 5mm;" />
         </td>
-        <td style="padding-right: 10mm; text-align: right; font-size: 10px;">
+        <td style="padding-right: 10mm; text-align: right; font-size: 10px; text-align: center;">
           <div><b>Fecha:</b> {{fecha}}</div>
         </td>
       </tr>
@@ -73,7 +73,7 @@
               border-top: solid 1px darkgray;
               padding: 5mm;
             ">
-          <span style="font-weight: 700; font-size: 11px;">INFORMACION CREDITO Nro: {{idCredito}}</span>
+          <span style="font-weight: 700; font-size: 11px;">INFORMACION GENERAL DEL CREDITO NRO: {{idCredito}}</span>
         </td>
       </tr>
     </table>
@@ -233,7 +233,7 @@
             <tfoot>
               <tr>
                 <td colspan="8" style="text-align: right;">
-                  <b>Deuda acumulada a la fecha ${{block_deuda}}</b>
+                  <b>Deuda acumulada a la fecha {{block_deuda}}</b>
                 </td>
               </tr>
             </tfoot>
@@ -248,7 +248,7 @@
                   <p>El deudor podra cancelar el credito solicitado, a partir de la cuarta cuota, con una quita de hasta
                     el 50% de los intereses</p>
                   <p>
-                    La cuota del seguro es semestral y varia segun suma asegurada .
+                    La cuota del seguro es semestral y varía segun suma asegurada .
                   </p>
                 </td>
               </tr>

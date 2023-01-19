@@ -19,7 +19,7 @@ notificationsRouter.get('/list', auth.required, function (req, res, next) {
   notificationsController.list(currentUser.id).then( data => {
     res.json(data);
   }).catch(error => {
-    res.send(500).json({response: "Error al obtener notificaciones"});
+    res.sendStatus(500).json({response: "Error al obtener notificaciones"});
   });
 });
 

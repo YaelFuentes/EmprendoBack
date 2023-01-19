@@ -19,10 +19,13 @@ const futurosRouter = require("./api/resourses/futuros/futuros.routes");
 const cash_flow_deposit = require('./api/resourses/cash_flow_deposit/cashflowdeposit.routes');
 const notasRoutes = require('./api/resourses/notas/notas.routes');
 const cajaRoutes = require('./api/resourses/caja/caja.routes');
-const cronCheques = require('./api/resourses/cheques/cheques.controller')
-const chequesRoutes = require('./api/resourses/cheques/cheques.routes')
+const cronCheques = require('./api/resourses/cheques/cheques.controller');
+const chequesRoutes = require('./api/resourses/cheques/cheques.routes');
+const cronStateCredits = require('./api/resourses/credits/credits.controller');
 const auth = require('./api/resourses/auth');
-
+const expenseRouter = require('./api/resourses/expenses/expenses.routes')
+const simulationRoutes = require('./api/resourses/simulation/simulation.routes')
+const notificationController = require('./api/resourses/notifications/notifications.controller')
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -85,6 +88,8 @@ app.use("/cashflowdeposit", cash_flow_deposit);
 app.use("/notas", notasRoutes);
 app.use("/cajas", cajaRoutes);
 app.use("/cheques", chequesRoutes);
+app.use("/expense",expenseRouter)
+app.use("/simulation",simulationRoutes)
 
 app.use(function (req, res, next) {
   setTimeout(next, 1000);
@@ -404,7 +409,7 @@ FROM
 WHERE
   (T1.capital+T1.intereses+ T1.safe+ T1.punitorios ) > T1.payed
       AND  DATE_ADD(DATE(T1.period),INTERVAL 4 DAY)  < NOW()
-      AND T2.status = 1
+      AND T2.status = 1 AND T2.state NOT IN (2,4)
       GROUP BY T1.credit_id;
       `;
   const punitorios = await query(punitoriosQuery, []);
@@ -420,16 +425,27 @@ WHERE
   }
 });
 
-cron.schedule("* * * * *", async function () {
-  //Ejecutar a cada minuto
-  const util = require("util");
-  const query = util.promisify(mysqli.query).bind(mysqli);
-});
+////////////////////////////////////////////////////////////////////////
+
 cron.schedule("0 7 * * *", async function () {
-  const util = require("util");
-  const query = util.promisify(mysqli.query).bind(mysqli);
   cronCheques.cronCheques();
+  notificationController.notificationInactivo()
 });
+cron.schedule("00 1 * * 1-5", async function () {
+  cronStateCredits.updateCreditsState()
+  cronStateCredits.notificacionClients()
+}); 
+cron.schedule("00 1 * * 1-5" , async function(){
+  cronStateCredits.cronUpdateSubState()
+});
+/* cron.schedule("00 1 * * 1-5", async function () {
+  console.log('en ejecucion')
+  cronStateCredits.updateCreditsState()
+  cronStateCredits.notificacionClients()
+});
+cron.schedule("00 1 * * 1-5" , async function(){
+  cronStateCredits.cronUpdateSubState()
+}); */
 
 app.get("/puni/:id",auth.required,async function (req, res) {
   let id = req.params.id;
