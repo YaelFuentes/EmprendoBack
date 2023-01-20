@@ -26,40 +26,41 @@ function createInvestment(investment, USER_ID, account_id, caja_id, firstQuote) 
       (err, results, rows) => {
         if (investment.tipoInversion) {
           let recapitalizacionArray = []
-          if (firstQuote >= 0) {
-            const newFirstAmount = Number(investment.amount) + firstQuote
-            console.log("newfirst", newFirstAmount)
+          let recapitalizacion = []
+          const newFirstAmount = Number(investment.amount) + firstQuote
+          console.log("newfirst", newFirstAmount)
 
-            for (let i = 0; i < investment.period; i++) {
-              if (recapitalizacionArray.length == 0) {
-                const new_amount = +newFirstAmount * (1 + +investment.percentage / 100);
-                recapitalizacion = {
-                  investmentid: results.insertId,
-                  prev_amount: investment.newFirstAmount,
-                  new_amount: new_amount,
-                  USER_ID: USER_ID,
-                };
+          for (let i = 0; i < investment.period; i++) {
+            if (recapitalizacionArray.length == 0) {
+              const new_amount = +newFirstAmount * (1 + +investment.percentage / 100);
+              recapitalizacion = {
+                investmentid: results.insertId,
+                prev_amount: investment.newFirstAmount,
+                new_amount: new_amount,
+                USER_ID: USER_ID,
+              };
 
-              } else {
+            } else {
 
-                const new_amount = recapitalizacionArray[recapitalizacionArray.length - 1].new_amount * (1 + +investment.percentage / 100);
+              const new_amount = recapitalizacionArray[recapitalizacionArray.length - 1].new_amount * (1 + +investment.percentage / 100);
 
-                recapitalizacion = {
-                  investmentid: results.insertId,
-                  prev_amount: recapitalizacionArray[recapitalizacionArray.length - 1].new_amount,
-                  new_amount: new_amount,
-                  USER_ID: USER_ID,
-                };
-              }
-              recapitalizacionArray.push(
-                recapitalizacion
-              )
+              recapitalizacion = {
+                investmentid: results.insertId,
+                prev_amount: recapitalizacionArray[recapitalizacionArray.length - 1].new_amount,
+                new_amount: new_amount,
+                USER_ID: USER_ID,
+              };
             }
+            recapitalizacionArray.push(
+              recapitalizacion
+            )
           }
+
 
           console.log(recapitalizacionArray)
           const promises = recapitalizacionArray.map(tipoRecapitalizacion => recapitalizar(tipoRecapitalizacion))
           Promise.all(promises)
+
         }
 
 
