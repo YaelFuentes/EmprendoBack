@@ -470,6 +470,6 @@ module.exports = {
   recapitalizar,
   getRecapitalizaciones,
   getAllInvestements,
-  getInfoInvestmentUsers
+  getInfoInvestmentUsers,
   getCsv
 };
