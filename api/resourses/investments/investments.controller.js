@@ -32,10 +32,11 @@ function createInvestment(investment, USER_ID, account_id, caja_id, firstQuote) 
 
           for (let i = 0; i < investment.period; i++) {
             if (recapitalizacionArray.length == 0) {
+              console.log(investment.newFirstAmount)
               const new_amount = +newFirstAmount * (1 + +investment.percentage / 100);
               recapitalizacion = {
                 investmentid: results.insertId,
-                prev_amount: investment.newFirstAmount,
+                prev_amount: newFirstAmount,
                 new_amount: new_amount,
                 USER_ID: USER_ID,
               };
