@@ -392,6 +392,13 @@ function payInvestment(investment, USER_ID, account_id, caja_id) {
     );
   });
 }
+async function getInfoInvestmentUsers(investmentID){
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const sql = `SELECT * FROM cayetano.investments A LEFT JOIN cayetano.users B ON A.investorID = B.id WHERE A.id = ?;`;
+  const result = await query(sql, [investmentID]);
+  return result
+}
 
 async function getInvestmentsByInvestor(investorID) {
   const util = require("util");
@@ -461,5 +468,6 @@ module.exports = {
   recapitalizar,
   getRecapitalizaciones,
   getAllInvestements,
+  getInfoInvestmentUsers
   getCsv
 };

@@ -17,6 +17,12 @@ investmentsRouter.get("/all", auth.required, async (req, res) => {
   res.json(investments);
 });
 
+investmentsRouter.get("/investmentUsers/:investmentID", auth.required, async (req, res) => {
+  const investmentId = req.params.investmentID;
+  const investmentsUsers = await investmentsController.getInfoInvestmentUsers(investmentId)
+  res.json(investmentsUsers);
+})
+
 investmentsRouter.get(
   "/investment/:investmentId",
   auth.required,
