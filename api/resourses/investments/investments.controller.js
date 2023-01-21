@@ -31,7 +31,7 @@ function createInvestment(investment, USER_ID, account_id, caja_id, firstQuote) 
                 const new_amount = +newFirstAmount * (1 + +investment.percentage / 100);
                 recapitalizacion = {
                   investmentid: results.insertId,
-                  prev_amount: investment.newFirstAmount,
+                  prev_amount: newFirstAmount,
                   new_amount: new_amount,
                   USER_ID: USER_ID,
                 };
@@ -51,10 +51,7 @@ function createInvestment(investment, USER_ID, account_id, caja_id, firstQuote) 
           }
           const promises = recapitalizacionArray.map(tipoRecapitalizacion => recapitalizar(tipoRecapitalizacion))
           Promise.all(promises)
-
         }
-
-
         if (err) {
           console.error(err);
           reject({ response: "Error al insertar inversión" });
