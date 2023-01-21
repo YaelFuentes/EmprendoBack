@@ -3,11 +3,10 @@ const resumeController = require("../resume/resume.controller");
 const moment = require("moment");
 
 function createInvestment(investment, USER_ID, account_id, caja_id, firstQuote) {
-  console.log("investment", investment)
-  let sqlState = "INSERT INTO investments (investorID, amount, percentage, termID, period,ts,recapitalizar,recapitalizacion_status,firstQuote) VALUES(?, ?, ?, ?, ?,?,?,?,?)"
+  let sqlState = `INSERT INTO investments (investorID, amount, percentage, termID, period,ts,recapitalizar,recapitalizacion_status,firstQuote,firstPay) 
+  VALUES(?, ?, ?, ?, ?,now(),?,?,?,?);`;
   let dataRecap = investment.tipoInversion == true ? "1" : " 0"
   let dataRecapStatus = investment.tipoInversion == true ? "1" : "0"
-  console.log("dataRecap", dataRecap, dataRecapStatus)
   const promises = [];
   return new Promise((resolve, reject) => {
     mysqli.query(
@@ -17,19 +16,16 @@ function createInvestment(investment, USER_ID, account_id, caja_id, firstQuote) 
       investment.percentage,
       investment.termID,
       investment.period,
-      investment.ts,
       dataRecap,
       dataRecapStatus,
       firstQuote,
-
+      investment.primera_cuota
     ],
       (err, results, rows) => {
         if (investment.tipoInversion) {
           let recapitalizacionArray = []
           if (firstQuote >= 0) {
             const newFirstAmount = Number(investment.amount) + firstQuote
-            console.log("newfirst", newFirstAmount)
-
             for (let i = 0; i < investment.period; i++) {
               if (recapitalizacionArray.length == 0) {
                 const new_amount = +newFirstAmount * (1 + +investment.percentage / 100);
@@ -39,11 +35,8 @@ function createInvestment(investment, USER_ID, account_id, caja_id, firstQuote) 
                   new_amount: new_amount,
                   USER_ID: USER_ID,
                 };
-
               } else {
-
                 const new_amount = recapitalizacionArray[recapitalizacionArray.length - 1].new_amount * (1 + +investment.percentage / 100);
-
                 recapitalizacion = {
                   investmentid: results.insertId,
                   prev_amount: recapitalizacionArray[recapitalizacionArray.length - 1].new_amount,
@@ -56,8 +49,6 @@ function createInvestment(investment, USER_ID, account_id, caja_id, firstQuote) 
               )
             }
           }
-
-          console.log(recapitalizacionArray)
           const promises = recapitalizacionArray.map(tipoRecapitalizacion => recapitalizar(tipoRecapitalizacion))
           Promise.all(promises)
         }
@@ -127,6 +118,7 @@ async function getAllInvestements() {
   T1.amount monto_inversion,
   T1.percentage porcentaje,
   T1.period cuotas,
+  T1.firstPay primeraCuota,
   T1.ts fecha_inversion,
   T1.recapitalizar recapitaliza_automaticamente,
   T1.recapitalizacion_status recapitaliza,
