@@ -123,8 +123,26 @@ async function getTotalCajaDiaria() {
   const result = await query(sql, [])
   return result;
 }
-
-
+async function getExpenses(credit_id) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  try {
+    const sql = `SELECT * from cayetano.cash_flow where credit_id=? && operation_type in  ('ingreso_interes_cuotas','ingreso_nota_debito', 'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas') is not true`;
+    const result = await query(sql, [credit_id])
+    const sqlExpense = `SELECT * from cayetano.expenses where credit_id = ? && (amount - payed) > 0 `;
+    const resultExpense = await query(sqlExpense, [credit_id])
+    if (resultExpense.length > 0) {
+      resultExpense.map(item=>{
+        result.push(item)
+      })
+    }
+    console.log(result);
+    return result;
+    
+  } catch (error) {
+    return error
+  }
+}
 
 async function add(
   type,
@@ -201,4 +219,5 @@ module.exports = {
   deleteAccount,
   deleteCashFlow,
   getCaja,
+  getExpenses
 };

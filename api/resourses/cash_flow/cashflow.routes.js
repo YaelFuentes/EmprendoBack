@@ -143,5 +143,13 @@ cashFlowRouter.post("/add", auth.required, function (req, res, next) {
       res.send(500).json({ response: "Error al obtener los datos" });
     });
 });
+cashFlowRouter.get("/creditexpenses/:creditId", auth.required, async function (req, res, next) {
+  const credit_id = req.params.creditId;
+  cashFlowController.getExpenses(credit_id).then((expenses) => {
+
+    console.log(expenses);
+    res.json(expenses);
+  })
+});
 
 module.exports = cashFlowRouter;
