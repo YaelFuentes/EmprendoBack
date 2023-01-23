@@ -76,36 +76,6 @@ function createInvestment(investment, USER_ID, account_id, caja_id, firstQuote) 
   });
 }
 
-function getCsv(callback) {
-  let sql = `SELECT 
-  T1.id,
-  T1.investorID,
-  T1.amount monto_inversion,
-  T1.percentage porcentaje,
-  T1.period cuotas,
-  T1.ts fecha_inversion,
-  T1.recapitalizar recapitaliza_automaticamente,
-  T1.recapitalizacion_status recapitaliza,
-  T2.name nombre,
-  T2.lastname apellido,
-  T2.email,
-  T2.dni,
-  T2.phone telefono,
-  SUM(T3.amount) total_pagado
-  FROM 
-  cayetano.investments T1
-  INNER JOIN cayetano.users T2 ON T1.investorID = T2.id
-  LEFT JOIN cayetano.investments_payments T3 ON T1.id = T3.investmentID
-  GROUP BY T1.id`;
-  mysqli.query(sql, [], (err, rows) => {
-    var response = []
-    if (rows) {
-      response = rows
-    }
-    return callback(err, response)
-  })
-}
-
 async function getAllInvestements() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
@@ -459,5 +429,4 @@ module.exports = {
   getRecapitalizaciones,
   getAllInvestements,
   getInfoInvestmentUsers,
-  getCsv
 };
