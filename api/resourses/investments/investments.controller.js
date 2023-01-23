@@ -85,35 +85,6 @@ function createInvestment(investment, USER_ID, account_id, caja_id, firstQuote) 
     );
   });
 }
-function getCsv(callback) {
-  let sql = `SELECT 
-  T1.id,
-  T1.investorID,
-  T1.amount monto_inversion,
-  T1.percentage porcentaje,
-  T1.period cuotas,
-  T1.ts fecha_inversion,
-  T1.recapitalizar recapitaliza_automaticamente,
-  T1.recapitalizacion_status recapitaliza,
-  T2.name nombre,
-  T2.lastname apellido,
-  T2.email,
-  T2.dni,
-  T2.phone telefono,
-  SUM(T3.amount) total_pagado
-  FROM 
-  cayetano.investments T1
-  INNER JOIN cayetano.users T2 ON T1.investorID = T2.id
-  LEFT JOIN cayetano.investments_payments T3 ON T1.id = T3.investmentID
-  GROUP BY T1.id`;
-  mysqli.query(sql, [], (err, rows) => {
-    var response = []
-    if (rows) {
-      response = rows
-    }
-    return callback(err, response)
-  })
-}
 
 async function getAllInvestements() {
   const util = require("util");
@@ -134,19 +105,37 @@ async function getAllInvestements() {
   T2.email,
   T2.dni,
   T2.phone telefono,
-  SUM(T3.amount) total_pagado
+  A.periodoMax
   FROM 
   cayetano.investments T1
   INNER JOIN cayetano.users T2 ON T1.investorID = T2.id
-  LEFT JOIN cayetano.investments_payments T3 ON T1.id = T3.investmentID
-  GROUP BY T1.id
+  left join (SELECT *,MAX(period) periodoMax FROM cayetano.investments_payments group by investmentID) A on T1.id = A.investmentID
+  GROUP BY T1.id 
   `;
   const investments = await query(sql, []);
-  const dataMap = investments.map((item) => {
-    const addDate = moment(item.fecha_inversion).add(item.cuotas, "months").format("DD-MM-YYYY")
-    return { ...item, addDate: addDate }
+  let dataMap = investments.map((item) => {
+    let proximaCuota;
+    const fechaPrimeraCuota = item.primera_cuota ?? item.fecha_inversion;
+    if (item.recapitaliza === 1) {
+      if (item.cuotas > item.periodoMax) {
+        proximaCuota = moment(fechaPrimeraCuota).add(item.cuotas, 'M').format('DD-MM-YYYY');
+      }
+    } else {
+      if (item.periodoMax == null) {
+        proximaCuota = moment(fechaPrimeraCuota).format('DD-MM-YYYY');
+      } else if (item.cuotas > item.periodoMax) {
+        proximaCuota = moment(fechaPrimeraCuota).add(item.periodoMax, 'M').format('DD-MM-YYYY');
+      }
+    }
+    const addDate = moment(item.fecha_inversion).add(item.cuotas, "M").format("DD-MM-YYYY")
+    const dateNow = moment().format("DD-MM-YYYY")
+
+    return { ...item, addDate: addDate, proximaCuota: proximaCuota, dateNow: dateNow }
   })
-  return dataMap
+  let activeInvestments = dataMap.filter(activeInvestment => activeInvestment.proximaCuota != null)
+  let finishedInvestments = dataMap.filter(activeInvestment => activeInvestment.proximaCuota == null)
+  activeInvestments = activeInvestments.sort((A, B) => moment(A.proximaCuota, 'DD-MM-YYYY') - moment(B.proximaCuota, 'DD-MM-YYYY'));
+  return [...activeInvestments , ...finishedInvestments]
 }
 
 
@@ -391,7 +380,7 @@ function payInvestment(investment, USER_ID, account_id, caja_id) {
     );
   });
 }
-async function getInfoInvestmentUsers(investmentID) {
+async function getInfoInvestmentUsers(investmentID)  {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
   const sql = `SELECT * FROM cayetano.investments A LEFT JOIN cayetano.users B ON A.investorID = B.id WHERE A.id = ?;`;
@@ -510,5 +499,4 @@ module.exports = {
   getRecapitalizaciones,
   getAllInvestements,
   getInfoInvestmentUsers,
-  getCsv
 };

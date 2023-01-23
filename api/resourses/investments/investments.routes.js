@@ -5,13 +5,6 @@ const auth = require("../auth");
 const jwt_decode = require("jwt-decode");
 
 const investmentsRouter = express.Router();
-
-investmentsRouter.get("/getcsv", auth.required, function (req, res, next) {
-  investmentsController.getCsv(function (err, result) {
-    res.json(result)
-  });
-});
-
 investmentsRouter.get("/all", auth.required, async (req, res) => {
   const investments = await investmentsController.getAllInvestements();
   res.json(investments);
@@ -164,7 +157,7 @@ investmentsRouter.post(
     let account_id = req.body.account_id;
     let caja_id = req.body.caja_id;
     let firstQuote = req.body.firstQuote
-    console.log("req.body",req.body)
+    console.log("req.body", req.body)
     try {
       const newInvestment = await investmentsController.createInvestment(
         investment,
