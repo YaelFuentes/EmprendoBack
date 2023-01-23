@@ -125,18 +125,33 @@ async function getAllInvestements() {
   T2.email,
   T2.dni,
   T2.phone telefono,
-  SUM(T3.amount) total_pagado
+  A.periodoMax
   FROM 
   cayetano.investments T1
   INNER JOIN cayetano.users T2 ON T1.investorID = T2.id
-  LEFT JOIN cayetano.investments_payments T3 ON T1.id = T3.investmentID
-  GROUP BY T1.id
+  left join (SELECT *,MAX(period) periodoMax FROM cayetano.investments_payments group by investmentID) A on T1.id = A.investmentID
+  GROUP BY T1.id 
   `;
   const investments = await query(sql, []);
-  const dataMap = investments.map((item) => {
-    const addDate = moment(item.fecha_inversion).add(item.cuotas, "months").format("DD-MM-YYYY")
-    return { ...item, addDate: addDate }
+  console.log(investments)
+  let dataMap = investments.map((item) => {
+    let proximaCuota;
+    const fechaPrimeraCuota = item.primera_cuota ?? item.fecha_inversion;
+    if (item.recapitaliza === 1) {
+      proximaCuota = moment(fechaPrimeraCuota).add(item.cuotas ,'M').format('DD-MM-YYYY');
+    } else {
+      if (item.periodoMax == null) {
+        proximaCuota = fechaPrimeraCuota
+      } else {
+        proximaCuota = moment(fechaPrimeraCuota).add(item.periodoMax, 'M').format('DD-MM-YYYY');
+      }
+    }
+    const addDate = moment(item.fecha_inversion).add(item.cuotas, "M").format("DD-MM-YYYY")
+
+    return { ...item, addDate: addDate, proximaCuota: proximaCuota}
   })
+
+  dataMap = dataMap.sort((A ,B) => moment(A.proximaCuota) - moment(B.proximaCuota) )
   return dataMap
 }
 
@@ -382,7 +397,7 @@ function payInvestment(investment, USER_ID, account_id, caja_id) {
     );
   });
 }
-async function getInfoInvestmentUsers(investmentID){
+async function getInfoInvestmentUsers(investmentID) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
   const sql = `SELECT * FROM cayetano.investments A LEFT JOIN cayetano.users B ON A.investorID = B.id WHERE A.id = ?;`;
