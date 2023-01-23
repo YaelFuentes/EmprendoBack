@@ -94,12 +94,12 @@ const addMultipleExpensesPayment = async (pagos,taxes,userId,USER_ID,creditId) =
    if (creditId) {
      const sql = `insert into cayetano.cash_flow (type,amount,created_at,description,operation_type,account_id,caja_id,user,responsable_id,credit_id) values (2,?,now(),?,"gasto_otorgamiento",?,1,?,?,?)`
        insertPaymentArray.map(async payedItem =>{
-        await query(sql,[-Number(payedItem.amount),payedItem.description,payedItem.accountId,userId,USER_ID,creditId])
+        await query(sql,[-Number(payedItem.amount),payedItem.description,payedItem.accountId,USER_ID,USER_ID,creditId])
       })
    }else{
      const sql = `insert into cayetano.cash_flow (type,amount,created_at,description,operation_type,account_id,caja_id,user,responsable_id) values (2,?,now(),?,"gasto_otorgamiento",?,1,?,?)`
        insertPaymentArray.map(async payedItem =>{
-        await query(sql,[-Number(payedItem.amount),payedItem.description,payedItem.accountId,userId,USER_ID])
+        await query(sql,[-Number(payedItem.amount),payedItem.description,payedItem.accountId,USER_ID,USER_ID])
       })
    }
   
