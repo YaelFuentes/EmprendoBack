@@ -1,6 +1,16 @@
 const usersController = require("../users/users.controller");
 const resumeController = require("../resume/resume.controller");
 const moment = require("moment");
+const sendMail = require("../nodemailer/mail");
+
+const emailJuicio = async (type) => {
+  const result = await usersTypeController.usersType(type)
+  if (Array.isArray(result) && result.length > 0) {
+    const returnValue = result.map(item => item.email)
+    return returnValue
+  }
+  return []
+}
 
 function createInvestment(investment, USER_ID, account_id, caja_id, firstQuote) {
   let sqlState = `INSERT INTO investments (investorID, amount, percentage, termID, period,ts,recapitalizar,recapitalizacion_status,firstQuote,firstPay) 
@@ -75,7 +85,6 @@ function createInvestment(investment, USER_ID, account_id, caja_id, firstQuote) 
     );
   });
 }
-
 function getCsv(callback) {
   let sql = `SELECT 
   T1.id,
@@ -382,7 +391,7 @@ function payInvestment(investment, USER_ID, account_id, caja_id) {
     );
   });
 }
-async function getInfoInvestmentUsers(investmentID){
+async function getInfoInvestmentUsers(investmentID) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
   const sql = `SELECT * FROM cayetano.investments A LEFT JOIN cayetano.users B ON A.investorID = B.id WHERE A.id = ?;`;
@@ -444,6 +453,48 @@ AND DATE_ADD(DATE(ts),INTERVAL (period - 1) MONTH) > DATE(NOW())
     compromiso30dias: compromiso30dias,
     soloInteresesApagarEn30dias,
   };
+}
+
+const emailInvPago = async (type) => {
+  const result = await usersTypeController.usersType(type)
+  if (Array.isArray(result) && result.length > 0) {
+    const returnValue = result.map(item => item.email)
+    return returnValue
+  }
+  return []
+}
+
+async function notificationInvestment(amount, percentaje,) {
+  const sql = 'SELECT * FROM cayetano.investments A LEFT JOIN cayetano.users B ON A.investorID = B.id;'
+  const util = require('util');
+  const query = utilpromisify(mysqli.query).bind(mysqli)
+  const sendMailFunction5 = await emailInvPago(5)
+  const updateState = await query(sql, [], (err, rows) => {
+    rows.map((item) => {
+      let mailOptions = {
+        from: process.env.MAIL_FROM,
+        to: sendMailFunction5,
+        subject: 'Inversion',
+        html: ''
+      }
+      html2 = `<!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+      </head>
+      <body>
+      <tbody>
+  
+      </tbody>
+      </body>`;
+      mailOptions.html = html2
+    })
+    sendMail(mailOptions);
+  })
+  return updateState;
 }
 
 module.exports = {
