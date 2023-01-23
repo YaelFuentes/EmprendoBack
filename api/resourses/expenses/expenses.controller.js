@@ -40,7 +40,7 @@ const addExpenses = async (expenses, userID,creditInfo) => {
   }
 
 }
-const addMultipleExpensesPayment = async (pagos,taxes,userId,USER_ID) => {
+const addMultipleExpensesPayment = async (pagos,taxes,userId,USER_ID,creditId) => {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   try {
@@ -91,10 +91,17 @@ const addMultipleExpensesPayment = async (pagos,taxes,userId,USER_ID) => {
       }
     })
    })
-   const sql = `insert into cayetano.cash_flow (type,amount,created_at,description,operation_type,account_id,caja_id,user,responsable_id) values (2,?,now(),?,"gasto_otorgamiento",?,1,?,?)`
-     insertPaymentArray.map(async payedItem =>{
-      await query(sql,[-Number(payedItem.amount),payedItem.description,payedItem.accountId,userId,USER_ID])
-    })
+   if (creditId) {
+     const sql = `insert into cayetano.cash_flow (type,amount,created_at,description,operation_type,account_id,caja_id,user,responsable_id,credit_id) values (2,?,now(),?,"gasto_otorgamiento",?,1,?,?,?)`
+       insertPaymentArray.map(async payedItem =>{
+        await query(sql,[-Number(payedItem.amount),payedItem.description,payedItem.accountId,userId,USER_ID,creditId])
+      })
+   }else{
+     const sql = `insert into cayetano.cash_flow (type,amount,created_at,description,operation_type,account_id,caja_id,user,responsable_id) values (2,?,now(),?,"gasto_otorgamiento",?,1,?,?)`
+       insertPaymentArray.map(async payedItem =>{
+        await query(sql,[-Number(payedItem.amount),payedItem.description,payedItem.accountId,userId,USER_ID])
+      })
+   }
   
     return payedArray
   } catch (error) {
@@ -102,12 +109,18 @@ const addMultipleExpensesPayment = async (pagos,taxes,userId,USER_ID) => {
   }
 
 }
-const updateExpenses =async (payedArray,userId) => {
+const updateExpenses =async (payedArray,userId,creditId) => {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-   payedArray.map(async tax =>{
+  if(creditId){
+    payedArray.map(async tax =>{
+      await query("update cayetano.expenses set payed=?, credit_id = ? where id = ?",[tax.pagado,creditId,tax.id])
+     })
+  }else{
+    payedArray.map(async tax =>{
       await query("update cayetano.expenses set payed=? where credit_id is null and client_id = ? and tax_id = ?",[tax.pagado,userId,tax.id])
-    })
+     })
+  }
   return
 }
 const assignCreditId = async (expenses,userId, creditId) => {
