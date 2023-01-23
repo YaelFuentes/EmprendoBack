@@ -103,26 +103,29 @@ async function getAllInvestements() {
   GROUP BY T1.id 
   `;
   const investments = await query(sql, []);
-  console.log(investments)
   let dataMap = investments.map((item) => {
     let proximaCuota;
     const fechaPrimeraCuota = item.primera_cuota ?? item.fecha_inversion;
     if (item.recapitaliza === 1) {
-      proximaCuota = moment(fechaPrimeraCuota).add(item.cuotas ,'M').format('DD-MM-YYYY');
+      if (item.cuotas > item.periodoMax) {
+        proximaCuota = moment(fechaPrimeraCuota).add(item.cuotas, 'M').format('DD-MM-YYYY');
+      }
     } else {
       if (item.periodoMax == null) {
-        proximaCuota = fechaPrimeraCuota
-      } else {
+        proximaCuota = moment(fechaPrimeraCuota).format('DD-MM-YYYY');
+      } else if (item.cuotas > item.periodoMax) {
         proximaCuota = moment(fechaPrimeraCuota).add(item.periodoMax, 'M').format('DD-MM-YYYY');
       }
     }
     const addDate = moment(item.fecha_inversion).add(item.cuotas, "M").format("DD-MM-YYYY")
+    const dateNow = moment().format("DD-MM-YYYY")
 
-    return { ...item, addDate: addDate, proximaCuota: proximaCuota}
+    return { ...item, addDate: addDate, proximaCuota: proximaCuota, dateNow: dateNow }
   })
-
-  dataMap = dataMap.sort((A ,B) => moment(A.proximaCuota) - moment(B.proximaCuota) )
-  return dataMap
+  let activeInvestments = dataMap.filter(activeInvestment => activeInvestment.proximaCuota != null)
+  let finishedInvestments = dataMap.filter(activeInvestment => activeInvestment.proximaCuota == null)
+  activeInvestments = activeInvestments.sort((A, B) => moment(A.proximaCuota, 'DD-MM-YYYY') - moment(B.proximaCuota, 'DD-MM-YYYY'));
+  return [...activeInvestments , ...finishedInvestments]
 }
 
 
