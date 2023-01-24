@@ -97,9 +97,9 @@ const addMultipleExpensesPayment = async (pagos,taxes,userId,USER_ID,creditId) =
         await query(sql,[-Number(payedItem.amount),payedItem.description,payedItem.accountId,USER_ID,USER_ID,creditId])
       })
    }else{
-     const sql = `insert into cayetano.cash_flow (type,amount,created_at,description,operation_type,account_id,caja_id,user,responsable_id) values (2,?,now(),?,"gasto_otorgamiento",?,1,?,?)`
+     const sql = `insert into cayetano.cash_flow (type,amount,created_at,description,operation_type,account_id,caja_id,user,responsable_id,expense_user_id) values (2,?,now(),?,"gasto_otorgamiento",?,1,?,?,?)`
        insertPaymentArray.map(async payedItem =>{
-        await query(sql,[-Number(payedItem.amount),payedItem.description,payedItem.accountId,USER_ID,USER_ID])
+        await query(sql,[-Number(payedItem.amount),payedItem.description,payedItem.accountId,USER_ID,USER_ID,userId])
       })
    }
   
@@ -151,7 +151,7 @@ const assignCreditId = async (expenses,userId, creditId) => {
     /* -------------------------------------------------------------------------- */
     /*                               updateCashFlow                               */
     /* -------------------------------------------------------------------------- */
-    const getCashFlow = await query(`select * from cayetano.cash_flow where user=? and operation_type="gasto_otorgamiento" and credit_id is null`,[userId])
+    const getCashFlow = await query(`select * from cayetano.cash_flow where expense_user_id=? and operation_type="gasto_otorgamiento" and credit_id is null`,[userId])
     if (getCashFlow.length>0) {
       const getIds = getCashFlow.map(item=>item.id)
       await query(`update cayetano.cash_flow set credit_id =? where id in(?)`,[creditId,getIds])
