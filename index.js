@@ -26,7 +26,7 @@ const auth = require('./api/resourses/auth');
 const expenseRouter = require('./api/resourses/expenses/expenses.routes')
 const simulationRoutes = require('./api/resourses/simulation/simulation.routes')
 const notificationController = require('../EmprendoBack/api/resourses/notifications/notifications.controller')
-
+const investmentController = require('./api/resourses/investments/investments.controller')
 const dotenv = require("dotenv");
 dotenv.config();
 const app = express();
@@ -429,7 +429,8 @@ WHERE
 
 cron.schedule("0 7 * * *", async function () {
   cronCheques.cronCheques();
-  notificationController.notificationInactivo()
+  notificationController.notificationInactivo();
+  investmentController.notificationInvestment()
 });
 cron.schedule("00 1 * * 1-5", async function () {
   cronStateCredits.updateCreditsState()
@@ -452,3 +453,4 @@ app.get("/puni/:id",auth.required,async function (req, res) {
   await punitoriosController.calculate(id);
   res.sendStatus(200)
 });
+

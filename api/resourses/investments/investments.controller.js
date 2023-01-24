@@ -2,7 +2,7 @@ const usersController = require("../users/users.controller");
 const resumeController = require("../resume/resume.controller");
 const moment = require("moment");
 const sendMail = require("../nodemailer/mail");
-
+const usersTypeController = require("../users/users.controller")
 const emailJuicio = async (type) => {
   const result = await usersTypeController.usersType(type)
   if (Array.isArray(result) && result.length > 0) {
@@ -135,7 +135,7 @@ async function getAllInvestements() {
   let activeInvestments = dataMap.filter(activeInvestment => activeInvestment.proximaCuota != null)
   let finishedInvestments = dataMap.filter(activeInvestment => activeInvestment.proximaCuota == null)
   activeInvestments = activeInvestments.sort((A, B) => moment(A.proximaCuota, 'DD-MM-YYYY') - moment(B.proximaCuota, 'DD-MM-YYYY'));
-  return [...activeInvestments , ...finishedInvestments]
+  return [...activeInvestments, ...finishedInvestments]
 }
 
 
@@ -356,6 +356,7 @@ function payInvestment(investment, USER_ID, account_id, caja_id) {
                         caja_id
                       ],
                       (err, results, rows) => {
+                        notificationInvestment()
                         mysqli.query(
                           "SELECT * FROM investments_payments WHERE id = ?",
                           [results.insertId],
@@ -380,7 +381,7 @@ function payInvestment(investment, USER_ID, account_id, caja_id) {
     );
   });
 }
-async function getInfoInvestmentUsers(investmentID)  {
+async function getInfoInvestmentUsers(investmentID) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
   const sql = `SELECT * FROM cayetano.investments A LEFT JOIN cayetano.users B ON A.investorID = B.id WHERE A.id = ?;`;
@@ -453,20 +454,22 @@ const emailInvPago = async (type) => {
   return []
 }
 
-async function notificationInvestment(amount, percentaje,) {
-  const sql = 'SELECT * FROM cayetano.investments A LEFT JOIN cayetano.users B ON A.investorID = B.id;'
+async function notificationInvestment(amount, percentaje) {
+  const dataInfo = await getAllInvestements()
+  console.log(dataInfo)
   const util = require('util');
-  const query = utilpromisify(mysqli.query).bind(mysqli)
+  const query = util.promisify(mysqli.query).bind(mysqli)
+  const sendMailFunction1 = await emailInvPago(1)
   const sendMailFunction5 = await emailInvPago(5)
-  const updateState = await query(sql, [], (err, rows) => {
-    rows.map((item) => {
-      let mailOptions = {
-        from: process.env.MAIL_FROM,
-        to: sendMailFunction5,
-        subject: 'Inversion',
-        html: ''
-      }
-      html2 = `<!DOCTYPE html>
+  const sendMailFunction7 = await emailInvPago(7)
+  dataInfo.map((item) => {
+    let mailOptions = {
+      from: process.env.MAIL_FROM,
+      to: sendMailFunction5,
+      subject: 'Notificación de pago de intereses',
+      html: ''
+    }
+    html1 = `<!DOCTYPE html>
       <html lang="en">
       <head>
         <meta charset="UTF-8">
@@ -476,14 +479,88 @@ async function notificationInvestment(amount, percentaje,) {
       </head>
       <body>
       <tbody>
-  
+    Estimado ${item.nombre} ${item.apellido} le notificamos desde Em.prendo que en 5 días podrá cobrar el pago del interes del ${item.porcentaje} % mensual de su inversión. Ante cualquier duda o consulta, por favor, comunicarse con Em.prendo
       </tbody>
       </body>`;
-      mailOptions.html = html2
-    })
-    sendMail(mailOptions);
+    mailOptions.html = html1;
+    if (moment().add(5, 'days').format("DD-MM-YYYY") === item.proximaCuota) {
+      /* sendMail(mailOptions); */
+      console.log(mailOptions)
+    }
+    let mailOptions2 = {
+      from: process.env.MAIL_FROM,
+      to: [...sendMailFunction1, ...sendMailFunction7 ],
+      subject: 'Aviso de pago a Em.prendo',
+      html: ''
+    }
+    html2 = `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Document</title>
+        </head>
+        <body>
+        <tbody>
+      Se informa que la inversión de ${item.nombre} ${item.apellido} por el monto de ${item.monto_inversion} con interes del ${item.porcentaje} % mensual de su inversión debe ser abonada en 5 días
+        </tbody>
+        </body>`;
+    mailOptions2.html = html2;
+    if (moment().add(5, 'days').format("DD-MM-YYYY") === item.proximaCuota) {
+      /* sendMail(mailOptions); */
+      console.log(mailOptions2)
+    }
+    let mailOptions3 = {
+      from: process.env.MAIL_FROM,
+      to: sendMailFunction1,
+      subject: 'Aviso de finalización de inversión',
+      html: ''
+    }
+    html3 = `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Document</title>
+        </head>
+        <body>
+        <tbody>
+      Se informa que la inversión de ${item.nombre} ${item.apellido} por el monto inicial de ${item.monto_inversion} finaliza en 30 días
+        </tbody>
+        </body>`;
+    mailOptions3.html = html3;
+    if (moment().add(30, 'days').format("DD-MM-YYYY") === item.addDate) {
+      /* sendMail(mailOptions); */
+      console.log(mailOptions3)
+    }
+    let mailOptions4 = {
+      from: process.env.MAIL_FROM,
+      to: [...sendMailFunction1, ...sendMailFunction7 ],
+      subject: 'Aviso de finalización de inversión',
+      html: ''
+    }
+    html4 = `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Document</title>
+        </head>
+        <body>
+        <tbody>
+        ${item.nombre} ${item.apellido} se informa que su inversión realizada por el monto inicial de ${item.monto_inversion} en Em.prendo finaliza en 30 días. Pasados los 30 días usted podrá comunicarse con nosotros para retirar su inversión. Ante cualquier duda o consulta, por favor, comunicarse con Em.prendo
+        </tbody>
+        </body>`;
+    mailOptions4.html = html4;
+    if (moment().add(30, 'days').format("DD-MM-YYYY") === item.addDate) {
+      /* sendMail(mailOptions); */
+      console.log(mailOptions4)
+    }
   })
-  return updateState;
+
 }
 
 module.exports = {
@@ -499,4 +576,5 @@ module.exports = {
   getRecapitalizaciones,
   getAllInvestements,
   getInfoInvestmentUsers,
+  notificationInvestment
 };
