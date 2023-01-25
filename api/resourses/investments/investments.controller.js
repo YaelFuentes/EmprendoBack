@@ -128,6 +128,18 @@ async function getAllInvestements() {
   return [...activeInvestments , ...finishedInvestments]
 }
 
+async function reinversion(investmentID, amount){
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const sqlCash_flow = `UPDATE cash_flow SET amount = ? WHERE investment_id = ? and operation_type = 'inversion_nueva';`;
+  const result = await query(sqlCash_flow, [amount, investmentID]);
+  const sqlInvestment = `UPDATE investments SET ts = now(), amount = ? WHERE id = ?;`;
+  const resultInvestments = await query(sqlInvestment, [amount,investmentID]);
+  return {
+    result,
+    resultInvestments
+  }
+};
 
 async function getInvestementInfo(investmentId) {
   const util = require("util");
@@ -447,4 +459,5 @@ module.exports = {
   getRecapitalizaciones,
   getAllInvestements,
   getInfoInvestmentUsers,
+  reinversion
 };
