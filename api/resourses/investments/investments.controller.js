@@ -128,13 +128,23 @@ async function getAllInvestements() {
   return [...activeInvestments , ...finishedInvestments]
 }
 
-async function reinversion(investmentID, amount){
+async function reinversion(investmentID, amount, dataInversion){
+  console.log(dataInversion)
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const sqlCash_flow = `UPDATE cash_flow SET amount = ? WHERE investment_id = ? and operation_type = 'inversion_nueva';`;
+  const sqlCash_flow = `UPDATE cash_flow SET amount = ?, created_at = now() WHERE investment_id = ? and operation_type = 'inversion_nueva';`;
   const result = await query(sqlCash_flow, [amount, investmentID]);
-  const sqlInvestment = `UPDATE investments SET ts = now(), amount = ? WHERE id = ?;`;
-  const resultInvestments = await query(sqlInvestment, [amount,investmentID]);
+  const sqlInvestment = `UPDATE investments SET ts = now(), amount = ?, firstQuote = ?, firstPay = ?, period= ?, percentage= ?, termID= ? WHERE id = ?;`;
+  const resultInvestments = await query(sqlInvestment, 
+    [
+      amount, 
+      dataInversion.firstQuote, 
+      dataInversion.primera_cuota , 
+      Number(dataInversion.period) + Number(dataInversion.cuotaAnterior),
+      dataInversion.percentage,
+      dataInversion.termID,
+      investmentID
+    ]);
   return {
     result,
     resultInvestments
