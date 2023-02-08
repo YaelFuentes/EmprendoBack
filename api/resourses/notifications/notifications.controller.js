@@ -1,3 +1,4 @@
+const sendMail = require("../nodemailer/mail");
 const userController = require("../users/users.controller")
 function insert(content) {
   const util = require("util");
@@ -6,28 +7,41 @@ function insert(content) {
   return query(sql, [content]);
 }
 
+const usersTypeController = require("../users/users.controller")
+
+const emailJuicio = async (type) => {
+  const result = await usersTypeController.usersType(type)
+  if (Array.isArray(result) && result.length > 0) {
+    const returnValue = result.map(item => item.email)
+    return returnValue
+  }
+  return []
+}
+
 // obtiene las notificaciones no leidas
 function list(clientID) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const sql = `SELECT * FROM notifications n
+  const sql = `SELECT * FROM notif ications n
                 WHERE id NOT IN (SELECT notificationId FROM notifications_read WHERE clientId =?) ORDER BY id DESC`;
   return query(sql, [clientID]);
 }
 
 async function notificationInactivo() {
   const moment = require("moment");
+  const sendMailFunction1 = await emailJuicio(1);
+  const sendMailFunction7 = await emailJuicio(7);
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   const sql = `SELECT * FROM cayetano.credits WHERE status = 1 AND state = 2;`;
   const data = await query(sql, [], (err, rows) => {
     rows.map(async (item) => {
       const infoUser = await userController.getUser(item.clientID);
-      console.log(moment(item.updated_at).add(2, 'days').format('DD/MM/YYYY'))
-      if (moment(item.updated_at).add(2, 'days').format('DD/MM/YYYY') == moment().format('DD/MM/YYYY')) {
+      console.log(moment(item.updated_at).add(30, 'days').format('DD/MM/YYYY'))
+      if (moment(item.updated_at).add(30, 'days').format('DD/MM/YYYY') == moment().format('DD/MM/YYYY')) {
         let mailOptions = {
           from: process.env.MAIL_FROM,
-          to: process.env.MAIL_TO.split(' '),
+          to: [...sendMailFunction1, ...sendMailFunction7],
           subject: 'Cliente en estado inactivo',
           html: ''
         }
@@ -41,10 +55,10 @@ async function notificationInactivo() {
       </head>
       <body>
           <h1>Credito en estado inactivo</h1>
-          <h3>Se informa que el credito de ${infoUser.name} ${infoUser.lastname} se encuentra en estado inactivo hace 50 días, por favor, si es necesario cambiar el estado del credito</h3>
+          <h3>Se informa que el credito de ${infoUser.name} ${infoUser.lastname} se encuentra en estado inactivo hace 30 días, por favor, si es necesario cambiar el estado del credito</h3>
         </body>`
         mailOptions.html = html
-        console.log(mailOptions)
+        sendMail(mailOptions)
       }
       /* sendMail(mailOptions) */
     })
