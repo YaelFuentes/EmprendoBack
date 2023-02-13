@@ -175,13 +175,15 @@ investmentsRouter.post(
     let investment = req.body;
     let account_id = req.body.account_id;
     let caja_id = req.body.caja_id;
-    let firstQuote = req.body.firstQuote
+    let firstQuote = req.body.firstQuote;
+    let responsable_id = req.body.responsable_id;
     console.log("req.body", req.body)
     try {
       const newInvestment = await investmentsController.createInvestment(
         investment,
         USER_ID,
         account_id,
+        responsable_id,
         caja_id,
         firstQuote
       );
