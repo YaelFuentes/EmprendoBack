@@ -100,6 +100,7 @@ async function getAllInvestements() {
   T1.ts fecha_inversion,
   T1.recapitalizar recapitaliza_automaticamente,
   T1.recapitalizacion_status recapitaliza,
+  T1.reinversionID,
   T2.name nombre,
   T2.lastname apellido,
   T2.email,
@@ -138,26 +139,66 @@ async function getAllInvestements() {
   return [...activeInvestments, ...finishedInvestments]
 }
 
-async function reinversion(investmentID, amount, dataInversion){
-  console.log(dataInversion)
+async function reinversion(investmentID, dataInversion) {
+  const { amount, originalAmount } = dataInversion
+  //esto hay que cambiar paso 1
+  console.log(investmentID)
   const util = require('util');
+  /*   const sqlCash_flow = `UPDATE cash_flow SET amount = ?, created_at = now() WHERE investment_id = ? and operation_type = 'inversion_nueva';`;
+    const result = await query(sqlCash_flow, [amount, investmentID]); */
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const sqlCash_flow = `UPDATE cash_flow SET amount = ?, created_at = now() WHERE investment_id = ? and operation_type = 'inversion_nueva';`;
-  const result = await query(sqlCash_flow, [amount, investmentID]);
-  const sqlInvestment = `UPDATE investments SET ts = now(), amount = ?, firstQuote = ?, firstPay = ?, period= ?, percentage= ?, termID= ? WHERE id = ?;`;
-  const resultInvestments = await query(sqlInvestment, 
-    [
-      amount, 
-      dataInversion.firstQuote, 
-      dataInversion.primera_cuota , 
-      Number(dataInversion.period) + Number(dataInversion.cuotaAnterior),
-      dataInversion.percentage,
-      dataInversion.termID,
-      investmentID
-    ]);
+  let resultInvestments
+  let cashFlowInvestment
+
+  if (amount === originalAmount) {
+    const sqlInvestment = `INSERT INTO investments  (investorID,amount,firstQuote,firstPay,period,percentage,termID, reinversionID,recapitalizar,recapitalizacion_status) VALUES(?,?,?,?,?,?,?,?,?,?) `;
+    let dataRecap = dataInversion.tipoInversion == true ? "1" : " 0"
+    let dataRecapStatus = dataInversion.tipoInversion == true ? "1" : "0"
+    resultInvestments = await query(sqlInvestment,
+      [
+        dataInversion.investorID,
+        amount,
+        dataInversion.firstQuote,
+        dataInversion.primera_cuota,
+        Number(dataInversion.period),
+        dataInversion.percentage,
+        dataInversion.termID,
+        investmentID,
+        dataRecap,
+        dataRecapStatus
+      ])
+  } else if (amount > originalAmount) {
+    const sqlInvestment = `INSERT INTO investments  (investorID,amount,firstQuote,firstPay,period,percentage,termID, reinversionID,recapitalizar,recapitalizacion_status) VALUES(?,?,?,?,?,?,?,?,?,?) `;
+    let dataRecap = dataInversion.tipoInversion == true ? "1" : " 0"
+    let dataRecapStatus = dataInversion.tipoInversion == true ? "1" : "0"
+    resultInvestments = await query(sqlInvestment,
+      [
+        dataInversion.investorID,
+        amount,
+        dataInversion.firstQuote,
+        dataInversion.primera_cuota,
+        Number(dataInversion.period),
+        dataInversion.percentage,
+        dataInversion.termID,
+        investmentID,
+        dataRecap,
+        dataRecapStatus
+      ])
+    const sqlCashFlowReinversion = "INSERT INTO cash_flow (type,amount,description,created_at,user,investment_id,operation_type,account_id,caja_id) VALUES (1,?,'ingreso de dinero por diferencia en reinversion',?,?,?,'reinversión',?,?)";
+    cashFlowInvestment = await query(sqlCashFlowReinversion,
+      [
+        amount - originalAmount,
+        dataInversion.ts,
+        dataInversion.investorID,
+        investmentID,
+        dataInversion.account_id,
+        dataInversion.caja_id
+      ])
+  }
   return {
-    result,
-    resultInvestments
+    /* result */
+    resultInvestments,
+    cashFlowInvestment
   }
 };
 
@@ -174,9 +215,9 @@ async function getInvestementInfo(investmentId) {
 
   if (investment) {
     investment_amount = investment[0].amount;
-    const sql2 = `SELECT SUM(amount) withdrawAmmount FROM cayetano.cash_flow WHERE investment_id = ? AND type = 2 AND operation_type = 'retiro_inversion';`;
+    const sql2 = `SELECT coalesce(SUM(amount), 0) withdrawAmmount FROM cayetano.cash_flow WHERE investment_id = ? AND type = 2 AND operation_type = 'retiro_inversion';`;
     const retirosInversion = await query(sql2, [investmentId]);
-    if (retirosInversion) {
+    if (retirosInversion.length > 0) {
       withdrawAmmount = retirosInversion[0].withdrawAmmount;
     }
 
@@ -203,6 +244,15 @@ async function getInvestementInfo(investmentId) {
       totalPayments: pagosRealizados,
     };
   }
+}
+
+async function getReinversion(investmentId) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+
+  const sql = `  SELECT * FROM cayetano.investments WHERE reinversionID = ? OR id = ? ORDER BY ts DESC`;
+  const investment = await query(sql, [investmentId, investmentId]);
+  return investment
 }
 
 async function getRetiros(investment_id) {
@@ -622,5 +672,6 @@ module.exports = {
   getAllInvestements,
   getInfoInvestmentUsers,
   notificationInvestment,
-  reinversion
+  reinversion,
+  getReinversion
 };

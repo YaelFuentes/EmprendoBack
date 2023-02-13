@@ -18,9 +18,8 @@ investmentsRouter.get("/investmentUsers/:investmentID", auth.required, async (re
 
 investmentsRouter.post("/reinversion/:investmentID", auth.required, async (req,res) => {
   const investmentID = req.params.investmentID;
-  const amount = req.body.amount;
-  const dataInversion = req.body
-  const reinversion = await investmentsController.reinversion(investmentID, amount , dataInversion)
+  const dataInversion = req.body;
+  const reinversion = await investmentsController.reinversion(investmentID, dataInversion)
   res.json(reinversion)
 })
 
@@ -30,6 +29,18 @@ investmentsRouter.get(
   async (req, res) => {
     const investmentId = req.params.investmentId;
     const investments = await investmentsController.getInvestementInfo(
+      investmentId
+    );
+    res.json(investments);
+  }
+);
+
+investmentsRouter.get(
+  "/investmentReinversion/:investmentId",
+  auth.required,
+  async (req, res) => {
+    const investmentId = req.params.investmentId;
+    const investments = await investmentsController.getReinversion(
       investmentId
     );
     res.json(investments);
