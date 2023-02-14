@@ -127,7 +127,7 @@ async function getExpenses(credit_id) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   try {
-    const sql = `SELECT * from cayetano.cash_flow A left join cayetano.cash_flow_accounts B on A.account_id = B.id  where credit_id=? && operation_type in  ('ingreso_interes_cuotas','ingreso_nota_debito', 'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas','egreso_credito_otorgado') is not true`;
+    const sql = `SELECT * from cayetano.cash_flow A left join cayetano.cash_flow_accounts B on A.account_id = B.id  where credit_id=? && operation_type in  ('ingreso_interes_cuotas','ingreso_nota_debito', 'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas','egreso_credito_otorgado','pago_cuota_total') is not true`;
     const result = await query(sql, [credit_id])
     const sqlExpense = `SELECT *,description as name from cayetano.expenses where credit_id = ? && (amount - payed) > 0 `;
     const resultExpense = await query(sqlExpense, [credit_id])
