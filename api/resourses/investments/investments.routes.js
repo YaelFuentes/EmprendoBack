@@ -5,11 +5,23 @@ const auth = require("../auth");
 const jwt_decode = require("jwt-decode");
 
 const investmentsRouter = express.Router();
-
 investmentsRouter.get("/all", auth.required, async (req, res) => {
   const investments = await investmentsController.getAllInvestements();
   res.json(investments);
 });
+
+investmentsRouter.get("/investmentUsers/:investmentID", auth.required, async (req, res) => {
+  const investmentId = req.params.investmentID;
+  const investmentsUsers = await investmentsController.getInfoInvestmentUsers(investmentId)
+  res.json(investmentsUsers);
+})
+
+investmentsRouter.post("/reinversion/:investmentID", auth.required, async (req,res) => {
+  const investmentID = req.params.investmentID;
+  const dataInversion = req.body;
+  const reinversion = await investmentsController.reinversion(investmentID, dataInversion)
+  res.json(reinversion)
+})
 
 investmentsRouter.get(
   "/investment/:investmentId",
@@ -17,6 +29,18 @@ investmentsRouter.get(
   async (req, res) => {
     const investmentId = req.params.investmentId;
     const investments = await investmentsController.getInvestementInfo(
+      investmentId
+    );
+    res.json(investments);
+  }
+);
+
+investmentsRouter.get(
+  "/investmentReinversion/:investmentId",
+  auth.required,
+  async (req, res) => {
+    const investmentId = req.params.investmentId;
+    const investments = await investmentsController.getReinversion(
       investmentId
     );
     res.json(investments);
@@ -132,6 +156,7 @@ investmentsRouter.post(
       check("termID").exists({ checkNull: true, checkFalsy: true }),
       check("period").exists({ checkNull: true, checkFalsy: true }),
       check("ts").exists({ checkNull: true, checkFalsy: true }),
+      check("primera_cuota").exists({ checkNull: true, checkFalsy: true }),
       check("account_id").exists({ checkNull: true, checkFalsy: true }),
     ],
   ],
@@ -150,12 +175,17 @@ investmentsRouter.post(
     let investment = req.body;
     let account_id = req.body.account_id;
     let caja_id = req.body.caja_id;
+    let firstQuote = req.body.firstQuote;
+    let responsable_id = req.body.responsable_id;
+    console.log("req.body", req.body)
     try {
       const newInvestment = await investmentsController.createInvestment(
         investment,
         USER_ID,
         account_id,
-        caja_id
+        responsable_id,
+        caja_id,
+        firstQuote
       );
       res.json(newInvestment);
     } catch (e) {

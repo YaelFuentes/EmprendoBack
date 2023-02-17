@@ -7,6 +7,7 @@ const expensesController = require("../expenses/expenses.controller");
 const auth = require("../auth");
 const { add } = require("../cash_flow/cashflow.controller");
 const jwt_decode = require("jwt-decode");
+const { check, validationResult } = require("express-validator");
 
 const creditsRouter = express.Router();
 
@@ -47,6 +48,39 @@ creditsRouter.post("/addpayments", auth.required, async function (req, res, next
       console.log(err);
       res.send(500).json({ response: "Error al obtener los datos del enrutador" })
     })
+});
+creditsRouter.post("/creditPay", [
+  auth.required,
+  [
+    check("formData.credit_id").exists({
+      checkNull: true,
+      checkFalsy: true,
+    }),
+    check("formData.payment_amount").exists({
+      checkNull: true,
+      checkFalsy: true,
+    }),
+    check("formData.account_id").exists({ checkNull: true, checkFalsy: true }),
+  ],
+], async function (req, res, next) {
+  const formData = req.body
+  const decoded = jwt_decode(auth.getToken(req));
+  const USER_ID = decoded.id;
+  let response 
+  if (formData.operation_type =="Venta_de_Vehículos_Prendados") {
+    response = creditsController.ventaDeVehiculoPrendado(formData,USER_ID)
+  } else if(formData.operation_type =="Créditos_cobrados_por_adelantado"){
+    response = creditsController.cancelacionAnticipada(formData,USER_ID)
+  }
+  res.json(response)
+});
+creditsRouter.get("/creditDebt/:creditId", 
+  auth.required, async function (req, res, next) {
+  const creditId = req.params.creditId
+  console.log(creditId);
+  const response = await creditsController.getInterestPayed(creditId)
+  console.log(response);
+  res.json(response)
 });
 
 creditsRouter.get("/substate/:creditID", auth.required, async function (req, res) {

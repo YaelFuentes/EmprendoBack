@@ -1,20 +1,67 @@
 const usersController = require("../users/users.controller");
 const resumeController = require("../resume/resume.controller");
 const moment = require("moment");
+const sendMail = require("../nodemailer/mail");
+const usersTypeController = require("../users/users.controller")
+const emailJuicio = async (type) => {
+  const result = await usersTypeController.usersType(type)
+  if (Array.isArray(result) && result.length > 0) {
+    const returnValue = result.map(item => item.email)
+    return returnValue
+  }
+  return []
+}
 
-function createInvestment(investment, USER_ID, account_id, caja_id) {
+function createInvestment(investment, USER_ID, account_id, caja_id, responsable_id, firstQuote) {
+  let sqlState = `INSERT INTO investments (investorID, amount, percentage, termID, period,ts,recapitalizar,recapitalizacion_status,firstQuote,firstPay) 
+  VALUES(?, ?, ?, ?, ?,now(),?,?,?,?);`;
+  let dataRecap = investment.tipoInversion == true ? "1" : " 0"
+  let dataRecapStatus = investment.tipoInversion == true ? "1" : "0"
+  const promises = [];
   return new Promise((resolve, reject) => {
     mysqli.query(
-      "INSERT INTO investments (investorID, amount, percentage, termID, period, ts) VALUES(?, ?, ?, ?, ?, ?)",
-      [
-        investment.investorID,
-        investment.amount,
-        investment.percentage,
-        investment.termID,
-        investment.period,
-        investment.ts,
-      ],
+      sqlState, [
+      investment.investorID,
+      investment.amount,
+      investment.percentage,
+      investment.termID,
+      investment.period,
+      dataRecap,
+      dataRecapStatus,
+      firstQuote,
+      investment.primera_cuota
+    ],
       (err, results, rows) => {
+        if (investment.tipoInversion) {
+          let recapitalizacionArray = []
+          if (firstQuote >= 0) {
+            const newFirstAmount = Number(investment.amount) + firstQuote
+            for (let i = 0; i < investment.period; i++) {
+              if (recapitalizacionArray.length == 0) {
+                const new_amount = +newFirstAmount * (1 + +investment.percentage / 100);
+                recapitalizacion = {
+                  investmentid: results.insertId,
+                  prev_amount: newFirstAmount,
+                  new_amount: new_amount,
+                  USER_ID: USER_ID,
+                };
+              } else {
+                const new_amount = recapitalizacionArray[recapitalizacionArray.length - 1].new_amount * (1 + +investment.percentage / 100);
+                recapitalizacion = {
+                  investmentid: results.insertId,
+                  prev_amount: recapitalizacionArray[recapitalizacionArray.length - 1].new_amount,
+                  new_amount: new_amount,
+                  USER_ID: USER_ID,
+                };
+              }
+              recapitalizacionArray.push(
+                recapitalizacion
+              )
+            }
+          }
+          const promises = recapitalizacionArray.map(tipoRecapitalizacion => recapitalizar(tipoRecapitalizacion))
+          Promise.all(promises)
+        }
         if (err) {
           console.error(err);
           reject({ response: "Error al insertar inversión" });
@@ -25,8 +72,8 @@ function createInvestment(investment, USER_ID, account_id, caja_id) {
             (err, rows) => {
               // INSERTAMOS EL INGRESO DE DINERO A LA CAJA TYPE=1 PARA INGRESOS, TYPE=2 PARA EGRESOS
               mysqli.query(
-                "INSERT INTO cash_flow (type,amount,created_at,description,user,investment_id,operation_type,account_id,caja_id) VALUES (1,?,?,'ingreso de dinero por nueva inversion',?,?,'inversion_nueva',?,?)",
-                [investment.amount, investment.ts, USER_ID, results.insertId, account_id, caja_id],
+                "INSERT INTO cash_flow (type,amount,created_at,description,user,investment_id,operation_type,account_id, responsable_id ,caja_id) VALUES (1,?,?,'ingreso de dinero por nueva inversion',?,?,'inversion_nueva',?,? ,?)",
+                [investment.amount, investment.ts, USER_ID, results.insertId, account_id, caja_id, responsable_id],
                 (err2, rows2) => {
                   resolve(rows[0]);
                 }
@@ -49,29 +96,111 @@ async function getAllInvestements() {
   T1.amount monto_inversion,
   T1.percentage porcentaje,
   T1.period cuotas,
+  T1.firstPay primeraCuota,
   T1.ts fecha_inversion,
   T1.recapitalizar recapitaliza_automaticamente,
   T1.recapitalizacion_status recapitaliza,
+  T1.reinversionID,
   T2.name nombre,
   T2.lastname apellido,
   T2.email,
   T2.dni,
   T2.phone telefono,
-  SUM(T3.amount) total_pagado
+  A.periodoMax
   FROM 
   cayetano.investments T1
   INNER JOIN cayetano.users T2 ON T1.investorID = T2.id
-  LEFT JOIN cayetano.investments_payments T3 ON T1.id = T3.investmentID
-  GROUP BY T1.id
+  left join (SELECT *,MAX(period) periodoMax FROM cayetano.investments_payments group by investmentID) A on T1.id = A.investmentID
+  GROUP BY T1.id 
   `;
   const investments = await query(sql, []);
-  const dataMap = investments.map((item) => {
-    const addDate = moment(item.fecha_inversion).add(item.cuotas, "months").format("DD-MM-YYYY")
-    return { ...item, addDate: addDate }
+  let dataMap = investments.map((item) => {
+    let proximaCuota;
+    const fechaPrimeraCuota = item.primera_cuota ?? item.fecha_inversion;
+    if (item.recapitaliza === 1) {
+      if (item.cuotas > item.periodoMax) {
+        proximaCuota = moment(fechaPrimeraCuota).add(item.cuotas, 'M').format('DD-MM-YYYY');
+      }
+    } else {
+      if (item.periodoMax == null) {
+        proximaCuota = moment(fechaPrimeraCuota).format('DD-MM-YYYY');
+      } else if (item.cuotas > item.periodoMax) {
+        proximaCuota = moment(fechaPrimeraCuota).add(item.periodoMax, 'M').format('DD-MM-YYYY');
+      }
+    }
+    const addDate = moment(item.fecha_inversion).add(item.cuotas, "M").format("DD-MM-YYYY")
+    const dateNow = moment().format("DD-MM-YYYY")
+
+    return { ...item, addDate: addDate, proximaCuota: proximaCuota, dateNow: dateNow }
   })
-  return dataMap
+  let activeInvestments = dataMap.filter(activeInvestment => activeInvestment.proximaCuota != null)
+  let finishedInvestments = dataMap.filter(activeInvestment => activeInvestment.proximaCuota == null)
+  activeInvestments = activeInvestments.sort((A, B) => moment(A.proximaCuota, 'DD-MM-YYYY') - moment(B.proximaCuota, 'DD-MM-YYYY'));
+  return [...activeInvestments, ...finishedInvestments]
 }
 
+async function reinversion(investmentID, dataInversion) {
+  const { amount, originalAmount } = dataInversion
+  //esto hay que cambiar paso 1
+  console.log(investmentID)
+  const util = require('util');
+  /*   const sqlCash_flow = `UPDATE cash_flow SET amount = ?, created_at = now() WHERE investment_id = ? and operation_type = 'inversion_nueva';`;
+    const result = await query(sqlCash_flow, [amount, investmentID]); */
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  let resultInvestments
+  let cashFlowInvestment
+
+  if (amount === originalAmount) {
+    const sqlInvestment = `INSERT INTO investments  (investorID,amount,firstQuote,firstPay,period,percentage,termID, reinversionID,recapitalizar,recapitalizacion_status) VALUES(?,?,?,?,?,?,?,?,?,?) `;
+    let dataRecap = dataInversion.tipoInversion == true ? "1" : " 0"
+    let dataRecapStatus = dataInversion.tipoInversion == true ? "1" : "0"
+    resultInvestments = await query(sqlInvestment,
+      [
+        dataInversion.investorID,
+        amount,
+        dataInversion.firstQuote,
+        dataInversion.primera_cuota,
+        Number(dataInversion.period),
+        dataInversion.percentage,
+        dataInversion.termID,
+        investmentID,
+        dataRecap,
+        dataRecapStatus
+      ])
+  } else if (amount > originalAmount) {
+    const sqlInvestment = `INSERT INTO investments  (investorID,amount,firstQuote,firstPay,period,percentage,termID, reinversionID,recapitalizar,recapitalizacion_status) VALUES(?,?,?,?,?,?,?,?,?,?) `;
+    let dataRecap = dataInversion.tipoInversion == true ? "1" : " 0"
+    let dataRecapStatus = dataInversion.tipoInversion == true ? "1" : "0"
+    resultInvestments = await query(sqlInvestment,
+      [
+        dataInversion.investorID,
+        amount,
+        dataInversion.firstQuote,
+        dataInversion.primera_cuota,
+        Number(dataInversion.period),
+        dataInversion.percentage,
+        dataInversion.termID,
+        investmentID,
+        dataRecap,
+        dataRecapStatus
+      ])
+    const sqlCashFlowReinversion = "INSERT INTO cash_flow (type,amount,description,created_at,user,investment_id,operation_type,account_id,caja_id) VALUES (1,?,'ingreso de dinero por diferencia en reinversion',?,?,?,'reinversión',?,?)";
+    cashFlowInvestment = await query(sqlCashFlowReinversion,
+      [
+        amount - originalAmount,
+        dataInversion.ts,
+        dataInversion.investorID,
+        investmentID,
+        dataInversion.account_id,
+        dataInversion.caja_id
+      ])
+  }
+  return {
+    /* result */
+    resultInvestments,
+    cashFlowInvestment
+  }
+};
 
 async function getInvestementInfo(investmentId) {
   const util = require("util");
@@ -86,9 +215,9 @@ async function getInvestementInfo(investmentId) {
 
   if (investment) {
     investment_amount = investment[0].amount;
-    const sql2 = `SELECT SUM(amount) withdrawAmmount FROM cayetano.cash_flow WHERE investment_id = ? AND type = 2 AND operation_type = 'retiro_inversion';`;
+    const sql2 = `SELECT coalesce(SUM(amount), 0) withdrawAmmount FROM cayetano.cash_flow WHERE investment_id = ? AND type = 2 AND operation_type = 'retiro_inversion';`;
     const retirosInversion = await query(sql2, [investmentId]);
-    if (retirosInversion) {
+    if (retirosInversion.length > 0) {
       withdrawAmmount = retirosInversion[0].withdrawAmmount;
     }
 
@@ -115,6 +244,15 @@ async function getInvestementInfo(investmentId) {
       totalPayments: pagosRealizados,
     };
   }
+}
+
+async function getReinversion(investmentId) {
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+
+  const sql = `  SELECT * FROM cayetano.investments WHERE reinversionID = ? OR id = ? ORDER BY ts DESC`;
+  const investment = await query(sql, [investmentId, investmentId]);
+  return investment
 }
 
 async function getRetiros(investment_id) {
@@ -290,6 +428,7 @@ function payInvestment(investment, USER_ID, account_id, caja_id) {
                         caja_id
                       ],
                       (err, results, rows) => {
+                        notificationInvestment()
                         mysqli.query(
                           "SELECT * FROM investments_payments WHERE id = ?",
                           [results.insertId],
@@ -313,6 +452,13 @@ function payInvestment(investment, USER_ID, account_id, caja_id) {
       }
     );
   });
+}
+async function getInfoInvestmentUsers(investmentID) {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const sql = `SELECT * FROM cayetano.investments A LEFT JOIN cayetano.users B ON A.investorID = B.id WHERE A.id = ?;`;
+  const result = await query(sql, [investmentID]);
+  return result
 }
 
 async function getInvestmentsByInvestor(investorID) {
@@ -371,6 +517,145 @@ AND DATE_ADD(DATE(ts),INTERVAL (period - 1) MONTH) > DATE(NOW())
   };
 }
 
+const emailInvPago = async (type) => {
+  const result = await usersTypeController.usersType(type)
+  if (Array.isArray(result) && result.length > 0) {
+    const returnValue = result.map(item => item.email)
+    return returnValue
+  }
+  return []
+}
+
+async function notificationInvestment(amount, percentaje) {
+  const dataInfo = await getAllInvestements()
+  console.log(dataInfo)
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli)
+  const sendMailFunction1 = await emailInvPago(1)
+  const sendMailFunction5 = await emailInvPago(5)
+  const sendMailFunction7 = await emailInvPago(7)
+  dataInfo.map((item) => {
+    let mailOptions = {
+      from: process.env.MAIL_FROM,
+      to: sendMailFunction5,
+      subject: 'Notificación de pago de intereses',
+      html: ''
+    }
+    html1 = `<!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+      </head>
+      <body>
+      <tbody>
+    Estimado ${item.nombre} ${item.apellido} le notificamos desde Em.prendo que en 5 días podrá cobrar el pago del interes del ${item.porcentaje} % mensual de su inversión. Ante cualquier duda o consulta, por favor, comunicarse con Em.prendo
+      </tbody>
+      </body>`;
+    mailOptions.html = html1;
+    if (moment().add(5, 'days').format("DD-MM-YYYY") === item.proximaCuota) {
+      /* sendMail(mailOptions); */
+      console.log(mailOptions)
+    }
+    let mailOptions2 = {
+      from: process.env.MAIL_FROM,
+      to: [...sendMailFunction1, ...sendMailFunction7],
+      subject: 'Aviso de pago a Em.prendo',
+      html: ''
+    }
+    html2 = `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Document</title>
+        </head>
+        <body>
+        <tbody>
+      Se informa que la inversión de ${item.nombre} ${item.apellido} por el monto de ${item.monto_inversion} con interes del ${item.porcentaje} % mensual de su inversión debe ser abonada en 5 días
+        </tbody>
+        </body>`;
+    mailOptions2.html = html2;
+    if (moment().add(5, 'days').format("DD-MM-YYYY") === item.proximaCuota) {
+       sendMail(mailOptions); 
+    }
+    let mailOptions3 = {
+      from: process.env.MAIL_FROM,
+      to: [...sendMailFunction1, ...sendMailFunction7],
+      subject: 'Aviso de finalización de inversión',
+      html: ''
+    }
+    html3 = `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Document</title>
+        </head>
+        <body>
+        <tbody>
+      Se informa que la inversión de ${item.nombre} ${item.apellido} por el monto inicial de ${item.monto_inversion} finaliza en 30 días
+        </tbody>
+        </body>`;
+    mailOptions3.html = html3;
+    if (moment().add(30, 'days').format("DD-MM-YYYY") === item.addDate) {
+       sendMail(mailOptions); 
+    }
+    let mailOptions4 = {
+      from: process.env.MAIL_FROM,
+      to: sendMailFunction5,
+      subject: 'Aviso de finalización de inversión',
+      html: ''
+    }
+    html4 = `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Document</title>
+        </head>
+        <body>
+        <tbody>
+        ${item.nombre} ${item.apellido} se informa que su inversión realizada por el monto inicial de $${item.monto_inversion} en Em.prendo finaliza en 30 días. Pasados los 30 días usted podrá comunicarse con nosotros para retirar su inversión. Ante cualquier duda o consulta, por favor, comunicarse con Em.prendo
+        </tbody>
+        </body>`;
+    mailOptions4.html = html4;
+    if (moment().add(30, 'days').format("DD-MM-YYYY") === item.addDate) {
+      /* sendMail(mailOptions); */
+      console.log(mailOptions4)
+    }
+    let mailOptions5 = {
+      from: process.env.MAIL_FROM,
+      to: [...sendMailFunction1, ...sendMailFunction7],
+      subject: 'Aviso de finalización de inversión',
+      html: ''
+    }
+    html5 = `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Document</title>
+        </head>
+        <body>
+        <tbody>
+        Se informa que la inversión de ${item.nombre} ${item.apellido} realizada por el monto inicial de ${item.monto_inversion} en Em.prendo finaliza en 7 días
+        </tbody>
+        </body>`;
+    mailOptions5.html = html5;
+    if (moment().add(7, 'days').format("DD-MM-YYYY") === item.addDate) {
+      /* sendMail(mailOptions); */
+      console.log(mailOptions5)
+    }
+  })
+
+}
 module.exports = {
   createInvestment,
   recapitalizar_auto,
@@ -383,4 +668,8 @@ module.exports = {
   recapitalizar,
   getRecapitalizaciones,
   getAllInvestements,
+  getInfoInvestmentUsers,
+  notificationInvestment,
+  reinversion,
+  getReinversion
 };
