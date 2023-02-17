@@ -48,12 +48,12 @@ async function insertPayment(
     }
 
     const creditsItemsQuery = `SELECT CASE WHEN p.amount IS NOT NULL THEN SUM(p.amount) ELSE 0 END punitorios, ci.capital,ci.otorgamiento,ci.intereses, ci.amount , ci.period, ci.safe, ci.payed , ci.id
-                                    FROM punitorios p
-                                    RIGHT JOIN credits_items ci ON ci.credit_id = p.credit_id
-                                    	AND MONTH(p.period) = MONTH(ci.period)
-                                    	AND YEAR (p.period) = YEAR(ci.period)
-                                    where ci.credit_id = ?
-                                    GROUP by ci.period order by ci.period`;
+    FROM punitorios p
+    RIGHT JOIN credits_items ci ON ci.credit_id = p.credit_id
+      AND MONTH(p.period) = MONTH(ci.period)
+      AND YEAR (p.period) = YEAR(ci.period)
+    where ci.credit_id = ?
+    GROUP by ci.period order by ci.period`;
     const creditsItems = await query(creditsItemsQuery, [credit_id]);
     let disponible = Number(payment_amount);
     for (let index = 0; index < creditsItems.length; index++) {

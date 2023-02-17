@@ -4,6 +4,7 @@ const usersTypeController = require("../users/users.controller");
 const paymentsController = require("../payments/payments.controller");
 var commonFormulas = require("../common/formulas");
 const sendMail = require("../nodemailer/mail");
+const cashflowsController = require("../cash_flow/cashflow.controller")
 
 const sqlDatos = `SELECT * FROM cayetano.credits A 
 LEFT JOIN users B ON A.clientID = B.id 
@@ -1690,6 +1691,127 @@ function formatNumber(num) {
     return Number(num);
   }
 }
+async function cancelacionAnticipada({credit_id,operation_type,account_id,payment_amount,payment_date,description,caja_id},user_id) {
+  payment_amount = Number(payment_amount)
+  description = description ?? "pago cuota total"
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  try {
+    //Traer credito   
+    const creditInfo = await getInterestPayed(credit_id)
+    let creditIds = [...creditInfo.creditItems]
+    creditIds = creditIds.map(item => item.idItem)
+    //actualizar intereses
+    if (creditInfo.interestPayed.length > 0) {
+      await query("update credits_items set intereses = ((intereses - ?) / 2 + ?)  where id = ?",[creditInfo.interestPayed[0].amount,creditInfo.interestPayed[0].amount,creditIds[0]])
+      creditIds.shift() 
+      await query("update credits_items set intereses = (intereses / 2)  where id in (?)",[creditIds])
+    }else{
+      await query("update credits_items set intereses = (intereses / 2)  where id in (?)",[creditIds])
+    }
+    //traer deuda actualizada y pagar cuotas
+    const creditUpdated = await getInterestPayed(credit_id)
+    if(creditUpdated.creditDebts[0].debt - payment_amount >= 0){
+      //generar nota credito
+      if(creditUpdated.creditDebts[0].debt - payment_amount < 10){
+        payment_amount = creditUpdated.creditDebts[0].debt
+      }
+      await cashflowsController.add(1,payment_amount,payment_date,description,user_id,credit_id,"pago_cuota_total",null,account_id,user_id,caja_id)
+      await paymentsController.insertPayment(Number(payment_amount),payment_date,Number(credit_id),Number(creditUpdated.creditItems[0].clientID),[],Number(payment_amount),Number(creditUpdated.creditItems[0].clientID),Number(account_id),1)
+      if (payment_amount<creditUpdated.creditDebts[0].debt) {
+        const creditData = await getInterestPayed(credit_id)
+        let creditIdNC = [...creditData.creditItems]
+        let montoNC = 0
+        for (let elem of creditIdNC){
+          montoNC = elem.interesesI + elem.capitalI + elem.nota_debito + elem.safe + elem.punitorios - elem.payed
+          await paymentsController.createNCreditOrDebit(Number(creditData.creditItems[0].clientID),payment_date,montoNC,credit_id,12,{id:elem.idItem,name: "Nota de Crédito"},"Nota de Crédito",Number(user_id))
+          await query("update credits_items set payed = payed + ? where id = ?",[montoNC,elem.idItem])
+        }
+      }
+    }else{
+      //generar nota debito
+      const pagoAmount = creditUpdated.creditDebts[0].debt
+      const notaCDAmount = payment_amount-creditUpdated.creditDebts[0].debt
+      await cashflowsController.add(1,pagoAmount,payment_date,description,user_id,credit_id,"pago_cuota_total",null,account_id,user_id,caja_id)
+      await paymentsController.insertPayment(Number(pagoAmount),payment_date,Number(credit_id),Number(creditUpdated.creditItems[0].clientID),[],Number(pagoAmount),Number(creditUpdated.creditItems[0].clientID),Number(account_id),1)
+      await paymentsController.createNCreditOrDebit(Number(creditUpdated.creditItems[0].clientID),payment_date,notaCDAmount,credit_id,13,{id:creditUpdated.creditItems[creditUpdated.creditItems.length-1].idItem,name: "nota de debito"},"Nota de Débito",Number(user_id))
+      await paymentsController.createNCreditOrDebit(Number(creditUpdated.creditItems[0].clientID),payment_date,notaCDAmount,credit_id,12,{id:creditUpdated.creditItems[creditUpdated.creditItems.length-1].idItem,name: "Nota de Crédito"},"Nota de Crédito",Number(user_id))
+      await query("update credits_items set payed = payed + ? where id = ?",[notaCDAmount,creditUpdated.creditItems[creditUpdated.creditItems.length-1].idItem])
+    }
+    return {success:true}
+  } catch (error) {
+    return error
+  }
+};
+async function ventaDeVehiculoPrendado({credit_id,operation_type,account_id,payment_amount,payment_date,description,caja_id},user_id) {
+  payment_amount = Number(payment_amount)
+  description = description ?? "pago cuota total"
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  try {
+    //Traer credito   
+    const creditInfo = await getInterestPayed(credit_id)
+    let creditIds = [...creditInfo.creditItems]
+    creditIds = creditIds.map(item => item.idItem)
+    //actualizar intereses
+    if (creditInfo.interestPayed.length > 0) {
+      await query("update credits_items set intereses = ?  where id = ?",[creditInfo.interestPayed[0].amount,creditIds[0]])
+      creditIds.shift() 
+      await query("update credits_items set intereses = 0  where id in (?)",[creditIds])
+    }else{
+      await query("update credits_items set intereses = 0  where id in (?)",[creditIds])
+    }
+    //traer deuda actualizada y pagar cuotas
+    const creditUpdated = await getInterestPayed(credit_id)
+    if(creditUpdated.creditDebts[0].debt - payment_amount >= 0){
+      //generar nota credito
+      if(creditUpdated.creditDebts[0].debt - payment_amount < 10){
+        payment_amount = creditUpdated.creditDebts[0].debt
+      }
+      await cashflowsController.add(1,payment_amount,payment_date,description,user_id,credit_id,"pago_cuota_total",null,account_id,user_id,caja_id)
+      await paymentsController.insertPayment(Number(payment_amount),payment_date,Number(credit_id),Number(creditUpdated.creditItems[0].clientID),[],Number(payment_amount),Number(creditUpdated.creditItems[0].clientID),Number(account_id),1)
+      if (payment_amount<creditUpdated.creditDebts[0].debt) {
+        const creditData = await getInterestPayed(credit_id)
+        let creditIdNC = [...creditData.creditItems]
+        let montoNC = 0
+        for (let elem of creditIdNC){
+          montoNC = elem.interesesI + elem.capitalI + elem.nota_debito + elem.safe + elem.punitorios - elem.payed
+          await paymentsController.createNCreditOrDebit(Number(creditData.creditItems[0].clientID),payment_date,montoNC,credit_id,12,{id:elem.idItem,name: "Nota de Crédito"},"Nota de Crédito",Number(user_id))
+          await query("update credits_items set payed = payed + ? where id = ?",[montoNC,elem.idItem])
+        }
+      }
+    }else{
+      //generar nota debito
+      const pagoAmount = creditUpdated.creditDebts[0].debt
+      const notaCDAmount = payment_amount-creditUpdated.creditDebts[0].debt
+      await cashflowsController.add(1,pagoAmount,payment_date,description,user_id,credit_id,"pago_cuota_total",null,account_id,user_id,caja_id)
+      await paymentsController.insertPayment(Number(pagoAmount),payment_date,Number(credit_id),Number(creditUpdated.creditItems[0].clientID),[],Number(pagoAmount),Number(creditUpdated.creditItems[0].clientID),Number(account_id),1)
+      await paymentsController.createNCreditOrDebit(Number(creditUpdated.creditItems[0].clientID),payment_date,notaCDAmount,credit_id,13,{id:creditUpdated.creditItems[creditUpdated.creditItems.length-1].idItem,name: "nota de debito"},"Nota de Débito",Number(user_id))
+      await paymentsController.createNCreditOrDebit(Number(creditUpdated.creditItems[0].clientID),payment_date,notaCDAmount,credit_id,12,{id:creditUpdated.creditItems[creditUpdated.creditItems.length-1].idItem,name: "Nota de Crédito"},"Nota de Crédito",Number(user_id))
+      await query("update credits_items set payed = payed + ? where id = ?",[notaCDAmount,creditUpdated.creditItems[creditUpdated.creditItems.length-1].idItem])
+    }
+    return {success:true}
+  } catch (error) {
+    return error
+  }
+};
+
+async function getInterestPayed(creditID) {
+  const util = require('util');
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  try {
+    
+    const getCreditItems = await query("select *, B.id as idItem,B.capital as capitalI,B.intereses as interesesI from cayetano.credits A inner join cayetano.credits_items B on A.id = B.credit_id where A.id = ? && (B.capital + B.intereses + B.punitorios + B.safe + B.nota_debito - B.payed > 0)",[creditID])
+    const getDebtCredit = await query("select sum(capital + intereses + punitorios + safe + nota_debito - payed ) as debt, sum(capital + intereses + punitorios + safe + nota_debito) as totalAmount from credits_items where credit_id = ?",[creditID])
+    let getCashFlowInterest = []
+    if (getCreditItems.length > 0) {
+       getCashFlowInterest = await query(`select coalesce(sum(amount),0) as amount from cayetano.cash_flow where credit_item_id = ? && operation_type = "ingreso_interes_cuotas"`,[getCreditItems[0].idItem])
+    }
+    return {interestPayed:getCashFlowInterest, creditItems:getCreditItems, creditDebts:getDebtCredit}
+  } catch (error) {
+    return error
+  }
+}
 
 module.exports = {
   create,
@@ -1730,4 +1852,7 @@ module.exports = {
   getPrintInfoPagos,
   getInfoCredit,
   updateCreditsState,
+  cancelacionAnticipada,
+  ventaDeVehiculoPrendado,
+  getInterestPayed
 };
