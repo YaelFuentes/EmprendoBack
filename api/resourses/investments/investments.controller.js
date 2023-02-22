@@ -12,7 +12,7 @@ const emailJuicio = async (type) => {
   return []
 }
 
-function createInvestment(investment, USER_ID, account_id, caja_id, responsable_id,firstQuote) {
+function createInvestment(investment, USER_ID, account_id, caja_id, responsable_id, firstQuote) {
   let sqlState = `INSERT INTO investments (investorID, amount, percentage, termID, period,ts,recapitalizar,recapitalizacion_status,firstQuote,firstPay) 
   VALUES(?, ?, ?, ?, ?,now(),?,?,?,?);`;
   let dataRecap = investment.tipoInversion == true ? "1" : " 0"
@@ -73,7 +73,7 @@ function createInvestment(investment, USER_ID, account_id, caja_id, responsable_
               // INSERTAMOS EL INGRESO DE DINERO A LA CAJA TYPE=1 PARA INGRESOS, TYPE=2 PARA EGRESOS
               mysqli.query(
                 "INSERT INTO cash_flow (type,amount,created_at,description,user,investment_id,operation_type,account_id, responsable_id ,caja_id) VALUES (1,?,?,'ingreso de dinero por nueva inversion',?,?,'inversion_nueva',?,? ,?)",
-                [investment.amount, investment.ts, USER_ID, results.insertId, account_id, responsable_id,caja_id],
+                [investment.amount, investment.ts, USER_ID, results.insertId, account_id, caja_id, responsable_id],
                 (err2, rows2) => {
                   resolve(rows[0]);
                 }
@@ -580,8 +580,7 @@ async function notificationInvestment(amount, percentaje) {
         </body>`;
     mailOptions2.html = html2;
     if (moment().add(5, 'days').format("DD-MM-YYYY") === item.proximaCuota) {
-      /* sendMail(mailOptions); */
-      console.log(mailOptions2)
+       sendMail(mailOptions); 
     }
     let mailOptions3 = {
       from: process.env.MAIL_FROM,
@@ -604,8 +603,7 @@ async function notificationInvestment(amount, percentaje) {
         </body>`;
     mailOptions3.html = html3;
     if (moment().add(30, 'days').format("DD-MM-YYYY") === item.addDate) {
-      /* sendMail(mailOptions); */
-      console.log(mailOptions3)
+       sendMail(mailOptions); 
     }
     let mailOptions4 = {
       from: process.env.MAIL_FROM,
