@@ -85,17 +85,33 @@ async function getFuturos(start, end) {
 /*                                 Inversiones                                */
 /* -------------------------------------------------------------------------- */
 // Total Capital de inversiones
-async function getTotalCapitalInversiones() {
+/* async function getTotalCapitalInversiones() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select  percentage, ts, period, sum(amount) as capitalInversiones from cayetano.investments where now() between ts and date_add(ts, interval period month) ;  `;
+  const dataQuery = `SELECT percentage, ts, period, sum(amount) AS capitalInversiones FROM cayetano.investments WHERE now() BETWEEN ts AND date_add(ts, interval period month);`;
   const result = await query(dataQuery, []);
+  console.log('result : ', result[0])
   if (result) {
     return result[0].capitalInversiones
   } else {
     return 0;
   }
-}
+} */
+async function getTotalCapitalInversiones(){
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQuery = `SELECT * FROM cayetano.investments WHERE id NOT IN (SELECT reinversionID FROM cayetano.investments WHERE reinversionID IS NOT NULL) AND now() BETWEEN ts AND date_add(ts, interval period month);`;
+  const result = await query(dataQuery, []);
+  const dataQueryRecap = `SELECT * FROM cayetano.investments WHERE reinversionID IS NOT NULL GROUP BY reinversionID ORDER BY ts DESC;`;
+  const resultRecap = await query(dataQueryRecap, []);
+  console.log('resultRecap : ',resultRecap)
+  console.log('result : ',result)
+  let initialValue = 0; 
+  const sumaResultadoMonto = result.map(item => item.amount).reduce((accumulator, currentValue) => accumulator + currentValue, initialValue);
+  if(result.filter(item => item.reinversionID != null)){
+
+  };
+};
 // Total inversiones ingresadas del mes
 async function getTotalCapitalInversionesMensual(start, end) {
   const util = require("util");
