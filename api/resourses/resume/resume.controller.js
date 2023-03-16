@@ -252,12 +252,12 @@ async function getInvestmentsUserComplete() {
   const InvestmentUserCompleteQuery = `SELECT amount InvestmentUserComplete FROM cayetano.users join cayetano.investments on users.id = investments.investorID;`;
   const InvestmentUserCompleteResult = await query(InvestmentUserCompleteQuery, [])
   if (InvestmentUserCompleteResult) {
-    totalInvestmentComplete = InvestmentUserCompleteResult[0].InvestmentUserComplete
+    totalInvestmentComplete = InvestmentUserCompleteResult[0] ? InvestmentUserCompleteResult[0].InvestmentUserComplete : 0
   }
   const InvestmentUserCompleteQuery2 = `SELECT investorID InvestmentUserComplete FROM cayetano.users join cayetano.investments on users.id = investments.investorID;`;
   const InvestmentUserCompleteResult2 = await query(InvestmentUserCompleteQuery2, [])
   if (InvestmentUserCompleteResult2) {
-    totalInvestmentComplete2 = InvestmentUserCompleteResult2[0].InvestmentUserComplete
+    totalInvestmentComplete2 = InvestmentUserCompleteResult2[0] ? InvestmentUserCompleteResult2[0].InvestmentUserComplete : 0
   }
   return {
     totalInvestmentComplete,
