@@ -106,7 +106,7 @@ async function insertPayment(
         ingreso_nota_credito: 0,
         egreso_nota_debito: 0,
       }
-      const obtenerNCreditoNDebito = await query('SELECT sum(p.amount) totalAmount,p.*, c.name FROM cayetano.payments p inner join  cayetano.cash_flow_accounts c on p.account_id = c.id where payed_ci = ? and name in ("Nota de Crédito","Nota de Débito","Nota de Credito","Nota de Debito") group by name;', [credit_item_id.toString()])
+      const obtenerNCreditoNDebito = await query('SELECT sum(p.amount) totalAmount,p.*, c.name FROM payments p inner join  cash_flow_accounts c on p.account_id = c.id where payed_ci = ? and name in ("Nota de Crédito","Nota de Débito","Nota de Credito","Nota de Debito") group by name;', [credit_item_id.toString()])
       obtenerNCreditoNDebito.map(item => {
         if (item.name === "Nota de Crédito" || item.name === "Nota de Credito") {
           totalNotaDebitoCredito.ingreso_nota_credito = item.totalAmount
@@ -603,9 +603,9 @@ async function createNCreditOrDebit(
 }
 function getNCreditoDebito(credit_id, callback) {
   let sql = `select sum(A.amount) as totalN,A.created_at,sum(A.amount) as contadorNotas,A.accountID,A.credit_item_id,A.name,A.payed_ci from (SELECT cf.created_at,cf.credit_item_id,p.payed_ci as creditItem,p.*,c.name,c.id as accountID
-    FROM cayetano.payments p 
-    inner join  cayetano.cash_flow_accounts c on p.account_id = c.id 
-    left join cayetano.cash_flow cf on p.payed_ci = cf.credit_item_id 
+    FROM payments p 
+    inner join  cash_flow_accounts c on p.account_id = c.id 
+    left join cash_flow cf on p.payed_ci = cf.credit_item_id 
     where p.deleted_at is null and p.credit_id = ?
      and c.name in ("Nota de Crédito","Nota de Débito","Nota de Credito","Nota de Debito") group by p.id) A group by A.name, A.creditItem;`
   try {
@@ -627,7 +627,7 @@ async function getList(credit_id) {
     const query = util.promisify(mysqli.query).bind(mysqli);
     let sql = `
   select A.clientID,A.description, A.paymentDate, A.id, A.amount,A.account_id,A.credit_id, B.user,concat(D.name," " ,D.lastname) as responsable, B.payment_id , C.id as idUser, C.name, C.lastname , E.name as mediopago, A.payed_ci AS pagos
-  from cayetano.payments A left join cayetano.cash_flow B on A.id = B.payment_id left join cayetano.users C  on B.user = C.id left join cayetano.users D  on A.responsable = D.id left join cayetano.cash_flow_accounts E on A.account_id = E.id 
+  from payments A left join cash_flow B on A.id = B.payment_id left join users C  on B.user = C.id left join users D  on A.responsable = D.id left join cash_flow_accounts E on A.account_id = E.id 
   where A.credit_id = ? AND A.status = 1 group by A.id  ORDER BY paymentDate ASC;`;
     const result = await query(sql, [credit_id])
     if (Array.isArray(result) && result.length > 0) {

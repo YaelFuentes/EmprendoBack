@@ -38,7 +38,7 @@ async function updateNotasCreditosState({userID, creditID, notas, USER_ID, fecha
 async function getNotasCreditosState(creditID){
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const sql = `SELECT * FROM cayetano.notas left join cayetano.users on notas.userID = users.id  WHERE credit_state = 4 AND creditID = ?`;
+  const sql = `SELECT * FROM notas left join users on notas.userID = users.id  WHERE credit_state = 4 AND creditID = ?`;
   const result = await query(sql,[creditID]);
   return result;
 }

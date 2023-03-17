@@ -249,12 +249,12 @@ async function getInvestmentsUserComplete() {
 
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const InvestmentUserCompleteQuery = `SELECT amount InvestmentUserComplete FROM cayetano.users join cayetano.investments on users.id = investments.investorID;`;
+  const InvestmentUserCompleteQuery = `SELECT amount InvestmentUserComplete FROM users join investments on users.id = investments.investorID;`;
   const InvestmentUserCompleteResult = await query(InvestmentUserCompleteQuery, [])
   if (InvestmentUserCompleteResult) {
     totalInvestmentComplete = InvestmentUserCompleteResult[0].InvestmentUserComplete
   }
-  const InvestmentUserCompleteQuery2 = `SELECT investorID InvestmentUserComplete FROM cayetano.users join cayetano.investments on users.id = investments.investorID;`;
+  const InvestmentUserCompleteQuery2 = `SELECT investorID InvestmentUserComplete FROM users join investments on users.id = investments.investorID;`;
   const InvestmentUserCompleteResult2 = await query(InvestmentUserCompleteQuery2, [])
   if (InvestmentUserCompleteResult2) {
     totalInvestmentComplete2 = InvestmentUserCompleteResult2[0].InvestmentUserComplete
@@ -364,7 +364,7 @@ async function getPatrimonioTotal() {
 async function getResultadoCajaPositivo(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(amount) ResultBoxPositive FROM cayetano.cash_flow WHERE created_at BETWEEN ? AND ? AND amount > 0;`;
+  const dataQuery = `SELECT SUM(amount) ResultBoxPositive FROM cash_flow WHERE created_at BETWEEN ? AND ? AND amount > 0;`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].ResultBoxPositive
@@ -375,7 +375,7 @@ async function getResultadoCajaPositivo(start, end) {
 async function getResultadoCajaNegativo(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(amount) ResultBoxNegative FROM cayetano.cash_flow WHERE created_at BETWEEN ? AND ? AND amount < 0;`;
+  const dataQuery = `SELECT SUM(amount) ResultBoxNegative FROM cash_flow WHERE created_at BETWEEN ? AND ? AND amount < 0;`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].ResultBoxNegative
@@ -463,7 +463,7 @@ async function getIngresosPorSegurosRecuperado(start, end) {
 async function getInteresesPrestado(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(intereses) interesesPrestado FROM cayetano.credits WHERE otorgamiento BETWEEN ? AND ? AND status > 0`;
+  const dataQuery = `SELECT SUM(intereses) interesesPrestado FROM credits WHERE otorgamiento BETWEEN ? AND ? AND status > 0`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].interesesPrestado;
@@ -508,7 +508,7 @@ async function getEfectivoDisponible() {
 async function getCuentaBrubank() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) brubank from cayetano.cash_flow where account_id = '5' and created_at between '2022-08-23' and now() and type not in ('8');`
+  const dataQuery = `select sum(amount) brubank from cash_flow where account_id = '5' and created_at between '2022-08-23' and now() and type not in ('8');`
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].brubank;
@@ -521,7 +521,7 @@ async function getCuentaBrubank() {
 /* async function getEfectivoDiarioCaja() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli)
-  const dataQuery = `select (select sum(amount) from cayetano.cash_flow where left(created_at,10) = left(now(),10) and type not in ('3', '2')) - (select sum(amount) from cayetano.cash_flow where type = '3' and left(created_at,10) = left(now(),10)) cajadiaria;`;
+  const dataQuery = `select (select sum(amount) from cash_flow where left(created_at,10) = left(now(),10) and type not in ('3', '2')) - (select sum(amount) from cash_flow where type = '3' and left(created_at,10) = left(now(),10)) cajadiaria;`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].cajadiaria
@@ -533,7 +533,7 @@ async function getCuentaBrubank() {
 async function getEfectivoDiarioCaja() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli)
-  const dataQuery = `select sum(amount) cajadiaria from cayetano.cash_flow where type in ('1','4') and account_id = '1' and left(created_at,10) = left(now(),10) and operation_type in ("ingreso_capital_cuotas","ingreso_interes_cuotas","ingreso_seguro_cuotas","ingreso_punitorios_cuotas") is not true;`;
+  const dataQuery = `select sum(amount) cajadiaria from cash_flow where type in ('1','4') and account_id = '1' and left(created_at,10) = left(now(),10) and operation_type in ("ingreso_capital_cuotas","ingreso_interes_cuotas","ingreso_seguro_cuotas","ingreso_punitorios_cuotas") is not true;`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].cajadiaria
@@ -545,7 +545,7 @@ async function getEfectivoDiarioCaja() {
 async function getRetiroEfectivoCajaDiaria() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli)
-  const dataQuery = `select sum(amount) cajadiaria from cayetano.cash_flow where type= '5' and account_id = '1' and left(created_at,10) = left(now(),10);`;
+  const dataQuery = `select sum(amount) cajadiaria from cash_flow where type= '5' and account_id = '1' and left(created_at,10) = left(now(),10);`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].cajadiaria
@@ -558,7 +558,7 @@ async function getRetiroEfectivoCajaDiaria() {
 async function getEfectivoDiarioCaja2() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli)
-  const dataQuery = `select sum(amount) cajaDiariaConAccount from cayetano.cash_flow where type = '1' and account_id = '5' and left(created_at,10) = left(now(),10) and operation_type in ("ingreso_capital_cuotas","ingreso_interes_cuotas","ingreso_seguro_cuotas","ingreso_punitorios_cuotas") is not true;`;
+  const dataQuery = `select sum(amount) cajaDiariaConAccount from cash_flow where type = '1' and account_id = '5' and left(created_at,10) = left(now(),10) and operation_type in ("ingreso_capital_cuotas","ingreso_interes_cuotas","ingreso_seguro_cuotas","ingreso_punitorios_cuotas") is not true;`;
   const result = await query(dataQuery, [])
   if (result) {
     return result[0].cajaDiariaConAccount
@@ -567,7 +567,7 @@ async function getEfectivoDiarioCaja2() {
 async function getEfectivoCajaMayor3() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) cajaDiariaConNull from cayetano.cash_flow where type='1' and account_id = '8' and left(created_at,10) = left(now(),10) and operation_type in ("ingreso_capital_cuotas","ingreso_interes_cuotas","ingreso_seguro_cuotas","ingreso_punitorios_cuotas") is not true;`;
+  const dataQuery = `select sum(amount) cajaDiariaConNull from cash_flow where type='1' and account_id = '8' and left(created_at,10) = left(now(),10) and operation_type in ("ingreso_capital_cuotas","ingreso_interes_cuotas","ingreso_seguro_cuotas","ingreso_punitorios_cuotas") is not true;`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].cajaDiariaConNull
@@ -576,13 +576,13 @@ async function getEfectivoCajaMayor3() {
   }
 }
 
-/*select (select sum(amount) from cayetano.cash_flow where left(created_at,10) = left(now(),10) and type not in ('3', '2')) + (select sum(amount) from cayetano.cash_flow where left(created_at,10) = left(now(),10) and type = '2' )+(
-    select sum(amount) from cayetano.cash_flow where account_id in ('8','5') and left(created_at,10) = left(now(),10))
+/*select (select sum(amount) from cash_flow where left(created_at,10) = left(now(),10) and type not in ('3', '2')) + (select sum(amount) from cash_flow where left(created_at,10) = left(now(),10) and type = '2' )+(
+    select sum(amount) from cash_flow where account_id in ('8','5') and left(created_at,10) = left(now(),10))
    as cajadiaria;*/
 async function getSaldoBancoSantander(start, end) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(amount) cajaBancoSantander FROM cayetano.cash_flow WHERE account_id='8' AND created_at BETWEEN '2022-08-23' AND now() AND type not in ('7', '2');`;
+  const dataQuery = `SELECT SUM(amount) cajaBancoSantander FROM cash_flow WHERE account_id='8' AND created_at BETWEEN '2022-08-23' AND now() AND type not in ('7', '2');`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].cajaBancoSantander
@@ -593,7 +593,7 @@ async function getSaldoBancoSantander(start, end) {
 async function getSaldoBancoSantanderEgreso(start, end) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(amount) cajaBancoSantander FROM cayetano.cash_flow WHERE account_id='8' AND created_at BETWEEN '2022-08-23' AND now() and type='2';`;
+  const dataQuery = `SELECT SUM(amount) cajaBancoSantander FROM cash_flow WHERE account_id='8' AND created_at BETWEEN '2022-08-23' AND now() and type='2';`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].cajaBancoSantander
@@ -619,7 +619,7 @@ async function getSantanderDirecto() { //suma type 3
 async function getBrubankDirecto() { //suma type 3
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) brubankDirectoEntrada from cayetano.cash_flow where type = '8';`;
+  const dataQuery = `select sum(amount) brubankDirectoEntrada from cash_flow where type = '8';`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].brubankDirectoEntrada
@@ -633,7 +633,7 @@ async function getBrubankDirecto() { //suma type 3
 async function getEfectivoCajaMayor() { //suma type 3
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) cajaMayor from cayetano.cash_flow where type = '3';`;
+  const dataQuery = `select sum(amount) cajaMayor from cash_flow where type = '3';`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].cajaMayor
@@ -644,7 +644,7 @@ async function getEfectivoCajaMayor() { //suma type 3
 async function getEfectivoTotalInversionista() { //suma type 3
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) Efectivoinversionnueva from cayetano.cash_flow where operation_type = 'inversion_nueva' and created_at between '2022-08-23' and now();`;
+  const dataQuery = `select sum(amount) Efectivoinversionnueva from cash_flow where operation_type = 'inversion_nueva' and created_at between '2022-08-23' and now();`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].Efectivoinversionnueva
@@ -656,7 +656,7 @@ async function getEfectivoTotalInversionista() { //suma type 3
 async function getEfectivoIngresoDirecto() { //suma type 3
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) cajaMayorDirecto from cayetano.cash_flow where account_id='9' and DATE(created_at) between '2022-08-23' and now();`;
+  const dataQuery = `select sum(amount) cajaMayorDirecto from cash_flow where account_id='9' and DATE(created_at) between '2022-08-23' and now();`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].cajaMayorDirecto
@@ -668,7 +668,7 @@ async function getEfectivoIngresoDirecto() { //suma type 3
 async function getEfectivoCajaMayorRetiro() { //resta type 2 egreso de pagos
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) retiroCajaMayor  from cayetano.cash_flow where type= ('2') and DATE(created_at) between '2022-08-23' and now();`;
+  const dataQuery = `select sum(amount) retiroCajaMayor  from cash_flow where type= ('2') and DATE(created_at) between '2022-08-23' and now();`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].retiroCajaMayor
@@ -679,7 +679,7 @@ async function getEfectivoCajaMayorRetiro() { //resta type 2 egreso de pagos
 async function getEfectivoCajaRetiroCajaDiaria() { //resta type 2 egreso de pagos
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) retiroCajaMayor  from cayetano.cash_flow where type= ('5') and DATE(created_at) between '2022-08-23' and date_sub(current_date(),interval 1 day);`;
+  const dataQuery = `select sum(amount) retiroCajaMayor  from cash_flow where type= ('5') and DATE(created_at) between '2022-08-23' and date_sub(current_date(),interval 1 day);`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].retiroCajaMayor
@@ -690,7 +690,7 @@ async function getEfectivoCajaRetiroCajaDiaria() { //resta type 2 egreso de pago
 async function getEfectivoCajaMayorCuotas() {  //suma cuota de creditos y demas type 1
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) ingresoCajaMayorCuotas from cayetano.cash_flow where type='1' and cast(created_at AS DATE) and DATE(created_at) between '2022-08-23' and date_sub(current_date(),interval 1 day) and account_id in ('8','1','5');`;
+  const dataQuery = `select sum(amount) ingresoCajaMayorCuotas from cash_flow where type='1' and cast(created_at AS DATE) and DATE(created_at) between '2022-08-23' and date_sub(current_date(),interval 1 day) and account_id in ('8','1','5');`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].ingresoCajaMayorCuotas
@@ -703,7 +703,7 @@ async function getEfectivoCajaMayorCuotas() {  //suma cuota de creditos y demas 
 async function getCajaMayorType2Efectivo() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) retiroSoloEfectivo from cayetano.cash_flow where type= ('2') and DATE(created_at) between '2022-08-23' and now() and (account_id = '1' or operation_type = 'pago_inversion');`;
+  const dataQuery = `select sum(amount) retiroSoloEfectivo from cash_flow where type= ('2') and DATE(created_at) between '2022-08-23' and now() and (account_id = '1' or operation_type = 'pago_inversion');`;
   const result = await query(dataQuery, []);
   if(result) {
     return result[0].retiroSoloEfectivo
@@ -716,7 +716,7 @@ async function getCajaMayorType2Efectivo() {
 async function getCajaMayorEfectivo() {  //suma del efectivo de la caja mayor
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) ingresoCajaMayorCuotas from cayetano.cash_flow where type='1' and cast(created_at AS DATE) and DATE(created_at) between '2022-08-23' and date_sub(current_date(),interval 1 day) and account_id = '1'  and 
+  const dataQuery = `select sum(amount) ingresoCajaMayorCuotas from cash_flow where type='1' and cast(created_at AS DATE) and DATE(created_at) between '2022-08-23' and date_sub(current_date(),interval 1 day) and account_id = '1'  and 
   operation_type like('pago_cuota_total') is not true;`;
   const result = await query(dataQuery, []);
   if (result) {
@@ -728,7 +728,7 @@ async function getCajaMayorEfectivo() {  //suma del efectivo de la caja mayor
 async function getCajaDiariaInicio() {  //suma del efectivo de la caja mayor
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select sum(amount) ingresoACajaDiaria from cayetano.cash_flow where type = '4' and created_at between '2022-08-23' and now();`;
+  const dataQuery = `select sum(amount) ingresoACajaDiaria from cash_flow where type = '4' and created_at between '2022-08-23' and now();`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].ingresoACajaDiaria
@@ -871,7 +871,7 @@ async function getCommitment30DaysPerInvestments(
         interesRecapitalizado = 1;
       }
 
-      const sql3 = `SELECT previous_amount capitalInicial FROM cayetano.recapitalizaciones WHERE investment_id = ? ORDER BY id ASC LIMIT 1;`;
+      const sql3 = `SELECT previous_amount capitalInicial FROM recapitalizaciones WHERE investment_id = ? ORDER BY id ASC LIMIT 1;`;
       const result3 = await query(sql3, [investment_id]);
       if (result3 && result3.length > 0) {
         interesRecapitalizado = 1;
@@ -891,7 +891,7 @@ async function getCommitment30DaysPerInvestments(
 
       //chequeamos si tiene pagos realizados y no esta recapitalizando
       if (interesRecapitalizado == 0) {
-        const sqlPayments = `SELECT SUM(amount) pagosRealizados FROM cayetano.investments_payments WHERE investmentID = ?;`;
+        const sqlPayments = `SELECT SUM(amount) pagosRealizados FROM investments_payments WHERE investmentID = ?;`;
         const resultPayments = await query(sqlPayments, [investment_id]);
         if (resultPayments && resultPayments.length > 0) {
           pagosRealizados = resultPayments[0].pagosRealizados;
@@ -966,7 +966,7 @@ async function getCommitment30Daysg(start, end) {
   const sql = `SELECT 
   *
 FROM
-  cayetano.investments
+  investments
 WHERE DATE(NOW()) BETWEEN DATE_ADD(DATE(ts),INTERVAL (period - 1) MONTH) AND DATE_ADD(DATE(ts),INTERVAL (period) MONTH)`;
   const result = await query(sql, [start, end, end]);
 
@@ -979,7 +979,7 @@ async function getPayments30Daysg(start, end) {
   const sql = `SELECT     
                 *
               FROM
-                cayetano.investments
+                investments
               WHERE
                 DATE_ADD(DATE(ts),INTERVAL (period) MONTH) >= DATE(NOW())
               AND DATE_ADD(DATE(ts),INTERVAL (period) MONTH) > DATE(NOW())`; //query para calcular el capital base a 30 dias
