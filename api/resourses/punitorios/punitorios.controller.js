@@ -25,7 +25,7 @@ async function calculate(credit_id) {
   const cuotas = credit[0].cuotas;
 
   let sql =
-    "SELECT * FROM cayetano.credits_items WHERE credit_id = ? AND (punitorios+capital+intereses+safe) > payed AND  DATE_ADD(DATE(period),INTERVAL 4 DAY) < NOW()";
+    "SELECT * FROM credits_items WHERE credit_id = ? AND (punitorios+capital+intereses+safe) > payed AND  DATE_ADD(DATE(period),INTERVAL 4 DAY) < NOW()";
   let insertado = 0;
   const creditsItems = await query(sql, [credit_id]);
 

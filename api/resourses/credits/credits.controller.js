@@ -6,11 +6,11 @@ var commonFormulas = require("../common/formulas");
 const sendMail = require("../nodemailer/mail");
 const cashflowsController = require("../cash_flow/cashflow.controller")
 
-const sqlDatos = `SELECT * FROM cayetano.credits A 
+const sqlDatos = `SELECT * FROM credits A 
 LEFT JOIN users B ON A.clientID = B.id 
-LEFT JOIN cayetano.cars C ON A.carID = C.id 
-LEFT JOIN cayetano.address D ON A.clientID = D.clientID 
-LEFT JOIN cayetano.credit_additional_info E ON A.id = E.creditID 
+LEFT JOIN cars C ON A.carID = C.id 
+LEFT JOIN address D ON A.clientID = D.clientID 
+LEFT JOIN credit_additional_info E ON A.id = E.creditID 
 WHERE a.id = ? GROUP BY operation_type;`;
 const sqlDatosDiasAtraso = `SELECT 
 A.id,
@@ -79,12 +79,12 @@ FROM
             ELSE 0
         END punitorios
 FROM
-    cayetano.credits T1
-INNER JOIN cayetano.budget T2 ON T1.budget = T2.id
-INNER JOIN cayetano.cars T3 ON T1.carID = T3.id
-INNER JOIN cayetano.users T5 ON T1.clientID = T5.id
-LEFT JOIN cayetano.credits_items T4 ON T1.id = T4.credit_id
-LEFT JOIN cayetano.punitorios T8 ON T1.id = T8.credit_id
+    credits T1
+INNER JOIN budget T2 ON T1.budget = T2.id
+INNER JOIN cars T3 ON T1.carID = T3.id
+INNER JOIN users T5 ON T1.clientID = T5.id
+LEFT JOIN credits_items T4 ON T1.id = T4.credit_id
+LEFT JOIN punitorios T8 ON T1.id = T8.credit_id
     AND T4.period = T8.period) A
     LEFT JOIN
 (SELECT 
@@ -103,11 +103,11 @@ FROM
         END) AS deudas,
         DATEDIFF(NOW(), ci.period) AS dias
 FROM
-    cayetano.punitorios p
-RIGHT JOIN cayetano.credits_items ci ON ci.credit_id = p.credit_id
+    punitorios p
+RIGHT JOIN credits_items ci ON ci.credit_id = p.credit_id
     AND MONTH(p.period) = MONTH(ci.period)
     AND YEAR(p.period) = YEAR(ci.period)
-INNER JOIN cayetano.credits c ON c.id = ci.credit_id
+INNER JOIN credits c ON c.id = ci.credit_id
 WHERE
     1 AND ci.period < NOW()
 GROUP BY ci.credit_id , ci.period , c.id
@@ -202,15 +202,15 @@ function getCsv(callback) {
       B.status,
       B.state
   FROM
-      cayetano.credits_items A
+      credits_items A
           LEFT JOIN
-      cayetano.credits B ON A.credit_id = B.id
+      credits B ON A.credit_id = B.id
           LEFT JOIN
-      cayetano.users C ON B.clientID = C.id
+      users C ON B.clientID = C.id
           LEFT JOIN
-      cayetano.cars D ON B.carID = D.id
+      cars D ON B.carID = D.id
           LEFT JOIN
-      cayetano.notas E ON A.credit_id = E.creditID`;
+      notas E ON A.credit_id = E.creditID`;
   mysqli.query(sql, [], (err, rows) => {
     var response = []
     if (rows) {
@@ -430,7 +430,7 @@ async function addpaymentupdate(creditID, nroExpediente, items) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
   const getElementSql = `select A.*,B.state, B.sub_state,B.id,B.status 
-  from cayetano.credit_additional_info A left join cayetano.credits B on A.creditID = B.id 
+  from credit_additional_info A left join credits B on A.creditID = B.id 
   where A.creditID = ? ;`;
   const result1 = await query(getElementSql, [creditID]);
   if (items.id === undefined || items.id === null) {
@@ -447,7 +447,7 @@ async function addpaymentupdate(creditID, nroExpediente, items) {
 async function cronUpdateSubState() {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  let getInfo = `SELECT *,A.id idCredit FROM cayetano.credits A 
+  let getInfo = `SELECT *,A.id idCredit FROM credits A 
   LEFT JOIN users B ON A.clientID = B.id 
   WHERE A.state = 4 AND A.status = 1 GROUP BY A.id;`;
   const sendMailFunction7 = await emailJuicio(7);
@@ -498,11 +498,11 @@ async function cronUpdateSubState() {
 async function updateSubState(sub_state, user_id, creditID) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  let sqlGetInfoSubState = `SELECT * FROM cayetano.credits A 
+  let sqlGetInfoSubState = `SELECT * FROM credits A 
   LEFT JOIN users B ON A.clientID = B.id 
-  LEFT JOIN cayetano.cars C ON A.carID = C.id 
-  LEFT JOIN cayetano.address D ON A.clientID = D.clientID 
-  LEFT JOIN cayetano.credit_additional_info E ON A.id = E.creditID 
+  LEFT JOIN cars C ON A.carID = C.id 
+  LEFT JOIN address D ON A.clientID = D.clientID 
+  LEFT JOIN credit_additional_info E ON A.id = E.creditID 
   WHERE a.id = 45 GROUP BY A.id;`;
   let sql = `UPDATE credits SET sub_state = ?, responsable_sub_state = ?, update_sub_state = now() WHERE id = ?;`;
   try {
@@ -602,9 +602,9 @@ async function getSetSubState(creditID) {
 async function getDemandasUser(userID) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  let sql = `select A.*,B.NroExpediente,B.created_at,C.name,C.lastname,C.email,C.dni,C.phone from cayetano.credits A 
-  left join cayetano.credit_additional_info B on A.id = B.creditID 
-  left join cayetano.users C on A.clientID = C.id where A.responsable_sub_state = ?;`;
+  let sql = `select A.*,B.NroExpediente,B.created_at,C.name,C.lastname,C.email,C.dni,C.phone from credits A 
+  left join credit_additional_info B on A.id = B.creditID 
+  left join users C on A.clientID = C.id where A.responsable_sub_state = ?;`;
   const result = await query(sql, [userID]);
   return result;
 }
@@ -664,7 +664,7 @@ async function updateAdditionalInfo(NroExpediente, creditID) {
 async function getAdditionalInfo(creditID) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  let sql = `select A.*,B.state, B.sub_state,B.id as creditID,B.status, B.update_sub_state from cayetano.credit_additional_info A left join cayetano.credits B on A.creditID = B.id where A.creditID = ?;`;
+  let sql = `select A.*,B.state, B.sub_state,B.id as creditID,B.status, B.update_sub_state from credit_additional_info A left join credits B on A.creditID = B.id where A.creditID = ?;`;
   const result = await query(sql, [creditID]);
   return result;
 };
@@ -679,7 +679,7 @@ async function getDetallePagos(creditID) {
 async function getCreditSubState() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  let sql = `SELECT * FROM cayetano.credits_sub_state;`;
+  let sql = `SELECT * FROM credits_sub_state;`;
   const subState = await query(sql, []);
   return subState
 };
@@ -873,12 +873,12 @@ async function getInfoCredit(creditid, callback) {
   T10.dni,
   T10.phone
   FROM
-  cayetano.credits T1
-  INNER JOIN cayetano.budget T2 ON T1.budget = T2.id
-  LEFT JOIN cayetano.credits_items T4 ON T1.id = T4.credit_id
-  LEFT JOIN cayetano.punitorios T8 ON T1.id = T8.credit_id AND T4.period = T8.period
-  left JOIN cayetano.cars T9 ON T1.carID = T9.id
-  left JOIN cayetano.users T10 ON T1.clientid = T10.id
+  credits T1
+  INNER JOIN budget T2 ON T1.budget = T2.id
+  LEFT JOIN credits_items T4 ON T1.id = T4.credit_id
+  LEFT JOIN punitorios T8 ON T1.id = T8.credit_id AND T4.period = T8.period
+  left JOIN cars T9 ON T1.carID = T9.id
+  left JOIN users T10 ON T1.clientid = T10.id
   WHERE T1.id = ?
   GROUP BY T4.period;`;
   mysqli.query(sql, [creditid], (err, rows) => {
@@ -899,7 +899,7 @@ async function getInfoCredit(creditid, callback) {
 }
 
 function getCashFlow(creditid, callback) {
-  let sql = `SELECT SUM(amount) pagado, credit_item_id, operation_type,description FROM cayetano.cash_flow WHERE credit_id = ? AND credit_item_id > 0 AND deleted_at IS NULL GROUP BY operation_type,credit_item_id`;
+  let sql = `SELECT SUM(amount) pagado, credit_item_id, operation_type,description FROM cash_flow WHERE credit_id = ? AND credit_item_id > 0 AND deleted_at IS NULL GROUP BY operation_type,credit_item_id`;
   mysqli.query(sql, [creditid], (err, rows) => {
     //si queremos imprimir el mensaje ponemos err.sqlMessage
     var response = [];
@@ -911,7 +911,7 @@ function getCashFlow(creditid, callback) {
 }
 
 function getCashFlowPerCreditItem(creditidid, callback) {
-  let sql = `SELECT SUM(amount) pagado, credit_item_id, operation_type, description, created_at FROM cayetano.cash_flow 
+  let sql = `SELECT SUM(amount) pagado, credit_item_id, operation_type, description, created_at FROM cash_flow 
   WHERE credit_item_id = ? AND credit_item_id > 0 AND deleted_at IS NULL GROUP BY operation_type;`;
   mysqli.query(sql, [creditidid], (err, rows) => {
     var response = [];
@@ -1103,12 +1103,12 @@ FROM
               ELSE 0
           END punitorios
   FROM
-      cayetano.credits T1
-  INNER JOIN cayetano.budget T2 ON T1.budget = T2.id
-  INNER JOIN cayetano.cars T3 ON T1.carID = T3.id
-  INNER JOIN cayetano.users T5 ON T1.clientID = T5.id
-  LEFT JOIN cayetano.credits_items T4 ON T1.id = T4.credit_id
-  LEFT JOIN cayetano.punitorios T8 ON T1.id = T8.credit_id
+      credits T1
+  INNER JOIN budget T2 ON T1.budget = T2.id
+  INNER JOIN cars T3 ON T1.carID = T3.id
+  INNER JOIN users T5 ON T1.clientID = T5.id
+  LEFT JOIN credits_items T4 ON T1.id = T4.credit_id
+  LEFT JOIN punitorios T8 ON T1.id = T8.credit_id
       AND T4.period = T8.period ) A
       LEFT JOIN
   (SELECT 
@@ -1127,11 +1127,11 @@ FROM
           END),0) AS deudas,
           DATEDIFF(NOW(), ci.period) AS dias
   FROM
-      cayetano.punitorios p
-  RIGHT JOIN cayetano.credits_items ci ON ci.credit_id = p.credit_id
+      punitorios p
+  RIGHT JOIN credits_items ci ON ci.credit_id = p.credit_id
       AND MONTH(p.period) = MONTH(ci.period)
       AND YEAR(p.period) = YEAR(ci.period)
-  INNER JOIN cayetano.credits c ON c.id = ci.credit_id
+  INNER JOIN credits c ON c.id = ci.credit_id
   WHERE
       1 AND ci.period < NOW()
   GROUP BY ci.credit_id , ci.period , c.id
@@ -1311,22 +1311,22 @@ async function getPrintInfoSeguros(creditID) {
   T4.phone telefono,
   T4.dni
 FROM
-  cayetano.insurances T1 
-  LEFT JOIN cayetano.cars T2 ON T1.carID = T2.id INNER JOIN cayetano.credits T3 ON T1.carID = T3.carID INNER JOIN cayetano.users T4 ON T3.clientID = T4.id
+  insurances T1 
+  LEFT JOIN cars T2 ON T1.carID = T2.id INNER JOIN credits T3 ON T1.carID = T3.carID INNER JOIN users T4 ON T3.clientID = T4.id
   WHERE T3.id = ?
 ORDER BY
   imputationDate DESC`;
   const printSeguros = await query(seguroDataQuery, [creditID]);
-  const seguroDataInfo = `  select A.* from cayetano.insurances A inner join cayetano.credits B on A.carID = B.carID where B.id = ? and A.status = 1 order by A.imputationDate desc`;
+  const seguroDataInfo = `  select A.* from insurances A inner join credits B on A.carID = B.carID where B.id = ? and A.status = 1 order by A.imputationDate desc`;
   const seguroData = await query(seguroDataInfo, [creditID]);
   const seguroDataInfoCar = `SELECT brand car_brand
   , model car_model
   , year car_year
   , domain car_domain
   , details car_details
-  FROM cayetano.cars c
-  INNER JOIN cayetano.users u on u.id = c.clientID
-  INNER JOIN cayetano.credits cr on cr.clientID = u.id
+  FROM cars c
+  INNER JOIN users u on u.id = c.clientID
+  INNER JOIN credits cr on cr.clientID = u.id
   WHERE cr.id=?;`;
   const seguroDataCar = await query(seguroDataInfoCar, [creditID]);
   return {
@@ -1340,7 +1340,7 @@ async function getPrintInfoPagos(creditID) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   const pagosDataQuery = `select A.clientID, A.paymentDate, A.id, A.amount,A.credit_id, B.user, B.payment_id , C.id as idUser, C.name, C.lastname 
-  from cayetano.payments A join cayetano.cash_flow B on A.id = B.payment_id left join cayetano.users C  on B.user = C.id 
+  from payments A join cash_flow B on A.id = B.payment_id left join users C  on B.user = C.id 
   where A.credit_id = ? AND A.status = 1 group by A.id  ORDER BY paymentDate ASC;`;
   const pagos = await query(pagosDataQuery, [creditID]);
   return {
@@ -1801,11 +1801,11 @@ async function getInterestPayed(creditID) {
   const query = util.promisify(mysqli.query).bind(mysqli);
   try {
     
-    const getCreditItems = await query("select *, B.id as idItem,B.capital as capitalI,B.intereses as interesesI from cayetano.credits A inner join cayetano.credits_items B on A.id = B.credit_id where A.id = ? && (B.capital + B.intereses + B.punitorios + B.safe + B.nota_debito - B.payed > 0)",[creditID])
+    const getCreditItems = await query("select *, B.id as idItem,B.capital as capitalI,B.intereses as interesesI from credits A inner join credits_items B on A.id = B.credit_id where A.id = ? && (B.capital + B.intereses + B.punitorios + B.safe + B.nota_debito - B.payed > 0)",[creditID])
     const getDebtCredit = await query("select sum(capital + intereses + punitorios + safe + nota_debito - payed ) as debt, sum(capital + intereses + punitorios + safe + nota_debito) as totalAmount from credits_items where credit_id = ?",[creditID])
     let getCashFlowInterest = []
     if (getCreditItems.length > 0) {
-       getCashFlowInterest = await query(`select coalesce(sum(amount),0) as amount from cayetano.cash_flow where credit_item_id = ? && operation_type = "ingreso_interes_cuotas"`,[getCreditItems[0].idItem])
+       getCashFlowInterest = await query(`select coalesce(sum(amount),0) as amount from cash_flow where credit_item_id = ? && operation_type = "ingreso_interes_cuotas"`,[getCreditItems[0].idItem])
     }
     return {interestPayed:getCashFlowInterest, creditItems:getCreditItems, creditDebts:getDebtCredit}
   } catch (error) {

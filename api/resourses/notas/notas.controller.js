@@ -6,7 +6,7 @@ async function getAllNotas(creditID) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
 
-  const sql = `SELECT * FROM notas left join users on notas.userID = users.id WHERE creditID = ? ORDER BY fecha DESC;`;
+  const sql = `SELECT *,(A.id) as idNotas FROM notas A left join users B on A.userID = B.id WHERE creditID = 156 ORDER BY fecha DESC;`;
   const notas = await query(sql, [creditID]);
 
   if (notas) {
@@ -38,7 +38,7 @@ async function updateNotasCreditosState({userID, creditID, notas, USER_ID, fecha
 async function getNotasCreditosState(creditID){
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const sql = `SELECT * FROM cayetano.notas left join cayetano.users on notas.userID = users.id  WHERE credit_state = 4 AND creditID = ?`;
+  const sql = `SELECT * FROM notas left join users on notas.userID = users.id  WHERE credit_state = 4 AND creditID = ?`;
   const result = await query(sql,[creditID]);
   return result;
 }

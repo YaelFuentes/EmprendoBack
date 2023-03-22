@@ -44,7 +44,7 @@ async function getResumeCaja() {
 async function getEfectivoDiario() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = "SELECT CASE WHEN SUM(amount) IS NULL THEN 0 ELSE SUM(amount) END efectivoDiarioQuery from cayetano.cash_flow where caja_id = '2' and operation_type not in ('pago_cuota_total') and account_id = '1';";
+  const dataQuery = "SELECT CASE WHEN SUM(amount) IS NULL THEN 0 ELSE SUM(amount) END efectivoDiarioQuery from cash_flow where caja_id = '2' and operation_type not in ('pago_cuota_total') and account_id = '1';";
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].efectivoDiarioQuery
@@ -80,7 +80,7 @@ async function getPagoJuiciosFinalizados(creditID) {
 async function getBrubankDiario() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = "select CASE WHEN SUM(amount) IS NULL THEN 0 ELSE SUM(amount) END brubankDiarioQuery from cayetano.cash_flow where caja_id = '2' and operation_type not in ('pago_cuota_total') and account_id = '5';";
+  const dataQuery = "select CASE WHEN SUM(amount) IS NULL THEN 0 ELSE SUM(amount) END brubankDiarioQuery from cash_flow where caja_id = '2' and operation_type not in ('pago_cuota_total') and account_id = '5';";
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].brubankDiarioQuery
@@ -91,7 +91,7 @@ async function getBrubankDiario() {
 async function getSantanderDiario() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = "select CASE WHEN SUM(amount) IS NULL THEN 0 ELSE SUM(amount) END santanderDiarioQuery from cayetano.cash_flow where caja_id = '2' and operation_type not in ('pago_cuota_total') and account_id = '8';";
+  const dataQuery = "select CASE WHEN SUM(amount) IS NULL THEN 0 ELSE SUM(amount) END santanderDiarioQuery from cash_flow where caja_id = '2' and operation_type not in ('pago_cuota_total') and account_id = '8';";
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].santanderDiarioQuery
@@ -149,14 +149,14 @@ async function updateCaja(caja_id) {
   A.type,A.amount,date_format(A.created_at, "%d-%m-%Y") AS fecha,A.description,A.user,A.credit_id,A.investment_id,A.operation_type,A.credit_item_id,A.account_id,A.responsable_id,caja_id,B.name,responsable.lastname responsableName,
   CONCAT(users.lastname," ",users.name) username, CONCAT(creditUsers.lastname," ",creditUsers.name)  creditUser, cash_flow_accounts.name account_name, investments.investorID
 FROM
-  cayetano.cash_flow A
-    LEFT JOIN cayetano.users ON A.user = users.id  
-    LEFT JOIN cayetano.credits ON A.credit_id = credits.id
-    LEFT JOIN cayetano.users responsable ON A.responsable_id = responsable.id
-    LEFT JOIN cayetano.users creditUsers ON credits.clientID = creditUsers.id
-    LEFT JOIN cayetano.cash_flow_accounts ON A.account_id = cash_flow_accounts.id
-    LEFT JOIN cayetano.investments ON A.investment_id = investments.id
-    JOIN cayetano.caja B ON A.caja_id = B.id
+  cash_flow A
+    LEFT JOIN users ON A.user = users.id  
+    LEFT JOIN credits ON A.credit_id = credits.id
+    LEFT JOIN users responsable ON A.responsable_id = responsable.id
+    LEFT JOIN users creditUsers ON credits.clientID = creditUsers.id
+    LEFT JOIN cash_flow_accounts ON A.account_id = cash_flow_accounts.id
+    LEFT JOIN investments ON A.investment_id = investments.id
+    JOIN caja B ON A.caja_id = B.id
     where A.caja_id = 2 and operation_type not in ('ingreso_interes_cuotas','ingreso_nota_debito', 'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas')
 ORDER BY
   A.created_at DESC`;
@@ -165,14 +165,14 @@ ORDER BY
   A.type,sum(A.amount) as amount,date_format(A.created_at, "%d-%m-%Y") AS fecha,A.description,A.user,A.credit_id,A.investment_id,A.operation_type,A.credit_item_id,A.account_id,A.responsable_id,caja_id,B.name,responsable.lastname responsableName,
   CONCAT(users.lastname," ",users.name) username, creditUsers.lastname creditUser, cash_flow_accounts.name account_name, investments.investorID
 FROM
-  cayetano.cash_flow A
-    LEFT JOIN cayetano.users ON A.user = users.id  
-    LEFT JOIN cayetano.credits ON A.credit_id = credits.id
-    LEFT JOIN cayetano.users responsable ON A.responsable_id = responsable.id
-    LEFT JOIN cayetano.users creditUsers ON credits.clientID = creditUsers.id
-    LEFT JOIN cayetano.cash_flow_accounts ON A.account_id = cash_flow_accounts.id
-    LEFT JOIN cayetano.investments ON A.investment_id = investments.id
-    JOIN cayetano.caja B ON A.caja_id = B.id
+  cash_flow A
+    LEFT JOIN users ON A.user = users.id  
+    LEFT JOIN credits ON A.credit_id = credits.id
+    LEFT JOIN users responsable ON A.responsable_id = responsable.id
+    LEFT JOIN users creditUsers ON credits.clientID = creditUsers.id
+    LEFT JOIN cash_flow_accounts ON A.account_id = cash_flow_accounts.id
+    LEFT JOIN investments ON A.investment_id = investments.id
+    JOIN caja B ON A.caja_id = B.id
     where A.caja_id = 2 and account_id = 1 and operation_type not in ('ingreso_interes_cuotas', 'ingreso_nota_debito','ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas')
 ORDER BY
   A.created_at DESC;`;
@@ -181,14 +181,14 @@ ORDER BY
   A.type,sum(A.amount) as amount,date_format(A.created_at, "%d-%m-%Y") AS fecha,A.description,A.user,A.credit_id,A.investment_id,A.operation_type,A.credit_item_id,A.account_id,A.responsable_id,caja_id,B.name,responsable.lastname responsableName,
   CONCAT(users.lastname," ",users.name) username, creditUsers.lastname creditUser, cash_flow_accounts.name account_name, investments.investorID
 FROM
-  cayetano.cash_flow A
-    LEFT JOIN cayetano.users ON A.user = users.id  
-    LEFT JOIN cayetano.credits ON A.credit_id = credits.id
-    LEFT JOIN cayetano.users responsable ON A.responsable_id = responsable.id
-    LEFT JOIN cayetano.users creditUsers ON credits.clientID = creditUsers.id
-    LEFT JOIN cayetano.cash_flow_accounts ON A.account_id = cash_flow_accounts.id
-    LEFT JOIN cayetano.investments ON A.investment_id = investments.id
-    JOIN cayetano.caja B ON A.caja_id = B.id
+  cash_flow A
+    LEFT JOIN users ON A.user = users.id  
+    LEFT JOIN credits ON A.credit_id = credits.id
+    LEFT JOIN users responsable ON A.responsable_id = responsable.id
+    LEFT JOIN users creditUsers ON credits.clientID = creditUsers.id
+    LEFT JOIN cash_flow_accounts ON A.account_id = cash_flow_accounts.id
+    LEFT JOIN investments ON A.investment_id = investments.id
+    JOIN caja B ON A.caja_id = B.id
     where A.caja_id = 2 and account_id = 8 and operation_type not in ('ingreso_interes_cuotas','ingreso_nota_debito', 'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas')
 ORDER BY
   A.created_at DESC;`;
@@ -197,14 +197,14 @@ ORDER BY
   A.type,sum(A.amount) as amount,date_format(A.created_at, "%d-%m-%Y") AS fecha,A.description,A.user,A.credit_id,A.investment_id,A.operation_type,A.credit_item_id,A.account_id,A.responsable_id,caja_id,B.name,responsable.lastname responsableName,
   CONCAT(users.lastname," ",users.name) username, creditUsers.lastname creditUser, cash_flow_accounts.name account_name, investments.investorID
 FROM
-  cayetano.cash_flow A
-    LEFT JOIN cayetano.users ON A.user = users.id  
-    LEFT JOIN cayetano.credits ON A.credit_id = credits.id
-    LEFT JOIN cayetano.users responsable ON A.responsable_id = responsable.id
-    LEFT JOIN cayetano.users creditUsers ON credits.clientID = creditUsers.id
-    LEFT JOIN cayetano.cash_flow_accounts ON A.account_id = cash_flow_accounts.id
-    LEFT JOIN cayetano.investments ON A.investment_id = investments.id
-    JOIN cayetano.caja B ON A.caja_id = B.id
+  cash_flow A
+    LEFT JOIN users ON A.user = users.id  
+    LEFT JOIN credits ON A.credit_id = credits.id
+    LEFT JOIN users responsable ON A.responsable_id = responsable.id
+    LEFT JOIN users creditUsers ON credits.clientID = creditUsers.id
+    LEFT JOIN cash_flow_accounts ON A.account_id = cash_flow_accounts.id
+    LEFT JOIN investments ON A.investment_id = investments.id
+    JOIN caja B ON A.caja_id = B.id
     where A.caja_id = 2 and account_id = 5 and operation_type not in ('ingreso_interes_cuotas', 'ingreso_nota_debito' ,'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas')
 ORDER BY
   A.created_at DESC;`;

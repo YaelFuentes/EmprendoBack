@@ -5,7 +5,7 @@ const auth = require("../auth");
 function list(queryParameter) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  let sql = `SELECT T1.*,CONCAT(T2.lastname," ",T2.name) username FROM cayetano.record_logs T1 LEFT JOIN users T2 ON T1.userId = T2.id`;
+  let sql = `SELECT T1.*,CONCAT(T2.lastname," ",T2.name) username FROM record_logs T1 LEFT JOIN users T2 ON T1.userId = T2.id`;
   if (queryParameter.type && queryParameter.type == "loginlist") {
     sql += ` WHERE T1.type = 'new-login' GROUP BY T1.userId `;
   } else {
