@@ -1,11 +1,56 @@
 const { query } = require("express");
 const moment = require("moment");
 
-async function getFuturos(start, end) {
-  
+async function staticFuturos(start, end) {
   start = moment(start).format("YYYY/MM/DD 00:00:00")
   end = moment(end).format("YYYY/MM/DD 23:59:59")
-  console.log(start, end );
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const sql = `select sum(credit_amount) as amount from cayetano.credits 
+  WHERE otorgamiento BETWEEN '2023-01-03' AND '2023-12-31' and status = 1 
+  group by year(otorgamiento), month(otorgamiento);`;
+  const result = await query(sql, [start, end])
+  console.log(result)  
+  if (result) {
+    return result
+  } else {
+    return 0;
+  }
+}
+
+const staticInversion = async (start, end) => {
+  start = moment(start).format("YYYY/MM/DD 00:00:00")
+  end = moment(end).format("YYYY/MM/DD 23:59:59")
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const dataQueryIngreso = `select (case when sum(B.amount) is null then 0 else sum(B.amount) end) as inversionesCapital, ts 
+  from cayetano.investments A inner join cash_flow B on A.id= B.investment_id 
+  where operation_type in( 'inversion_nueva') and created_at between ? and ? GROUP BY year(ts), month(ts)`;
+  const dataQueryEgreso = `  select (case when sum(B.amount) is null then 0 else abs(sum(B.amount)) end) as inversionesCapital , ts
+  from cayetano.investments A inner join cash_flow B on A.id= B.investment_id 
+  where operation_type in( 'retiro_inversion') and created_at between ? and ? GROUP BY year(ts), month(ts);`;
+  const arr = []
+  const resultIngreso = await query(dataQueryIngreso, [start, end]);
+  const resultEgreso = await query(dataQueryEgreso, [start, end]);
+  for (let i = 0; i < resultIngreso.length; i++) {
+    if (resultEgreso[i]) {
+      const sumAmount = resultIngreso[i].inversionesCapital - resultEgreso[i].inversionesCapital;
+      arr.push(sumAmount)
+    } else {
+      const completeAmount = resultIngreso[i].inversionesCapital - 0
+      arr.push(completeAmount)
+    }
+  }
+  if (arr) {
+    return arr
+  } else {
+    return 0;
+  }
+}
+
+async function getFuturos(start, end) {
+  start = moment(start).format("YYYY/MM/DD 00:00:00")
+  end = moment(end).format("YYYY/MM/DD 23:59:59")
   //Inversiones
   const totalCapitalInversiones = await getTotalCapitalInversiones();
   const totalCapitalInversionesMensual = await getTotalCapitalInversionesMensual(
@@ -21,22 +66,22 @@ async function getFuturos(start, end) {
     start,
     end
   );
-  const totalCreditosOtorgadosNotaCredito= await getTotalCreditosOtorgadosNotasCredito(
+  const totalCreditosOtorgadosNotaCredito = await getTotalCreditosOtorgadosNotasCredito(
     start,
     end
   );
   const totalCreditosOtorgadosCapitalIntereses =
-  await getTotalCreditosOtorgadosCapitalIntereses(start, end);
+    await getTotalCreditosOtorgadosCapitalIntereses(start, end);
   const totalCreditosOtorgadosCapitalInteresesGO =
-  await getTotalCreditosOtorgadosCapitalInteresesGO(start, end);
+    await getTotalCreditosOtorgadosCapitalInteresesGO(start, end);
   const totalGastosOtorgamiento = await getTotalGastosOtorgamiento(start, end);
   await getTotalCreditosOtorgadosCapitalInteresesGO(start, end);
   const totalDeudaCreditosMora = await getTotalDeudaCreditosMora();
   const totalDeudaCreditosJuicio = await getTotalDeudaCreditosJuicio();
   const totalACobrar = await getTotalACobrar(start, end);
   const totalACobrarCapitalIntereses = await getTotalACobrarCapitalIntereses(start, end);
-  const totalACobrarSeguros= await getTotalACobrarSeguros(start, end);
-  const totalACobrarPunitorios= await getTotalACobrarPunitorios(start, end);
+  const totalACobrarSeguros = await getTotalACobrarSeguros(start, end);
+  const totalACobrarPunitorios = await getTotalACobrarPunitorios(start, end);
   const totalCobrado = await getTotalCobrado(start, end);
   const totalCobradoCapitalIntereses = await getTotalCobradoCapitalInteres(start, end);
   const totalCobradoSeguro = await getTotalCobradoSeguro(start, end);
@@ -543,4 +588,6 @@ async function getEgresosFijos(start, end) {
 
 module.exports = {
   getFuturos,
+  staticFuturos,
+  staticInversion
 };
