@@ -22,13 +22,13 @@ async function getMovements(start = "", end = "") {
       cash_flow_accounts.name account_name,
       investments.investorID
   FROM
-    cayetano.cash_flow 
-      LEFT JOIN cayetano.users ON cash_flow.user = users.id  
-      LEFT JOIN cayetano.credits ON cash_flow.credit_id = credits.id
-      LEFT JOIN cayetano.users creditUsers ON credits.clientID = creditUsers.id
-      LEFT JOIN cayetano.cash_flow_accounts ON cash_flow.account_id = cash_flow_accounts.id
-      LEFT JOIN cayetano.investments ON cash_flow.investment_id = investments.id
-      LEFT JOIN cayetano.users investmentUser ON investments.investorID = investmentUser.id
+    cash_flow 
+      LEFT JOIN users ON cash_flow.user = users.id  
+      LEFT JOIN credits ON cash_flow.credit_id = credits.id
+      LEFT JOIN users creditUsers ON credits.clientID = creditUsers.id
+      LEFT JOIN cash_flow_accounts ON cash_flow.account_id = cash_flow_accounts.id
+      LEFT JOIN investments ON cash_flow.investment_id = investments.id
+      LEFT JOIN users investmentUser ON investments.investorID = investmentUser.id
   WHERE cash_flow.created_at BETWEEN ? AND ? AND cash_flow.deleted_at IS NULL AND operation_type not in ("ingreso_interes_cuotas", "ingreso_capital_cuotas","ingreso_seguro_cuotas", "ingreso_punitorios_cuotas", "ingreso_nota_debito")
   ORDER BY
     cash_flow.created_at DESC`;
@@ -43,11 +43,11 @@ async function getMovements(start = "", end = "") {
     ELSE null
     end cliente,
   FROM
-    cayetano.cash_flow 
-      LEFT JOIN cayetano.users ON cash_flow.user = users.id  
-      LEFT JOIN cayetano.credits ON cash_flow.credit_id = credits.id
-      LEFT JOIN cayetano.users creditUsers ON credits.clientID = creditUsers.id
-      LEFT JOIN cayetano.cash_flow_accounts ON cash_flow.account_id = cash_flow_accounts.id
+    cash_flow 
+      LEFT JOIN users ON cash_flow.user = users.id  
+      LEFT JOIN credits ON cash_flow.credit_id = credits.id
+      LEFT JOIN users creditUsers ON credits.clientID = creditUsers.id
+      LEFT JOIN cash_flow_accounts ON cash_flow.account_id = cash_flow_accounts.id
       WHERE cash_flow.deleted_at IS NULL AND operation_type not in ("ingreso_interes_cuotas", "ingreso_capital_cuotas","ingreso_seguro_cuotas", "ingreso_punitorios_cuotas", "ingreso_nota_debito")
   ORDER BY
     cash_flow.created_at DESC`;
@@ -127,9 +127,9 @@ async function getExpenses(credit_id) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   try {
-    const sql = `SELECT * from cayetano.cash_flow A left join cayetano.cash_flow_accounts B on A.account_id = B.id  where credit_id=? && operation_type in  ('ingreso_interes_cuotas','ingreso_nota_debito', 'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas','egreso_credito_otorgado','pago_cuota_total') is not true`;
+    const sql = `SELECT * from cash_flow A left join cash_flow_accounts B on A.account_id = B.id  where credit_id=? && operation_type in  ('ingreso_interes_cuotas','ingreso_nota_debito', 'ingreso_capital_cuotas','ingreso_punitorios_cuotas','ingreso_seguro_cuotas','egreso_credito_otorgado','pago_cuota_total') is not true`;
     const result = await query(sql, [credit_id])
-    const sqlExpense = `SELECT *,description as name from cayetano.expenses where credit_id = ? && (amount - payed) > 0 `;
+    const sqlExpense = `SELECT *,description as name from expenses where credit_id = ? && (amount - payed) > 0 `;
     const resultExpense = await query(sqlExpense, [credit_id])
     if (resultExpense.length > 0) {
       resultExpense.map(item=>{

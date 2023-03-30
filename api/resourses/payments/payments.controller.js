@@ -602,9 +602,9 @@ async function createNCreditOrDebit(
 }
 function getNCreditoDebito(credit_id, callback) {
   let sql = `select sum(A.amount) as totalN,A.created_at,sum(A.amount) as contadorNotas,A.accountID,A.credit_item_id,A.name,A.payed_ci from (SELECT cf.created_at,cf.credit_item_id,p.payed_ci as creditItem,p.*,c.name,c.id as accountID
-    FROM cayetano.payments p 
-    inner join  cayetano.cash_flow_accounts c on p.account_id = c.id 
-    left join cayetano.cash_flow cf on p.payed_ci = cf.credit_item_id 
+    FROM payments p 
+    inner join  cash_flow_accounts c on p.account_id = c.id 
+    left join cash_flow cf on p.payed_ci = cf.credit_item_id 
     where p.deleted_at is null and p.credit_id = ?
      and c.name in ("Nota de Crédito","Nota de Débito","Nota de Credito","Nota de Debito") group by p.id) A group by A.name, A.creditItem;`
   try {

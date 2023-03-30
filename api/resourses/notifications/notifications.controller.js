@@ -33,7 +33,7 @@ async function notificationInactivo() {
   const sendMailFunction7 = await emailJuicio(7);
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const sql = `SELECT * FROM cayetano.credits WHERE status = 1 AND state = 2;`;
+  const sql = `SELECT * FROM credits WHERE status = 1 AND state = 2;`;
   const data = await query(sql, [], (err, rows) => {
     rows.map(async (item) => {
       const infoUser = await userController.getUser(item.clientID);
@@ -68,7 +68,7 @@ async function notificationInactivo() {
 function read(notificationID, clientID) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const sql = `INSERT INTO cayetano.notifications_read
+  const sql = `INSERT INTO notifications_read
                   (clientId, notificationId)
                   VALUES(?, ?)`;
   return query(sql, [clientID, notificationID]);

@@ -88,7 +88,7 @@ async function getFuturos(start, end) {
 async function getTotalCapitalInversiones() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select  percentage, ts, period, sum(amount) as capitalInversiones from cayetano.investments where now() between ts and date_add(ts, interval period month) ;  `;
+  const dataQuery = `select  percentage, ts, period, sum(amount) as capitalInversiones from investments where now() between ts and date_add(ts, interval period month) ;  `;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].capitalInversiones
@@ -101,10 +101,10 @@ async function getTotalCapitalInversionesMensual(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   const dataQueryIngreso = `select  percentage, ts, period,(case when sum(B.amount) is null then 0 else sum(B.amount) end) as inversionesCapital 
-  from cayetano.investments A inner join cash_flow B on A.id= B.investment_id 
+  from investments A inner join cash_flow B on A.id= B.investment_id 
   where operation_type in( 'inversion_nueva') and created_at between ? and ?;`;
   const dataQueryEgreso = `select  percentage, ts, period,(case when sum(B.amount) is null then 0 else abs(sum(B.amount)) end) as inversionesCapital 
-  from cayetano.investments A inner join cash_flow B on A.id= B.investment_id 
+  from investments A inner join cash_flow B on A.id= B.investment_id 
   where operation_type in( 'retiro_inversion') and created_at between ? and ?;`;
   const resultIngreso = await query(dataQueryIngreso, [start, end]);
   const resultEgreso = await query(dataQueryEgreso, [start, end]);
@@ -118,7 +118,7 @@ async function getTotalCapitalInversionesMensual(start, end) {
 async function getTotalAPagarInversionesMesActual() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `select  percentage, ts, period, sum(amount * (percentage / 100))as pagoMensual from cayetano.investments where now() between ts and date_add(ts, interval period month) and recapitalizacion_status = 0 ;`;
+  const dataQuery = `select  percentage, ts, period, sum(amount * (percentage / 100))as pagoMensual from investments where now() between ts and date_add(ts, interval period month) and recapitalizacion_status = 0 ;`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].pagoMensual;
@@ -132,9 +132,9 @@ async function getInversionesARetirarConInteresesPagados() {
   const query = util.promisify(mysqli.query).bind(mysqli);
   const dataQuery = `Select sum(A.amountTotal) as total from (SELECT  cast(date_add(I.ts, interval I.period month) as date) as finalDate , I.ts,I.id as investment_id,
   I.period ,sum(I.amount) as amountTotal,((I.amount * (I.percentage / 100))*I.period) as sumaIntereses,abs(sum(C.amount)) as sumaPagos
- FROM cayetano.investments I inner join cayetano.cash_flow C on I.id = C.investment_id
+ FROM investments I inner join cash_flow C on I.id = C.investment_id
  where C.operation_type in ("pago_inversion") and cast(date_add(I.ts, interval I.period month) as date) < DATE_SUB(now(),INTERVAL DAYOFMONTH(now())-1 DAY) 
- and I.id not in ( select CSH.investment_id from cayetano.cash_flow CSH where operation_type="retiro_inversion")
+ and I.id not in ( select CSH.investment_id from cash_flow CSH where operation_type="retiro_inversion")
   Group by C.investment_id having sumaIntereses = sumaPagos ) A;`;
   const result = await query(dataQuery, []);
   if (result) {
@@ -151,7 +151,7 @@ async function getInversionesARetirarConInteresesPagados() {
 async function getTotalCreditosOtorgadosCapital(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(credit_amount) as amount  FROM cayetano.credits WHERE otorgamiento BETWEEN ? AND ? and status = 1;`;
+  const dataQuery = `SELECT SUM(credit_amount) as amount  FROM credits WHERE otorgamiento BETWEEN ? AND ? and status = 1;`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].amount;
@@ -175,7 +175,7 @@ async function getTotalCreditosOtorgadosNotasCredito(start, end) {
 async function getTotalCreditosOtorgadosCapitalIntereses(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(credit_amount+intereses) as amount  FROM cayetano.credits WHERE otorgamiento BETWEEN ? AND ? and status = 1;`;
+  const dataQuery = `SELECT SUM(credit_amount+intereses) as amount  FROM credits WHERE otorgamiento BETWEEN ? AND ? and status = 1;`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].amount;
@@ -187,7 +187,7 @@ async function getTotalCreditosOtorgadosCapitalIntereses(start, end) {
 async function getTotalCreditosOtorgadosCapitalInteresesGO(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(capital+intereses) as amount  FROM cayetano.credits WHERE otorgamiento BETWEEN ? AND ? and status = 1;`;
+  const dataQuery = `SELECT SUM(capital+intereses) as amount  FROM credits WHERE otorgamiento BETWEEN ? AND ? and status = 1;`;
   const result = await query(dataQuery, [start, end]);
   console.log(result);
 
@@ -201,7 +201,7 @@ async function getTotalCreditosOtorgadosCapitalInteresesGO(start, end) {
 async function getTotalGastosOtorgamiento(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(A.capital-A.credit_amount)  amountT  FROM cayetano.credits A WHERE otorgamiento  BETWEEN ? and ? and status = 1;`
+  const dataQuery = `SELECT SUM(A.capital-A.credit_amount)  amountT  FROM credits A WHERE otorgamiento  BETWEEN ? and ? and status = 1;`
   const result = await query(dataQuery, [start, end]);
   console.log(result[0].amountT);
   if (result) {
@@ -225,11 +225,11 @@ FROM
       coalesce(ci.capital + ci.intereses + punitorios + safe + nota_debito +  - ci.payed , 0) AS deudas,
       DATEDIFF(NOW(), ci.period) AS dias
 FROM
-  cayetano.punitorios p
-RIGHT JOIN cayetano.credits_items ci ON ci.credit_id = p.credit_id
+  punitorios p
+RIGHT JOIN credits_items ci ON ci.credit_id = p.credit_id
   AND MONTH(p.period) = MONTH(ci.period)
   AND YEAR(p.period) = YEAR(ci.period)
-INNER JOIN cayetano.credits c ON c.id = ci.credit_id
+INNER JOIN credits c ON c.id = ci.credit_id
 WHERE
   1 AND ci.period < NOW() AND c.status=1 AND c.state IN ('4','0','5','6','2') IS NOT TRUE
 GROUP BY ci.credit_id , ci.period , c.id
@@ -246,7 +246,7 @@ ORDER BY c.clientID , ci.period) A`;
 async function getTotalDeudaCreditosJuicio() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT sum(A.amount+A.safe+A.punitorios+A.nota_debito-A.payed) deuda,B.status,B.state, A.credit_id FROM cayetano.credits_items A inner join cayetano.credits B on A.credit_id=B.id where B.state = 4 and B.status= 1`;
+  const dataQuery = `SELECT sum(A.amount+A.safe+A.punitorios+A.nota_debito-A.payed) deuda,B.status,B.state, A.credit_id FROM credits_items A inner join credits B on A.credit_id=B.id where B.state = 4 and B.status= 1`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].deuda;
@@ -258,7 +258,7 @@ async function getTotalDeudaCreditosJuicio() {
 async function getTotalACobrar(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT credit_id,SUM(A.amount + A.safe + A.nota_debito + A.punitorios)- SUM(A.payed) as deudaTotal FROM cayetano.credits_items A INNER JOIN cayetano.credits B ON A.credit_id = B.id 
+  const dataQuery = `SELECT credit_id,SUM(A.amount + A.safe + A.nota_debito + A.punitorios)- SUM(A.payed) as deudaTotal FROM credits_items A INNER JOIN credits B ON A.credit_id = B.id 
     WHERE B.state IN ('2','4','5','6') IS NOT TRUE AND A.payed < (A.amount + A.safe + A.punitorios + A.nota_debito ) AND period BETWEEN ? AND ? ;`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
@@ -271,7 +271,7 @@ async function getTotalACobrar(start, end) {
 async function getTotalACobrarCapitalIntereses(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT credit_id,coalesce(sum(A.capital+ A.intereses),0) aCobrar FROM cayetano.credits_items A INNER JOIN cayetano.credits B ON A.credit_id = B.id 
+  const dataQuery = `SELECT credit_id,coalesce(sum(A.capital+ A.intereses),0) aCobrar FROM credits_items A INNER JOIN credits B ON A.credit_id = B.id 
   WHERE B.status=1 and B.state IN ('2','4','5','6') IS NOT TRUE AND period BETWEEN ? AND ?;`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
@@ -284,7 +284,7 @@ async function getTotalACobrarCapitalIntereses(start, end) {
 async function getTotalACobrarSeguros(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT credit_id,coalesce(SUM(A.safe),0) aCobrar FROM cayetano.credits_items A INNER JOIN cayetano.credits B ON A.credit_id = B.id 
+  const dataQuery = `SELECT credit_id,coalesce(SUM(A.safe),0) aCobrar FROM credits_items A INNER JOIN credits B ON A.credit_id = B.id 
   WHERE B.status=1 and B.state IN ('2','4','5','6') IS NOT TRUE AND period BETWEEN ? AND ?;`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
@@ -297,7 +297,7 @@ async function getTotalACobrarSeguros(start, end) {
 async function getTotalACobrarPunitorios(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT credit_id,coalesce(SUM(A.punitorios),0) aCobrar FROM cayetano.credits_items A INNER JOIN cayetano.credits B ON A.credit_id = B.id 
+  const dataQuery = `SELECT credit_id,coalesce(SUM(A.punitorios),0) aCobrar FROM credits_items A INNER JOIN credits B ON A.credit_id = B.id 
   WHERE B.status=1 and B.state IN ('2','4','5','6') IS NOT TRUE AND period BETWEEN ? AND ?;`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
@@ -310,7 +310,7 @@ async function getTotalACobrarPunitorios(start, end) {
 async function getTotalCobrado(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT sum(amount) AS total FROM cayetano.cash_flow WHERE operation_type IN ('ingreso_seguro_cuotas','ingreso_interes_cuotas','ingreso_capital_cuotas','ingreso_punitorios_cuotas') AND created_at
+  const dataQuery = `SELECT sum(amount) AS total FROM cash_flow WHERE operation_type IN ('ingreso_seguro_cuotas','ingreso_interes_cuotas','ingreso_capital_cuotas','ingreso_punitorios_cuotas') AND created_at
     BETWEEN ? AND ?;`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
@@ -323,9 +323,9 @@ async function getTotalCobrado(start, end) {
 async function getTotalCobradoCapitalInteres(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `  SELECT sum(A.amount) AS total,A.created_at,A.operation_type,C.* FROM cayetano.cash_flow A 
-  inner join  cayetano.credits B on A.credit_id = B.id 
-  inner join cayetano.credits_items C on A.credit_item_id = C.id
+  const dataQuery = `  SELECT sum(A.amount) AS total,A.created_at,A.operation_type,C.* FROM cash_flow A 
+  inner join  credits B on A.credit_id = B.id 
+  inner join credits_items C on A.credit_item_id = C.id
   WHERE B.status = 1 and  A.operation_type in ('ingreso_interes_cuotas','ingreso_capital_cuotas') AND C.period
     BETWEEN ? AND ? and B.state IN ('2','4','5','6') IS NOT TRUE;`;
   const result = await query(dataQuery, [start, end]);
@@ -340,9 +340,9 @@ async function getTotalCobradoSeguro(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
   const dataQuery = `      
-  SELECT sum(A.amount) AS total,A.created_at,A.operation_type,C.* FROM cayetano.cash_flow A 
-inner join  cayetano.credits B on A.credit_id = B.id 
-inner join cayetano.credits_items C on A.credit_item_id = C.id
+  SELECT sum(A.amount) AS total,A.created_at,A.operation_type,C.* FROM cash_flow A 
+inner join  credits B on A.credit_id = B.id 
+inner join credits_items C on A.credit_item_id = C.id
 WHERE B.status = 1 and  A.operation_type in ('ingreso_seguro_cuotas') AND C.period
   BETWEEN ? AND ? and B.state IN ('2','4','5','6') IS NOT TRUE;`;
   const result = await query(dataQuery, [start, end]);
@@ -356,9 +356,9 @@ WHERE B.status = 1 and  A.operation_type in ('ingreso_seguro_cuotas') AND C.peri
 async function getTotalCobradoPunitorios(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT sum(A.amount) AS total,A.created_at,A.operation_type,C.* FROM cayetano.cash_flow A 
-  inner join  cayetano.credits B on A.credit_id = B.id 
-  inner join cayetano.credits_items C on A.credit_item_id = C.id
+  const dataQuery = `SELECT sum(A.amount) AS total,A.created_at,A.operation_type,C.* FROM cash_flow A 
+  inner join  credits B on A.credit_id = B.id 
+  inner join credits_items C on A.credit_item_id = C.id
   WHERE B.status = 1 and  A.operation_type in ('ingreso_punitorios_cuotas') AND C.period
     BETWEEN ? AND ? and B.state IN ('2','4','5','6') IS NOT TRUE;`;
   const result = await query(dataQuery, [start, end]);
@@ -373,7 +373,7 @@ async function getTotalCobradoPunitorios(start, end) {
 async function getTotalHistoricoCapitalGO() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(A.capital) amount FROM cayetano.credits A WHERE state in (4,2) is not true and status = 1;`;
+  const dataQuery = `SELECT SUM(A.capital) amount FROM credits A WHERE state in (4,2) is not true and status = 1;`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].amount;
@@ -385,7 +385,7 @@ async function getTotalHistoricoCapitalGO() {
 async function getTotalHistoricoCapitalGOJuicio() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(A.capital) amount FROM cayetano.credits A WHERE state = 4 and status = 1;`;
+  const dataQuery = `SELECT SUM(A.capital) amount FROM credits A WHERE state = 4 and status = 1;`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].amount;
@@ -397,7 +397,7 @@ async function getTotalHistoricoCapitalGOJuicio() {
 async function getTotalHistoricoCapitalGOInactivos() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT SUM(A.capital) amount FROM cayetano.credits A WHERE state = 2 and status = 1;`;
+  const dataQuery = `SELECT SUM(A.capital) amount FROM credits A WHERE state = 2 and status = 1;`;
   const result = await query(dataQuery, []);
   if (result) {
     return result[0].amount;
@@ -409,9 +409,9 @@ async function getTotalHistoricoCapitalGOInactivos() {
 async function getSaldoRestanteCapitalHistorico() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT COALESCE(sum(B.capital),0) as amount  FROM cayetano.credits A inner join cayetano.credits_items B on B.credit_id = A.id  WHERE status = 1;`;
+  const dataQuery = `SELECT COALESCE(sum(B.capital),0) as amount  FROM credits A inner join credits_items B on B.credit_id = A.id  WHERE status = 1;`;
   const result = await query(dataQuery, []);
-  const dataQuery2 = `SELECT COALESCE(sum(B.amount),0) as amount  FROM cayetano.credits A inner join cayetano.cash_flow B on A.id = B.credit_id WHERE operation_type="ingreso_capital_cuotas" and status = 1;`;
+  const dataQuery2 = `SELECT COALESCE(sum(B.amount),0) as amount  FROM credits A inner join cash_flow B on A.id = B.credit_id WHERE operation_type="ingreso_capital_cuotas" and status = 1;`;
   const result2 = await query(dataQuery2, []);
   if (result) {
     return result[0].amount - result2[0].amount;
@@ -427,7 +427,7 @@ async function getSaldoRestanteCapitalHistorico() {
 async function getTotalEgresoSinInversiones(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT abs(sum(amount)) as egreso FROM cayetano.cash_flow WHERE type = 2 AND created_at BETWEEN ? and ? and caja_id = 1 and deleted_at is null and operation_type in ('pago_inversion') is not true;`;
+  const dataQuery = `SELECT abs(sum(amount)) as egreso FROM cash_flow WHERE type = 2 AND created_at BETWEEN ? and ? and caja_id = 1 and deleted_at is null and operation_type in ('pago_inversion') is not true;`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].egreso;
@@ -439,7 +439,7 @@ async function getTotalEgresoSinInversiones(start, end) {
 async function getTotalEgresoConInversiones(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT abs(sum(amount)) as egreso FROM cayetano.cash_flow WHERE type = 2 AND created_at BETWEEN ? and ? and caja_id = 1 and deleted_at is null;`;
+  const dataQuery = `SELECT abs(sum(amount)) as egreso FROM cash_flow WHERE type = 2 AND created_at BETWEEN ? and ? and caja_id = 1 and deleted_at is null;`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].egreso;
@@ -451,7 +451,7 @@ async function getTotalEgresoConInversiones(start, end) {
 async function getEgresosFijos(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT COALESCE(abs(sum(amount)),0) as amount FROM cayetano.cash_flow where type = 2 and created_at between ? and ? and deleted_at is null 
+  const dataQuery = `SELECT COALESCE(abs(sum(amount)),0) as amount FROM cash_flow where type = 2 and created_at between ? and ? and deleted_at is null 
   and operation_type in ("Comision_mantenimiento","IIBB_creditos","imp_creditos_debitos","IVA","gastos_impuestos","impuesto_luz","impuesto_agua","impuesto_gas","alquiler_oficina","amortizacion_capital",
   "gastos_cochera","gastos_cafeteria","gastos_agua","gastos_limpieza","gastos_monitoreo_alarma","gasto_telefonia","gastos_celular","gastos_generales","impuesto_inmobiliario",
   "insumos_libreria","insumos_oficina","publicidad_propaganda","sueldo_aguinaldo", "sueldos","egreso_servers","egreso_web","gastos_tasa_impuestos");`;
@@ -506,7 +506,7 @@ async function getEgresosFijos(start, end) {
 // async function getCuotaCreditoMensual(start, end){
 //     const util = require("util");
 //     const query = util.promisify(mysqli.query).bind(mysqli);
-//     const dataQuery = `SELECT SUM(amount ) CreditoMensualCuota FROM cayetano.credits_items where period BETWEEN ? AND ?;`;
+//     const dataQuery = `SELECT SUM(amount ) CreditoMensualCuota FROM credits_items where period BETWEEN ? AND ?;`;
 //     const result = await query(dataQuery, [start, end])
 //     if(result){
 //         return result[0].CreditoMensualCuota

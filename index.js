@@ -227,7 +227,7 @@ app.post("/updateprendadocuments", async function (req, res) {
         let sql = `SELECT 
         T1.prenda_file, T2.*
     FROM
-        cayetano.credits T1
+        credits T1
             INNER JOIN
         files T2 ON T1.prenda_file = T2.id
     WHERE
@@ -325,7 +325,7 @@ WHERE
       SUM(punitorios.amount) punitorios,
       users.name
   FROM
-      cayetano.credits_items
+      credits_items
       LEFT JOIN punitorios ON credits_items.period = punitorios.period AND credits_items.credit_id = punitorios.credit_id
       LEFT JOIN credits ON credits_items.credit_id = credits.id
       LEFT JOIN users ON users.id = credits.clientID
@@ -352,7 +352,7 @@ WHERE
        SUM(punitorios.amount) punitorios,
        users.name
    FROM
-       cayetano.credits_items
+       credits_items
        LEFT JOIN punitorios ON credits_items.period = punitorios.period AND credits_items.credit_id = punitorios.credit_id
        LEFT JOIN credits ON credits_items.credit_id = credits.id
        LEFT JOIN users ON users.id = credits.clientID
@@ -404,8 +404,8 @@ WHERE
   const punitoriosQuery = `SELECT 
   T1.credit_id
   FROM
-  cayetano.credits_items T1
-  LEFT JOIN cayetano.credits T2 ON T1.credit_id = T2.id
+  credits_items T1
+  LEFT JOIN credits T2 ON T1.credit_id = T2.id
   WHERE
   (T1.capital+T1.intereses+ T1.safe+ T1.punitorios ) > T1.payed
       AND  DATE_ADD(DATE(T1.period),INTERVAL 4 DAY)  < NOW()

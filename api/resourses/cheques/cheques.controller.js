@@ -90,7 +90,7 @@ async function getMostrarCheques() {
 async function cronCheques() {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  let sql = `select * from cayetano.cheques where  date_sub(vencimiento, interval 2 day) = date(now());`;
+  let sql = `select * from cheques where  date_sub(vencimiento, interval 2 day) = date(now());`;
   const result = await query(sql, []);
   console.log(result);
   var mailOptions = {

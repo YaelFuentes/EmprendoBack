@@ -108,9 +108,9 @@ async function getAllInvestements() {
   T2.phone telefono,
   A.periodoMax
   FROM 
-  cayetano.investments T1
-  INNER JOIN cayetano.users T2 ON T1.investorID = T2.id
-  left join (SELECT *,MAX(period) periodoMax FROM cayetano.investments_payments group by investmentID) A on T1.id = A.investmentID
+  investments T1
+  INNER JOIN users T2 ON T1.investorID = T2.id
+  left join (SELECT *,MAX(period) periodoMax FROM investments_payments group by investmentID) A on T1.id = A.investmentID
   GROUP BY T1.id 
   `;
   const investments = await query(sql, []);
@@ -215,7 +215,7 @@ async function getInvestementInfo(investmentId) {
 
   if (investment) {
     investment_amount = investment[0].amount;
-    const sql2 = `SELECT coalesce(SUM(amount), 0) withdrawAmmount FROM cayetano.cash_flow WHERE investment_id = ? AND type = 2 AND operation_type = 'retiro_inversion';`;
+    const sql2 = `SELECT coalesce(SUM(amount), 0) withdrawAmmount FROM cash_flow WHERE investment_id = ? AND type = 2 AND operation_type = 'retiro_inversion';`;
     const retirosInversion = await query(sql2, [investmentId]);
     if (retirosInversion.length > 0) {
       withdrawAmmount = retirosInversion[0].withdrawAmmount;
@@ -250,7 +250,7 @@ async function getReinversion(investmentId) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
 
-  const sql = `  SELECT * FROM cayetano.investments WHERE reinversionID = ? OR id = ? ORDER BY ts DESC`;
+  const sql = `  SELECT * FROM investments WHERE reinversionID = ? OR id = ? ORDER BY ts DESC`;
   const investment = await query(sql, [investmentId, investmentId]);
   return investment
 }
@@ -262,7 +262,7 @@ async function getRetiros(investment_id) {
   let retirosTotal = 0;
   let saldo = 0;
 
-  const sql1 = `SELECT amount FROM cayetano.investments WHERE id = ?;`;
+  const sql1 = `SELECT amount FROM investments WHERE id = ?;`;
   const montoInversionResult = await query(sql1, [investment_id]);
 
   const sql2 = `SELECT * FROM cash_flow WHERE investment_id = ? AND operation_type = 'retiro_inversion';`;
@@ -392,7 +392,7 @@ function payInvestment(investment, USER_ID, account_id, caja_id) {
   return new Promise((resolve, reject) => {
     //ACA CHEQUEAMOS SI SE HA HECHO UNA RECAPITALIZACION, SI ES ASI NO DEBERIA PODER RECIBIR PAGOS
     mysqli.query(
-      `SELECT * FROM cayetano.recapitalizaciones WHERE investment_id = ?`,
+      `SELECT * FROM recapitalizaciones WHERE investment_id = ?`,
       [investment.investmentID],
       (errcheck, rowscheck) => {
         let tieneRecapitalizaciones = 0;
@@ -456,7 +456,7 @@ function payInvestment(investment, USER_ID, account_id, caja_id) {
 async function getInfoInvestmentUsers(investmentID) {
   const util = require('util');
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const sql = `SELECT * FROM cayetano.investments A LEFT JOIN cayetano.users B ON A.investorID = B.id WHERE A.id = ?;`;
+  const sql = `SELECT * FROM investments A LEFT JOIN users B ON A.investorID = B.id WHERE A.id = ?;`;
   const result = await query(sql, [investmentID]);
   return result
 }
@@ -485,7 +485,7 @@ WHERE
     `SELECT 
   *
 FROM
-  cayetano.investments
+  investments
 WHERE
   DATE_ADD(DATE(ts),INTERVAL (period) MONTH) > DATE(NOW())
 AND DATE_ADD(DATE(ts),INTERVAL (period - 1) MONTH) > DATE(NOW())
