@@ -85,9 +85,16 @@ paymentsRouter.post(
   }
 );
 
-paymentsRouter.get("/list/:creditid", auth.required, async function (req, res, next) {
+paymentsRouter.get("/list/:creditid",auth.required,async function (req, res, next) {
   let credit_id = req.params.creditid;
   const result = await paymentsController.getList(credit_id)
+  res.status(200).send(result)
+});
+
+paymentsRouter.get("/notaDebitoDeleteDecision/:creditItemId/:paymentId",auth.required, async function (req, res, next) {
+  let creditItemId = req.params.creditItemId;
+  let paymentId = req.params.paymentId;
+  const result = await paymentsController.getNotaDebitoDelete(creditItemId,paymentId)
   res.status(200).send(result)
 });
 

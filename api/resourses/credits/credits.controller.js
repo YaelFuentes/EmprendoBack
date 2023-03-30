@@ -1812,6 +1812,36 @@ async function getInterestPayed(creditID) {
     return error
   }
 }
+async function reversion(paymentId,reason,userID) {
+  try {
+    const util = require('util');
+    const query = util.promisify(mysqli.query).bind(mysqli);
+    const result = await query(`select * from payments where id = ?`,[paymentId])
+    if (!Array.isArray(result) && !result.length > 0 ){
+      return {message:"Error al revertir el pago."}
+    }
+    let response
+    switch (result[0].account_id) {
+      case 12:
+        await mysqli.beginTransaction()        
+        await mysqli.query("update payments set deleted_at = now(), deletionReason = ? ,deletedByUser = ? where id = ?",[reason,userID,paymentId])
+        await mysqli.query("update credits_items set payed = payed - ? where id = ? ",[result[0].amount,result[0].payed_ci])
+        response = await mysqli.commit()        
+        return response?.response?.callSite || 'success'
+      case 13:
+        await mysqli.beginTransaction()        
+        await mysqli.query("update payments set deleted_at = now(),deletionReason = ? ,deletedByUser = ? where id = ?",[reason,userID,paymentId])
+        await mysqli.query("update credits_items set nota_debito = nota_debito - ? where id = ? ",[result[0].amount,result[0].payed_ci])
+        response = await mysqli.commit()        
+        return response?.response?.callSite || 'success'
+      default:
+        response = await paymentsController.deletePayment(paymentId,reason,userID)
+        return response;
+    }
+  } catch (error) {
+      return error.message;
+  }
+}
 
 module.exports = {
   create,
@@ -1854,5 +1884,6 @@ module.exports = {
   updateCreditsState,
   cancelacionAnticipada,
   ventaDeVehiculoPrendado,
-  getInterestPayed
+  getInterestPayed,
+  reversion
 };

@@ -39,12 +39,11 @@ async function insertPayment(
 
     const insertLog = `INSERT INTO record_logs (type,userId,createdAt,affectedId,credit_id) VALUES ('insert-payment',?,NOW(),?,?)`;
     await query(insertLog, [USER_ID, insertId, credit_id]);
+    const getLastCashFlowPayment = await query('select * from cash_flow where credit_id = ? and Date(created_at) = Date(NOW()) and operation_type = "pago_cuota_total" and used_in_payments = 0 order by id desc ',[credit_id])
 
-    if (cash_flow_list && cash_flow_list.length > 0) {
-      const updateCashFlowItems = `UPDATE cash_flow SET used_in_payments = 1 WHERE id IN(${cash_flow_list.join(
-        ","
-      )})`;
-      await query(updateCashFlowItems, []);
+    if (getLastCashFlowPayment && getLastCashFlowPayment.length > 0) {
+      const updateCashFlowItems = `UPDATE cash_flow SET used_in_payments = ? WHERE id = ?`
+      await query(updateCashFlowItems, [insertId,getLastCashFlowPayment[0].id]);
     }
 
     const creditsItemsQuery = `SELECT CASE WHEN p.amount IS NOT NULL THEN SUM(p.amount) ELSE 0 END punitorios, ci.capital,ci.otorgamiento,ci.intereses, ci.amount , ci.period, ci.safe, ci.payed , ci.id
@@ -106,7 +105,7 @@ async function insertPayment(
         ingreso_nota_credito: 0,
         egreso_nota_debito: 0,
       }
-      const obtenerNCreditoNDebito = await query('SELECT sum(p.amount) totalAmount,p.*, c.name FROM cayetano.payments p inner join  cayetano.cash_flow_accounts c on p.account_id = c.id where payed_ci = ? and name in ("Nota de Crédito","Nota de Débito","Nota de Credito","Nota de Debito") group by name;', [credit_item_id.toString()])
+      const obtenerNCreditoNDebito = await query('SELECT sum(p.amount) totalAmount,p.*, c.name FROM cayetano.payments p inner join  cayetano.cash_flow_accounts c on p.account_id = c.id where payed_ci = ? and name in ("Nota de Crédito","Nota de Débito","Nota de Credito","Nota de Debito") and p.deleted_at is null group by name;', [credit_item_id.toString()])
       obtenerNCreditoNDebito.map(item => {
         if (item.name === "Nota de Crédito" || item.name === "Nota de Credito") {
           totalNotaDebitoCredito.ingreso_nota_credito = item.totalAmount
@@ -626,9 +625,9 @@ async function getList(credit_id) {
     const util = require("util");
     const query = util.promisify(mysqli.query).bind(mysqli);
     let sql = `
-  select A.clientID,A.description, A.paymentDate, A.id, A.amount,A.account_id,A.credit_id, B.user,concat(D.name," " ,D.lastname) as responsable, B.payment_id , C.id as idUser, C.name, C.lastname , E.name as mediopago, A.payed_ci AS pagos
+  select A.clientID,A.description, A.paymentDate,A.deleted_at,A.deletionReason, A.id, A.amount,A.account_id,A.credit_id, B.user,concat(D.name," " ,D.lastname) as responsable, B.payment_id , C.id as idUser, C.name, C.lastname , E.name as mediopago,A.payed_ci AS pagos
   from cayetano.payments A left join cayetano.cash_flow B on A.id = B.payment_id left join cayetano.users C  on B.user = C.id left join cayetano.users D  on A.responsable = D.id left join cayetano.cash_flow_accounts E on A.account_id = E.id 
-  where A.credit_id = ? AND A.status = 1 group by A.id  ORDER BY paymentDate ASC;`;
+  where A.credit_id = ? group by A.id ORDER BY paymentDate ASC;`;
     const result = await query(sql, [credit_id])
     if (Array.isArray(result) && result.length > 0) {
       const arrayPagos = await Promise.all(
@@ -646,6 +645,21 @@ async function getList(credit_id) {
     return error
   }
 }
+
+async function getNotaDebitoDelete(creditItemId,paymentId){
+  const util = require("util");
+  const query = util.promisify(mysqli.query).bind(mysqli);
+  const getNotasDebitoCreditItem = await query('select *, A.id as paymentId,A.amount as montoND from payments A inner join credits_items B on A.payed_ci = B.id where A.id = ? and account_id = 13 and deleted_at is null', [paymentId])
+  const getPayedND = await query('select sum(amount) as montoPagado from cash_flow where credit_item_id = ? and operation_type = "ingreso_nota_debito" ',[creditItemId])
+  if (Array.isArray(getPayedND) && (getPayedND[0].montoPagado === 0 || getPayedND[0].montoPagado === null)) {
+    return true
+  }
+  if (getNotasDebitoCreditItem[0].nota_debito - getPayedND[0].montoPagado > getNotasDebitoCreditItem[0].montoND ) {
+    return true
+  }
+  return false
+}
+
 
 function getListDeleted(credit_id, callback) {
   let sql =
@@ -695,7 +709,7 @@ function updatePayment(amount, paymentDate, paymentid, callback) {
   });
 }
 
-async function deletePayment(paymentid, reason, user_id, callback) {
+async function deletePayment(paymentid, reason, user_id) {
   try {
     const util = require("util");
     const query = util.promisify(mysqli.query).bind(mysqli);
@@ -722,28 +736,36 @@ async function deletePayment(paymentid, reason, user_id, callback) {
           "UPDATE cash_flow SET deleted_at = NOW() WHERE payment_id = ?",
           [paymentid]
         );
-
-        const getTotalsCashFlowDeleted = await query(
-          "SELECT SUM(amount) pagado, credit_item_id FROM cash_flow WHERE payment_id = ? GROUP BY credit_item_id;",
-          [paymentid]
+        
+      const getTotalsCashFlowDeleted = await query(
+        "SELECT SUM(amount) pagado, credit_item_id FROM cash_flow WHERE payment_id = ? GROUP BY credit_item_id;",
+        [paymentid]
         );
-
+        
         console.log(`getTotalsCashFlowDeleted ${getTotalsCashFlowDeleted}`);
-
-        if (getTotalsCashFlowDeleted && getTotalsCashFlowDeleted.length > 0) {
-          getTotalsCashFlowDeleted.forEach(async (item) => {
-            console.log(`item ${item}`);
-
-            await query(
-              `UPDATE credits_items SET payed = payed - ${item.pagado} WHERE credit_id = ? AND id = ?;`,
-              [credit_id, item.credit_item_id]
+        
+      if (getTotalsCashFlowDeleted && getTotalsCashFlowDeleted.length > 0) {
+        getTotalsCashFlowDeleted.forEach(async (item) => {
+          console.log(`item ${item}`);
+          
+          await query(
+            `UPDATE credits_items SET payed = payed - ${item.pagado} WHERE credit_id = ? AND id = ?;`,
+            [credit_id, item.credit_item_id]
             );
           });
-        }
+      }
+      await query(
+        "delete from cash_flow WHERE payment_id = ?",
+        [paymentid]
+      );
+      await query(
+        "delete from cash_flow WHERE used_in_payments = ?",
+        [paymentid]
+      );
 
-        return callback(null, deletePaymentQuery);
+        return  deletePaymentQuery
       } else {
-        return callback("No se pudo eliminar el pago", null);
+        return {message:"No se pudo eliminar el pago"}
       }
     }
   } catch (error) {
@@ -840,5 +862,6 @@ module.exports = {
   getInfo,
   updatePayment,
   createNCreditOrDebit,
-  getNCreditoDebito
+  getNCreditoDebito,
+  getNotaDebitoDelete
 };

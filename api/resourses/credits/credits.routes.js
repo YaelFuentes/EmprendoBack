@@ -17,6 +17,14 @@ creditsRouter.get("/infoEstado/:creditid", function (req, res) {
     res.json(result);
   });
 });
+creditsRouter.post("/reversion/:paymentId",async function (req, res) {
+  const paymentId = req.params.paymentId;
+  const reason = req.body.razon;
+  const decoded = jwt_decode(auth.getToken(req));
+  const USER_ID = decoded.id;
+  const result = await creditsController.reversion(paymentId,reason,USER_ID)
+  res.json(result);
+});
 
 creditsRouter.get("/list/:clientid", auth.required, function (req, res, next) {
   const clientid = req.params.clientid;

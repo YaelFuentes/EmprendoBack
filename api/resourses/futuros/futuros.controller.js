@@ -163,7 +163,7 @@ async function getTotalCreditosOtorgadosCapital(start, end) {
 async function getTotalCreditosOtorgadosNotasCredito(start, end) {
   const util = require("util");
   const query = util.promisify(mysqli.query).bind(mysqli);
-  const dataQuery = `SELECT sum(amount) as amount FROM cayetano.payments where account_id=12 and paymentDate between ? and ?;`;
+  const dataQuery = `SELECT sum(amount) as amount FROM cayetano.payments where deleted_at is null and account_id=12 and paymentDate between ? and ?;`;
   const result = await query(dataQuery, [start, end]);
   if (result) {
     return result[0].amount;
